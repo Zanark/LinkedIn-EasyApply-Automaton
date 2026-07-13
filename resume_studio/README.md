@@ -119,6 +119,7 @@ Invoke as `.\.venv\Scripts\python.exe resume_studio\render.py <command>`.
 | `pick`       | Build the resume. Renders the HTML design → `hybrid_html.pdf` **and** the RenderCV twin → `hybrid.pdf`, plus preview PNGs. | `out/pick/` |
 | `pick-fonts` | Render the design across **20 distinct fonts** and stitch a labelled contact sheet to shortlist a typeface. | `out/pick/fonts/` |
 | `publish`    | Render the design and **copy the PDF into `resumes/`** so the automaton submits it. Optional filename arg; any existing file of that name is backed up first. | `resumes/` |
+| `publish-variants` | Render **one PDF per role** from the `variants:` block in `master.yaml` (tailored headline + skills emphasis) and copy each into `resumes/`. | `resumes/` |
 
 ```powershell
 .\.venv\Scripts\python.exe resume_studio\render.py publish                       # -> resumes/<Your_Name>_Resume.pdf
@@ -191,6 +192,46 @@ So the published filename must match an entry there. Verify end-to-end with:
 Publishing over an existing file first copies it to
 `resumes/<stem>.backup-<timestamp>.pdf` (which still matches the `resumes/*.pdf`
 git-ignore rule), so your previous resume is never lost.
+
+---
+
+## Role variants
+
+Want a resume tuned per role? Add a `variants:` block to `master.yaml` — the
+**same** content, only re-emphasized (headline + skills order). Nothing is
+invented or removed:
+
+```yaml
+variants:
+  - key: software-engineer
+    filename: Debashish_Mishra_SoftwareEngineer.pdf
+    title: "Software Engineer · Backend, Cloud & AI"
+    skills_order: [".NET & Backend", "Cloud & DevOps", "Data", "Frontend"]
+  - key: full-stack
+    filename: Debashish_Mishra_FullStack.pdf
+    title: "Full Stack Engineer · .NET, React & Azure"
+    skills_order: ["Frontend", ".NET & Backend", "Cloud & DevOps", "Data"]
+```
+
+| Field         | Effect                                                                    |
+| ------------- | ------------------------------------------------------------------------- |
+| `filename`    | The PDF written into `resumes/` — point `config.yaml → resume.mapping` at it |
+| `title`       | Overrides the headline under your name                                    |
+| `skills_order`| Reorders the skills **categories** (any not listed sink to the end)       |
+
+```powershell
+.\.venv\Scripts\python.exe resume_studio\render.py publish-variants
+```
+
+Then map each search to its variant:
+
+```yaml
+resume:
+  default: Debashish_Mishra_Resume.pdf          # the general one, for anything unmapped
+  mapping:
+    software engineer: Debashish_Mishra_SoftwareEngineer.pdf
+    full stack developer: Debashish_Mishra_FullStack.pdf
+```
 
 ---
 

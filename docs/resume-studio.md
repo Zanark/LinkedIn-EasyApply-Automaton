@@ -53,6 +53,15 @@ Two deliberate decisions worth stealing:
   never delete content to fit a page — you filter a view. This is
   **projection**: the store is complete, each view is a subset.
 
+**Role variants make projection concrete.** An optional `variants:` block lets one
+master produce several role-tuned PDFs — the same facts, re-emphasized (a
+different headline, skills reordered so the role's keywords lead). `_apply_variant`
+does this on a **deep copy** (the master is never mutated), and the template — a
+plain ordered `{% for s in skills %}` loop — renders whatever order it's handed.
+That's the "single source, many views" rule again: you don't fork the résumé per
+role, you *derive* each view. `publish-variants` writes one PDF per variant so the
+automaton's `resume.mapping` can send a tailored file to each search.
+
 `load_master()` is the whole "repository" here — one function, one YAML read. The
 rest of the system depends on the *shape* of that dict, not on any file format.
 

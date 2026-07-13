@@ -979,7 +979,7 @@ def render_pick(m: dict) -> Path:
 # stacked RIGHT, like the attachment) and (8) a bigger per-entry title font.
 # Same content (master.yaml), same teal palette + Raleway.
 # --------------------------------------------------------------------------- #
-def render_pick_html(m: dict) -> Path:
+def render_pick_html(m: dict, dest: Path | None = None, previews: bool = True) -> Path:
     from jinja2 import Environment, FileSystemLoader, select_autoescape
     from playwright.sync_api import sync_playwright
 
@@ -990,9 +990,9 @@ def render_pick_html(m: dict) -> Path:
     env.filters["mon"] = mon
     env.filters["striphttp"] = strip_http
     html = env.get_template("pick.html.j2").render(**_html_context(m))
-    src = pdir / "_hybrid_html_input.html"
+    pdf = dest or (pdir / "hybrid_html.pdf")
+    src = pdir / f"_{pdf.stem}_input.html"
     src.write_text(html, encoding="utf-8")
-    pdf = pdir / "hybrid_html.pdf"
 
     with sync_playwright() as p:
         browser = None
@@ -1013,14 +1013,15 @@ def render_pick_html(m: dict) -> Path:
         browser.close()
     if not pdf.exists():
         raise RuntimeError("playwright produced no PDF")
-    try:
-        import fitz
-        doc = fitz.open(str(pdf))
-        for i, pg in enumerate(doc):
-            pg.get_pixmap(dpi=120).save(str(pdir / f"hybrid_html_p{i + 1}.png"))
-        doc.close()
-    except Exception as exc:
-        print(f"[warn] preview failed: {exc}")
+    if previews:
+        try:
+            import fitz
+            doc = fitz.open(str(pdf))
+            for i, pg in enumerate(doc):
+                pg.get_pixmap(dpi=120).save(str(pdir / f"{pdf.stem}_p{i + 1}.png"))
+            doc.close()
+        except Exception as exc:
+            print(f"[warn] preview failed: {exc}")
     return pdf
 
 
@@ -1120,26 +1121,72 @@ def render_pick_fonts(m: dict) -> list:
 # of the same name is copied to resumes/<stem>.backup-<stamp>.pdf first (that
 # still matches the resumes/*.pdf git-ignore rule), so nothing is ever lost.
 # --------------------------------------------------------------------------- #
-def render_publish(m: dict, name: str | None = None) -> Path:
+def _place_in_resumes(src_pdf: Path, name: str) -> Path:
+    """Copy a rendered PDF into resumes/<name>, backing up any existing file to
+    resumes/<stem>.backup-<stamp>.pdf first (still matches the resumes/*.pdf
+    git-ignore rule), so nothing is ever lost."""
     from datetime import datetime
 
-    pdf = render_pick_html(m)                       # out/pick/hybrid_html.pdf (1 page)
-    if not name:
-        who = str(m.get("basics", {}).get("name", "resume")).strip() or "resume"
-        name = who.replace(" ", "_") + "_Resume.pdf"
     if not name.lower().endswith(".pdf"):
         name += ".pdf"
-
     dest_dir = HERE.parent / "resumes"
     dest_dir.mkdir(exist_ok=True)
     dest = dest_dir / name
-    if dest.exists() and dest.resolve() != pdf.resolve():
+    if dest.exists() and dest.resolve() != src_pdf.resolve():
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup = dest_dir / f"{dest.stem}.backup-{stamp}{dest.suffix}"
         shutil.copy2(dest, backup)
         print(f"[backup] existing {name} -> {backup.name}")
-    shutil.copy2(pdf, dest)
+    shutil.copy2(src_pdf, dest)
     return dest
+
+
+def render_publish(m: dict, name: str | None = None) -> Path:
+    pdf = render_pick_html(m)                       # out/pick/hybrid_html.pdf (1 page)
+    if not name:
+        who = str(m.get("basics", {}).get("name", "resume")).strip() or "resume"
+        name = who.replace(" ", "_") + "_Resume.pdf"
+    return _place_in_resumes(pdf, name)
+
+
+# --------------------------------------------------------------------------- #
+# role variants: the SAME master content, tailored per role. A `variants:` list
+# in master.yaml may override the headline `title` and reorder `skills` (by
+# category name via `skills_order`) so each search can map to a role-focused
+# resume. Content is never invented — only emphasized/reordered.
+# --------------------------------------------------------------------------- #
+def _apply_variant(m: dict, v: dict) -> dict:
+    import copy
+
+    mv = copy.deepcopy(m)
+    if v.get("title"):
+        mv.setdefault("basics", {})["title"] = v["title"]
+    order = v.get("skills_order")
+    if order:
+        rank = {name: i for i, name in enumerate(order)}
+        mv["skills"] = sorted(
+            mv.get("skills", []),
+            key=lambda s: rank.get(s.get("category"), len(order)),
+        )
+    return mv
+
+
+def render_publish_variants(m: dict) -> list:
+    variants = m.get("variants") or []
+    made = []
+    for v in variants:
+        stem = _slug(str(v.get("key") or v.get("filename") or "variant"))
+        mv = _apply_variant(m, v)
+        tmp = OUT / "pick" / f"_variant_{stem}.pdf"
+        render_pick_html(mv, dest=tmp, previews=False)
+        name = v.get("filename") or f"{stem}.pdf"
+        dest = _place_in_resumes(tmp, name)
+        tmp.unlink(missing_ok=True)
+        (OUT / "pick" / f"_{tmp.stem}_input.html").unlink(missing_ok=True)
+        title = mv.get("basics", {}).get("title", "")
+        print(f"[ok] {v.get('key', stem):18s} -> {dest.name}   ({title})")
+        made.append((name, dest))
+    return made
 
 
 # --------------------------------------------------------------------------- #
@@ -1188,6 +1235,15 @@ def main() -> int:
         made = render_pick_fonts(master)
         print(f"\nPick-design font gallery: {len(made)}/20 PDFs in {OUT / 'pick' / 'fonts'}")
         print(f"Compare them all at once: {OUT / 'pick' / 'fonts' / 'CONTACT_SHEET_PICK_FONTS.png'}")
+        return 0
+    if args and args[0] == "publish-variants":
+        made = render_publish_variants(master)
+        if not made:
+            print("No `variants:` defined in master.yaml — nothing to publish.")
+        else:
+            print(f"\nPublished {len(made)} role-tailored resume(s) into "
+                  f"{HERE.parent / 'resumes'}")
+            print("Point configs/config.yaml -> resume.mapping at these filenames.")
         return 0
     if args and args[0] == "publish":
         name = args[1] if len(args) > 1 else None
