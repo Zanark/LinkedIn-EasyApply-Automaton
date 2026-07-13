@@ -56,6 +56,9 @@ discover → extract → upsert → pre-apply checks → score → select resume
 Limits enforced: `max_per_run` (in-memory counter), `max_per_company` and
 `max_daily` (live database queries).
 
+For a full stage-by-stage narrative (with the log lines emitted at each step and
+the dry-run/scan stopping points), see [`run-lifecycle.md`](run-lifecycle.md).
+
 ## Logging conventions
 
 Logging is centralised in `logging/setup.py` (Loguru; console → stderr, rotating

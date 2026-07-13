@@ -147,6 +147,9 @@ Deep-dive guides that teach the computer-science behind this codebase — writte
 for engineers who want to understand *why* it's built this way and map it to
 patterns used at bigger companies:
 
+- [Run Lifecycle](docs/run-lifecycle.md) — a stage-by-stage walkthrough of one
+  run: where it starts, how a job is discovered, what happens when a job is
+  found, how the form is filled, and how it ends (with the log lines you'll see).
 - [Architecture & Design Patterns](docs/architecture.md) — component/sequence
   diagrams, the Functional-Core/Imperative-Shell style, and every design pattern
   used here (Facade, Strategy, Factory, Repository, Null Object…) with real code.

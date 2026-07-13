@@ -85,6 +85,49 @@ ensure `run.dry_run: false`. With `--interactive`, confirm at the prompt.
 Expected when `run.pause_on_unknown_question: true`. Answer at the prompt (it's
 remembered for next time), or run non-interactively with `--yes` to auto-skip.
 
+## Reading the logs
+
+Every line in `logs/easy_apply_<date>.log` has four pipe-delimited fields:
+
+```
+2026-07-13 21:09:16.805 | DEBUG    | linkedin_easy_apply.answers.resolver:resolve:131 - Resolve phone -> '+91-…' (from answers key 'phone')
+└── timestamp (ms) ───┘   └ level ┘   └──── source: module:function:line ────┘   └───────────── message ─────────────┘
+```
+
+- **timestamp** — millisecond precision, so you can measure the gap between steps
+  (e.g. a 30 000 ms gap before a click error = a Playwright timeout).
+- **level** — `DEBUG` (the tool's internal "brain": every field parsed, resolved,
+  filled), `INFO` (the readable narrative: job headers, skip/fill decisions, step
+  transitions), `WARNING` (recoverable, e.g. résumé not found), `ERROR` (a failure).
+  `-v` / `logging.level: DEBUG` turns on the DEBUG stream.
+- **source** `module:function:line` — the exact code that emitted the line. This
+  doubles as a **pipeline map**: `orchestrator:_process_job` (job header + skip),
+  `forms.detector:detect` (what fields it saw), `answers.resolver:resolve` (where
+  an answer came from), `forms.filler:*` (fill result), `forms.easy_apply:apply`
+  (step transitions).
+- **message** — the human/DEBUG text.
+
+**Trace one field end-to-end** by reading top-to-bottom: *detected → understood
+as (confidence) → resolved from (which `answers.yaml` key) → fill result*. The
+full run walkthrough is in [`run-lifecycle.md`](run-lifecycle.md).
+
+> **Records ≠ lines.** `ERROR` entries include a Playwright `Call log:` block that
+> spans many raw lines, so filter by the `| ERROR |` prefix, not by line number.
+> One dated file is **append-only across every run that day**.
+
+Handy queries:
+
+```powershell
+# just the human narrative (skip DEBUG)
+Select-String logs\easy_apply_2026-07-13.log -Pattern '\| (INFO|WARNING|ERROR)\s+\|'
+# everything the resolver decided
+Select-String logs\easy_apply_2026-07-13.log -Pattern 'resolver:resolve'
+# the scoring math for every job
+Select-String logs\easy_apply_2026-07-13.log -Pattern 'Scored'
+# what got filled vs left blank
+Select-String logs\easy_apply_2026-07-13.log -Pattern 'filled with|left blank'
+```
+
 ## Logs and screenshots
 
 - Logs: `logs/` (rotation/retention configurable under `logging`).

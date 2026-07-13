@@ -117,6 +117,10 @@ important boundary in the whole project.**
 
 ## 3. What happens on one run
 
+> For a prose, stage-by-stage walkthrough of this same flow (with the exact log
+> lines emitted at each step and where `scan`/`--dry-run` stop), see
+> [`run-lifecycle.md`](run-lifecycle.md).
+
 ```mermaid
 sequenceDiagram
     participant U as You (CLI)
