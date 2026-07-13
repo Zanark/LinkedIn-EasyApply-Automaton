@@ -141,6 +141,20 @@ INIT.MD                run guide: every command & option with examples
 - [FAQ](docs/faq.md) — safety, AI, resumes, data storage.
 - [Troubleshooting](docs/troubleshooting.md) — fixes for common problems.
 
+### Learning the internals
+
+Deep-dive guides that teach the computer-science behind this codebase — written
+for engineers who want to understand *why* it's built this way and map it to
+patterns used at bigger companies:
+
+- [Architecture & Design Patterns](docs/architecture.md) — component/sequence
+  diagrams, the Functional-Core/Imperative-Shell style, and every design pattern
+  used here (Facade, Strategy, Factory, Repository, Null Object…) with real code.
+- [Data Structures](docs/data-structures.md) — the maps, sets, enums, DTOs and
+  relational schema used, each with complexity and where industry uses it.
+- [Algorithms](docs/algorithms.md) — normalization, fuzzy matching, weighted
+  scoring, backoff and more, each with a real-world example.
+
 ## Development
 
 ```powershell
