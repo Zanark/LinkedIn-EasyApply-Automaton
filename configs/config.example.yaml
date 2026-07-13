@@ -1,0 +1,98 @@
+# LinkedIn Easy Apply Automaton - example configuration.
+# Copy to configs/config.yaml (or run `lea init`) and edit for your setup.
+# String values support ${ENV_VAR} and ${ENV_VAR:-default} expansion.
+
+browser:
+  engine: chrome                 # chrome | edge | chromium
+  # Path to a browser profile that is ALREADY logged into LinkedIn.
+  # Windows Chrome example: C:/Users/<you>/AppData/Local/Google/Chrome/User Data
+  # Tip: use a dedicated profile and close other windows using it first.
+  profile_path: ${LEA_PROFILE:-.browser-profile}
+  headless: false                # keep visible so you can intervene
+  viewport_width: 1440
+  viewport_height: 900
+  slow_mo_ms: 0
+  download_dir: downloads
+  default_timeout_ms: 30000
+  navigation_timeout_ms: 45000
+  max_retries: 3
+  record_har: false
+
+jobs:
+  max_per_run: 15
+  max_per_company: 3
+  max_daily: 40
+  pause_after: 5                 # pause after every N applications (0 disables)
+  pause_seconds: 20
+  blacklist_companies: []
+  whitelist_companies: []
+  include_keywords: []           # if set, job text must contain at least one
+  exclude_keywords:              # skip jobs mentioning any of these
+    - clearance
+    - unpaid
+
+search:
+  searches:
+    - name: backend
+      url: "https://www.linkedin.com/jobs/search/?keywords=backend%20engineer&f_AL=true"
+      enabled: true
+    - name: sre
+      url: "https://www.linkedin.com/jobs/search/?keywords=site%20reliability%20engineer&f_AL=true"
+      enabled: false
+
+answers:
+  file: configs/answers.yaml
+  fuzzy_threshold: 80
+
+resume:
+  directory: resumes
+  default: Backend.pdf
+  mapping:
+    backend engineer: Backend.pdf
+    java developer: Java.pdf
+    site reliability engineer: SRE.pdf
+    azure: Azure.pdf
+
+scoring:
+  threshold: 20
+  case_sensitive: false
+  rules:
+    - { keyword: backend, weight: 20 }
+    - { keyword: azure, weight: 20 }
+    - { keyword: distributed systems, weight: 15 }
+    - { keyword: kubernetes, weight: 10 }
+    - { keyword: java, weight: 10 }
+    - { keyword: go, weight: 5 }
+    - { keyword: remote, weight: 5 }
+    - { keyword: principal, weight: -50 }
+    - { keyword: staff, weight: -40 }
+    - { keyword: rust, weight: -30 }
+
+logging:
+  level: INFO
+  directory: logs
+  rotation: 10 MB
+  retention: 14 days
+  console: true
+
+ai:
+  provider: none                 # none | openai
+  enabled: false
+  model: gpt-4o-mini
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.2
+  max_tokens: 800
+
+database:
+  path: database/easy_apply.db
+
+screenshots:
+  enabled: true
+  directory: screenshots
+  on_error: true
+  each_step: true
+
+run:
+  dry_run: false
+  interactive: false
+  pause_on_unknown_question: true

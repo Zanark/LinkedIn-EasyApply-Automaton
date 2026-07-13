@@ -1,2 +1,140 @@
 # LinkedIn-EasyApply-Automaton
-An automaton to apply for all jobs that have LinkedIn Easy Apply available.
+
+A production-quality, **modular** framework that automates the LinkedIn **Easy
+Apply** workflow: it discovers jobs from your saved searches, scores them against
+your criteria, picks the right resume, fills every question from your own answer
+file, and applies — with dry-run, interactive approval, dedupe and daily limits
+built in.
+
+> ⚠️ **Read this first.** Automating LinkedIn violates their Terms of Service and
+> can get your account restricted. This project is provided for educational
+> purposes; **use it at your own risk**. It **never** stores your password —
+> you stay logged in through your own browser profile.
+
+## Highlights
+
+- **Reuses your logged-in browser profile** (Playwright persistent context) —
+  no credentials, no automated login.
+- **Dynamic question recognition** — a hybrid keyword + fuzzy parser maps
+  free-form Easy Apply questions to your answers; unknown questions pause for
+  input and are **remembered** for next time.
+- **Config-driven everything** — searches, scoring, filters, limits, resume
+  selection, logging and AI are all YAML. No hardcoded values.
+- **Weighted job scoring** with whole-word matching (so `go` ≠ `google`) and
+  punctuation keywords (`c++`, `.net`).
+- **Automatic resume selection** (mapping → keyword overlap → default).
+- **Safety rails**: per-run / per-company / daily caps, blacklist/whitelist,
+  include/exclude keywords, URL + company-role dedupe.
+- **Dry-run & interactive** modes; per-step and on-error screenshots.
+- **SQLite persistence** of jobs, applications, questions/answers, scores,
+  errors — with `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard.
+- **Optional AI advisor** (OpenAI) that only *advises* — it can never submit.
+- Clean, typed, tested codebase (ruff + black + mypy + pytest).
+
+## Requirements
+
+- Python **3.12+**
+- Google Chrome, Microsoft Edge, or bundled Chromium
+- A LinkedIn account you are logged into within the chosen browser profile
+
+## Install
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+
+# First time only, if you use bundled Chromium:
+.\.venv\Scripts\python.exe -m playwright install chromium
+```
+
+Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[dev]` (e.g.
+`pip install -e ".[dev]"`).
+
+## Quickstart
+
+```powershell
+# 1. Scaffold config files + runtime folders
+.\.venv\Scripts\python.exe apply.py init
+
+# 2. Edit configs/config.yaml (searches, scoring, limits)
+#    and configs/answers.yaml (your details & skills).
+#    Drop your resume(s) in resumes/ and reference them in config.yaml.
+
+# 3. Confirm your browser session is logged in
+.\.venv\Scripts\python.exe apply.py test-browser
+
+# 4. Discover & score jobs without applying
+.\.venv\Scripts\python.exe apply.py scan
+
+# 5. Practice run — fills everything, never submits
+.\.venv\Scripts\python.exe apply.py apply --dry-run
+
+# 6. For real, confirming each submission
+.\.venv\Scripts\python.exe apply.py apply --interactive
+```
+
+Installing the package also exposes a `lea` console script, so `lea init`,
+`lea scan`, `lea apply --dry-run`, etc. work once the venv is active.
+
+## Commands
+
+| Command                       | Description                                             |
+| ----------------------------- | ------------------------------------------------------- |
+| `init`                        | Scaffold example configs and runtime directories.       |
+| `apply`                       | Run the Easy Apply automation (`--dry-run`, `--interactive`, `--yes`, `--limit`, `--url`). |
+| `scan`                        | Discover & score jobs without applying.                 |
+| `stats`                       | Print database statistics.                              |
+| `export`                      | Export applications (joined with jobs) to CSV/XLSX.     |
+| `dashboard`                   | Launch the Streamlit dashboard.                         |
+| `resume-test <title>`         | Show which resume would be chosen for a job.            |
+| `test-form "<question>"`      | Recognise & resolve a single question (offline).        |
+| `test-browser`                | Launch the browser and verify your logged-in session.   |
+| `version`                     | Print the version.                                      |
+
+## How it works
+
+```
+discover → extract → dedupe → filter → score → select resume
+        → (AI advise) → Easy Apply workflow → persist → learn answers
+```
+
+The `Orchestrator` coordinates focused modules (`config`, `parser`, `scoring`,
+`answers`, `forms`, `browser`, `jobs`, `ai`, `database`). Playwright is imported
+lazily, so the pure-logic modules run and unit-test without a browser.
+
+## Project structure
+
+```
+linkedin_easy_apply/   the package (config, parser, scoring, answers, forms,
+                       browser, jobs, ai, database, cli, dashboard, utils,
+                       orchestrator.py)
+configs/               *.example.yaml templates (init copies these)
+resumes/               your resume files (git-ignored)
+docs/                  configuration, developer guide, FAQ, troubleshooting
+tests/                 unit tests for the pure-logic modules
+apply.py               CLI entry point
+```
+
+## Documentation
+
+- [Configuration](docs/configuration.md) — every file and key explained.
+- [Developer Guide](docs/developer_guide.md) — architecture & how to extend.
+- [FAQ](docs/faq.md) — safety, AI, resumes, data storage.
+- [Troubleshooting](docs/troubleshooting.md) — fixes for common problems.
+
+## Development
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\ruff.exe check .
+.\.venv\Scripts\black.exe --check .
+.\.venv\Scripts\mypy.exe linkedin_easy_apply
+.\.venv\Scripts\python.exe -m pytest
+```
+
+## Disclaimer
+
+This software is not affiliated with, endorsed by, or connected to LinkedIn.
+Automating the platform may violate LinkedIn's User Agreement and could lead to
+account restrictions. You are solely responsible for how you use it.
+

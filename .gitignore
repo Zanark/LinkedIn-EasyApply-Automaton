@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Playwright
+.playwright/
+
+# Runtime artifacts (keep the directories, ignore contents)
+logs/*
+!logs/.gitkeep
+screenshots/*
+!screenshots/.gitkeep
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+
+# Local resumes & real secrets
+resumes/*.pdf
+resumes/*.docx
+configs/config.yaml
+configs/answers.yaml
+configs/searches.yaml
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp

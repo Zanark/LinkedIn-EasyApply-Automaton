@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linkedin-easy-apply"
+version = "0.1.0"
+description = "Production-quality LinkedIn Easy Apply automation framework"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Zanark" }]
+keywords = ["linkedin", "automation", "playwright", "easy-apply", "job-search"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "playwright>=1.44",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "loguru>=0.7",
+    "typer>=0.12",
+    "rich>=13.0",
+    "rapidfuzz>=3.6",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+ai = ["openai>=1.30"]
+dashboard = ["streamlit>=1.35", "pandas>=2.2"]
+export = ["openpyxl>=3.1"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "black>=24.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+lea = "linkedin_easy_apply.cli.main:app"
+
+[project.urls]
+Homepage = "https://github.com/Zanark/LinkedIn-EasyApply-Automaton"
+Repository = "https://github.com/Zanark/LinkedIn-EasyApply-Automaton"
+
+[tool.setuptools.packages.find]
+include = ["linkedin_easy_apply*"]
+
+[tool.setuptools.package-data]
+linkedin_easy_apply = ["database/sql/*.sql"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "W"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Typer relies on function calls (typer.Option/Argument) in parameter defaults.
+"linkedin_easy_apply/cli/main.py" = ["B008"]
+# Tests may re-import and shadow names freely.
+"tests/*" = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

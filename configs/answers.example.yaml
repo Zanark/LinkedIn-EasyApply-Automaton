@@ -1,0 +1,79 @@
+# Example answers file. Copy to configs/answers.yaml and fill in YOUR details.
+# Values here are used to auto-fill Easy Apply questions. Nothing is uploaded
+# anywhere; this file stays on your machine.
+
+# --- Personal / contact -----------------------------------------------------
+full_name: Jane Doe
+first_name: Jane
+last_name: Doe
+email: jane.doe@example.com
+phone: "+91-9000000000"
+city: Bengaluru
+country: India
+linkedin: https://www.linkedin.com/in/jane-doe
+github: https://github.com/janedoe
+portfolio: https://janedoe.dev
+website: https://janedoe.dev
+
+# --- Preferences ------------------------------------------------------------
+years_experience: 8            # total years of professional experience
+notice_period: 30 days
+current_ctc: 3500000           # numbers can be plain integers
+expected_ctc: 5000000
+current_salary: 3500000
+expected_salary: 5000000
+start_date: 2 weeks
+education: Bachelor's Degree
+
+# Yes/No questions (accepts true/false or yes/no)
+authorization: true            # legally authorized to work
+visa: false                    # require visa sponsorship?
+relocation: true               # willing to relocate
+remote: true                   # comfortable working remotely
+onsite: true                   # comfortable working onsite
+
+# Equal-opportunity questions (optional; "Decline" is a safe default)
+gender: Decline to answer
+race: Decline to answer
+veteran: I am not a protected veteran
+disability: I don't wish to answer
+
+# Free-text used by the cover-letter template
+summary: >
+  I build reliable, scalable backend services and enjoy owning systems
+  end-to-end, from design through production operations.
+
+# --- Skills (years of experience) -------------------------------------------
+# Aliases let one entry answer differently phrased questions, e.g. "Core Java".
+skills:
+  Java:
+    years: 6
+    aliases: [Core Java, Java Programming, J2EE]
+  Python:
+    years: 5
+    aliases: [Py]
+  Kubernetes:
+    years: 4
+    aliases: [K8s]
+  Azure:
+    years: 5
+    aliases: [Microsoft Azure]
+  SQL:
+    years: 7
+  Docker:
+    years: 5
+
+# --- Field aliases ----------------------------------------------------------
+# Map an alternate label to a canonical field above.
+aliases:
+  mobile: phone
+  cell: phone
+  personal email: email
+  expected compensation: expected_ctc
+  current compensation: current_ctc
+
+# --- Defaults for anything not explicitly answered --------------------------
+defaults:
+  authorization: true
+  relocation: true
+  remote: true

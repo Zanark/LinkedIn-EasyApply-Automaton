@@ -1,0 +1,24 @@
+# Example standalone searches file.
+# You can keep searches here and reference them, or inline them in config.yaml
+# under `search.searches`. Each search is iterated in order.
+#
+# Build a URL by running a normal LinkedIn job search in your browser, applying
+# the "Easy Apply" filter, then copying the address bar. The `f_AL=true`
+# parameter is LinkedIn's Easy Apply filter.
+
+searches:
+  - name: backend
+    url: "https://www.linkedin.com/jobs/search/?keywords=backend%20engineer&f_AL=true&f_TPR=r604800"
+    enabled: true
+
+  - name: java
+    url: "https://www.linkedin.com/jobs/search/?keywords=java%20developer&f_AL=true"
+    enabled: true
+
+  - name: sre
+    url: "https://www.linkedin.com/jobs/search/?keywords=site%20reliability%20engineer&f_AL=true"
+    enabled: false
+
+  - name: architect
+    url: "https://www.linkedin.com/jobs/search/?keywords=software%20architect&f_AL=true"
+    enabled: false
