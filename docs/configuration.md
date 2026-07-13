@@ -118,10 +118,75 @@ scoring:
     - {keyword: intern,  weight: -50}
 ```
 
-Each rule adds its weight when the keyword appears in the title/description.
-Plain alphanumeric keywords use **whole-word** matching (so `go` never matches
-`google`); punctuation-heavy keywords like `c++` or `.net` match by substring.
-Only jobs scoring `>= threshold` are eligible.
+| Key             | Default | Description                                             |
+| --------------- | ------- | ------------------------------------------------------- |
+| `threshold`     | `0`     | Minimum score to be eligible; job passes if `score >= threshold`. |
+| `case_sensitive`| `false` | When `false`, matching is case-insensitive.             |
+| `rules`         | `[]`    | List of `{keyword, weight}` pairs (weights may be negative). |
+
+#### How the score is computed
+
+For each job the engine builds one haystack — the **title and description
+joined** — and adds a rule's `weight` **once** if its `keyword` is found there:
+
+```
+score  = Σ rule.weight   for every rule whose keyword appears in (title + description)
+passed = score >= threshold
+```
+
+Key details:
+
+- **Presence, not frequency.** A keyword contributes its weight once whether it
+  appears one time or ten. It's a set-of-signals model, not a word count.
+- **Two matching modes.** A keyword made only of letters/digits/spaces
+  (`^[a-z0-9 ]+$`) matches by **whole word** — `\bgo\b`, so `go` never matches
+  `google`. A keyword containing punctuation (`c++`, `.net`, `node.js`) matches
+  by **substring** (word boundaries misbehave around symbols).
+- **Case handling.** With `case_sensitive: false` (default) both sides are
+  lower-cased; keyword values are *also* lower-cased when the config loads, so
+  `Python` and `python` behave identically.
+- **Negative weights are penalties** used to push undesirable roles below the
+  threshold (`architect: -30`, `principal: -50`, `us citizen: -80`).
+- **Threshold is inclusive.** A job scoring exactly `threshold` passes.
+- **Duplicate keywords accumulate.** Two rules with the same keyword each add
+  their weight (they share one entry in the breakdown).
+
+#### The breakdown (your audit trail)
+
+`score()` returns a `breakdown` map of `{keyword: weight}` for every rule that
+fired. It is stored in the database (`scores` table) **and** logged at `DEBUG`:
+
+```
+Scored 'Senior Software Engineer': 12 vs threshold 20 -> FAIL
+    (breakdown: {'python': 20, 'javascript': 12, 'software engineer': 10, 'architect': -30})
+```
+
+Run with `-v` (or `logging.level: DEBUG`) and grep the log to see the math for
+any job: `Select-String logs\easy_apply_<date>.log -Pattern 'Scored'`.
+
+#### Worked examples
+
+| Job (title) | Keywords hit | Score | Result (threshold 20) |
+| --- | --- | --- | --- |
+| Senior Software Engineer | python 20 + javascript 12 + software engineer 10 **− architect 30** | **12** | FAIL — a penalty sank a strong match |
+| Lead Back End Engineer | sql 8 + backend 8 | **16** | FAIL |
+| Software Engineer | azure 10 + software engineer 10 | **20** | PASS (exactly at threshold) |
+| Software Engineer | python+javascript+react+node+azure+sql+software engineer | **82** | PASS |
+
+#### Scoring is only half of the skip decision
+
+The score decides *eligibility*, but a job is first run through hard **gates**
+(`_pre_apply_checks`) that can skip it **regardless of score** — see
+[FAQ → *Why was a job skipped?*](faq.md#why-was-a-job-skipped). The algorithmic
+write-up lives in [`algorithms.md`](algorithms.md#5-weighted-keyword-scoring--threshold).
+
+#### Tuning
+
+- Too many good jobs skipped? Lower `threshold`, raise a keyword's weight, or
+  soften a penalty (e.g. `architect: -10`).
+- Applying to jobs you don't want? Add a negative rule or an
+  `exclude_keywords`/`blacklist_companies` entry under `jobs`.
+- Always preview with `lea scan` (scores jobs, writes nothing) before applying.
 
 ### `ai` (optional, advisory only)
 

@@ -88,7 +88,9 @@ the decision and **DEBUG** for the "why" (inputs, candidates, chosen value).
 ### Add a scoring rule
 
 No code needed — add to `scoring.rules` in `config.yaml`. Weights may be
-negative to penalise unwanted roles.
+negative to penalise unwanted roles. See
+[`configuration.md` → scoring](configuration.md#scoring) for the full scoring
+algorithm (matching modes, breakdown, worked examples).
 
 ### Add a new AI provider
 

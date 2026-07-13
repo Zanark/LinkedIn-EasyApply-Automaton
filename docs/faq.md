@@ -58,6 +58,52 @@ Combine `scoring.rules` + `scoring.threshold` with the `jobs` filters
 (`include_keywords`, `exclude_keywords`, `blacklist_companies`,
 `whitelist_companies`). Use `lea scan` to see scores before applying.
 
+### How exactly does job scoring work?
+
+Each job gets one number. The engine joins the **title and description** into a
+single haystack and adds a rule's `weight` **once** for every `keyword` that
+appears there; the job is eligible when `score >= threshold`.
+
+- **Presence, not frequency** — a keyword counts once no matter how often it
+  occurs.
+- **Whole-word vs substring** — plain alphanumeric keywords match on word
+  boundaries (`go` never matches `google`); punctuation keywords like `c++` or
+  `.net` match by substring.
+- **Negative weights are penalties** (`architect: -30`) that push roles below
+  the bar. **Threshold is inclusive** (exactly `threshold` passes).
+- The per-keyword `breakdown` is saved to the DB and logged at `DEBUG`:
+  `Scored '…': 12 vs threshold 20 -> FAIL (breakdown: {'python': 20, 'architect': -30, ...})`.
+
+Full reference + worked examples:
+[`configuration.md` → scoring](configuration.md#scoring). Algorithm write-up:
+[`algorithms.md`](algorithms.md#5-weighted-keyword-scoring--threshold).
+
+### Why was a job skipped?
+
+Skips happen in **two phases** (`orchestrator._process_job`). Hard **gates** are
+checked first and win over any score; then the **score threshold** applies:
+
+**Phase 1 — hard gates (`_pre_apply_checks`), first match wins:**
+
+| Reason logged | Trips when… |
+| --- | --- |
+| `not_easy_apply` | the posting has no Easy Apply button (external apply) |
+| `already_applied` | you already applied to this URL (recorded in the DB) |
+| `duplicate_company_role` | you already applied to that company + title |
+| `not_whitelisted` | `whitelist_companies` is set and the company isn't on it |
+| `blacklisted` | the company is in `blacklist_companies` |
+| `excluded_keyword` | an `exclude_keywords` term appears in title/description |
+| `missing_include_keyword` | `include_keywords` is set and none appear |
+| `company_limit` | you've hit `max_per_company` for that company |
+
+**Phase 2 — score:** if it clears the gates but `score < threshold`, it's
+skipped as `below_threshold`.
+
+**Two later, silent skips:** `ai_advised_against` (only when AI is enabled) and
+`scan_only` (`scan` mode never applies). Every decision is in the log — the
+`INFO` line reads `Skip (<reason>) - <job>`, and the preceding `DEBUG` `Scored …`
+line shows the exact keyword math.
+
 ### Where is my data stored?
 
 Locally only. A SQLite database (`database.path`) records jobs, applications,

@@ -149,6 +149,17 @@ scoring** (the very systems this project is submitting into!), and naive-Bayes
 spam scoring. It's a hand-tuned linear classifier — the same shape as a single
 neuron/logistic-regression, minus the learned weights.
 
+**Worked example (real breakdown from a run):** a job matching
+`python 20 + javascript 12 + software engineer 10` looks strong at **42**, but
+the posting also contains "architect" (`architect: -30`), so the final score is
+**12** and it fails a threshold of 20. Two ideas to notice: (1) matching is
+**presence-based** — a keyword adds its weight once regardless of how many times
+it occurs; (2) **negative weights** let one disqualifier veto several positives,
+which is exactly how risk scorecards encode hard "knock-out" factors. This score
+only decides *eligibility*; hard gates (`_pre_apply_checks`, see §11) run first
+and can skip a job regardless of score. Full config reference:
+[`configuration.md` → scoring](configuration.md#scoring).
+
 ---
 
 ## 6. Cascading option matcher
