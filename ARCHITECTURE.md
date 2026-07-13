@@ -683,6 +683,12 @@ Answer selected
 
 Resume chosen
 
+Implemented with Loguru (`logging/setup.py`): **INFO** emits the readable
+per-field narrative (navigation, question detected, answer selected **and its
+source**, resume chosen, submit/discard), while **DEBUG** adds parse/resolve/
+detect/fill internals. Pass the global `-v` / `--verbose` flag (before the
+command) or set `logging.level: DEBUG` for the full trace.
+
 Application status
 
 ---

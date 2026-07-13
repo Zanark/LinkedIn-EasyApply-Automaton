@@ -56,6 +56,23 @@ discover → extract → upsert → pre-apply checks → score → select resume
 Limits enforced: `max_per_run` (in-memory counter), `max_per_company` and
 `max_daily` (live database queries).
 
+## Logging conventions
+
+Logging is centralised in `logging/setup.py` (Loguru; console → stderr, rotating
+file → `logs/easy_apply_<date>.log`). Two levels carry meaning:
+
+- **INFO** — the human-readable narrative: run/step headers, one line per field
+  (`Field 'X' [kind] -> key: filled with '...' (source)` / `left blank`), and the
+  submit vs dry-run/discard decision (`orchestrator`, `forms/easy_apply.py`).
+- **DEBUG** — the internals: parse confidence (`parser`), which answer key each
+  value resolved from (`answers/resolver.py`), every detected field + its options
+  (`forms/detector.py`), option/match results (`forms/filler.py`) and job
+  extraction (`jobs/extractor.py`).
+
+The global `-v` / `--verbose` flag (see the `@app.callback` in `cli/main.py`)
+forces `DEBUG` for a run. When adding behaviour, log a concise **INFO** line for
+the decision and **DEBUG** for the "why" (inputs, candidates, chosen value).
+
 ## Extending the system
 
 ### Add a recognised question category

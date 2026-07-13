@@ -156,12 +156,20 @@ auto-submits and can only *soft-skip* a job — it cannot force an application.
 
 | Key         | Default    | Description                              |
 | ----------- | ---------- | ---------------------------------------- |
-| `level`     | `INFO`     | Log level.                               |
+| `level`     | `INFO`     | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR`. `DEBUG` traces every field (parse → resolve → fill). |
 | `directory` | `logs`     | Log-file directory.                      |
 | `rotation`  | `10 MB`    | Rotate when the file reaches this size.  |
 | `retention` | `14 days`  | How long to keep rotated logs.           |
 | `serialize` | `false`    | JSON logs when `true`.                   |
 | `console`   | `true`     | Also log to the console.                 |
+
+> **Verbose "brain" logging.** `INFO` prints a readable per-field narrative plus
+> step and submit/discard decisions. `DEBUG` adds the internals: parse
+> confidence, which `answers.yaml` key each value came from, every detected form
+> field with its options, and why a value did or didn't fit. You don't have to
+> edit this file — pass `-v` / `--verbose` **before** any command to force
+> `DEBUG` for that run (e.g. `apply.py -v apply --dry-run`). Logs are written to
+> `logs/easy_apply_<date>.log` (git-ignored).
 
 ### `run`
 
@@ -171,7 +179,9 @@ auto-submits and can only *soft-skip* a job — it cannot force an application.
 | `interactive`                | `false` | Ask for confirmation before each final submit.     |
 | `pause_on_unknown_question`  | `true`  | Prompt you when a question can't be recognised.    |
 
-CLI flags (`--dry-run`, `--interactive`, `--yes`) override these per invocation.
+CLI flags (`--dry-run`, `--interactive`, `--yes`, `--limit`, `--url`) override
+these per invocation. The global `-v` / `--verbose` flag (placed **before** the
+command) forces `DEBUG` logging for that run.
 
 ---
 

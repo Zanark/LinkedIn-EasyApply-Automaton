@@ -91,8 +91,13 @@ remembered for next time), or run non-interactively with `--yes` to auto-skip.
 - Screenshots: `screenshots/` (per-step and on-error; toggle under
   `screenshots`). These are the fastest way to see what the page looked like when
   something failed.
-- For deep debugging set `logging.level: DEBUG`, `browser.headless: false`, and a
-  small `browser.slow_mo_ms` (e.g. `250`) to watch each action.
+- The quickest way to see everything the tool is doing is the global `-v` /
+  `--verbose` flag (before the command), e.g.
+  `.\.venv\Scripts\python.exe apply.py -v apply --dry-run` — it forces `DEBUG`
+  and narrates every field (parsed category, resolved answer + its source, and
+  fill/skip outcome). Make it permanent with `logging.level: DEBUG`.
+- For deep debugging also set `browser.headless: false` and a small
+  `browser.slow_mo_ms` (e.g. `250`) to watch each action.
 
 ## Quality gates fail after my changes
 

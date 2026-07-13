@@ -32,6 +32,20 @@ By default (`run.pause_on_unknown_question: true`) it pauses and asks you for th
 answer, then **remembers it** in the database for future runs. With `--yes` /
 non-interactive mode, unknown questions are skipped and the step is recorded.
 
+### How do I see exactly what the tool is doing (and why)?
+
+Add the global `-v` / `--verbose` flag **before** any command (or set
+`logging.level: DEBUG`). Every run then narrates itself: the job it's on, each
+form field, the question category it parsed, **which answer it resolved and from
+which `answers.yaml` key**, and whether it filled the field or left it blank —
+plus the submit/discard decision. Full logs land in `logs/easy_apply_<date>.log`
+(git-ignored). For example:
+
+    .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y
+
+To inspect a single question offline, `lea -v test-form "..."` shows the same
+parse → resolve reasoning without opening a browser.
+
 ### How does it pick which resume to upload?
 
 In order: an explicit `resume.mapping` match (role/keyword → filename), then
@@ -65,7 +79,8 @@ matching browser must be installed; for `chromium`, run
 ### How do I see stats / export results?
 
 `lea stats` prints a summary table. `lea export --format csv` (or `xlsx`, which
-needs the `.[export]` extra) writes applications joined with jobs. `lea
+needs the `.[export]` extra) writes applications joined with jobs to
+`applications.csv` (git-ignored, so your exported data isn't committed). `lea
 dashboard` launches an optional Streamlit UI (needs the `.[dashboard]` extra).
 
 See [`troubleshooting.md`](troubleshooting.md) if something isn't working.

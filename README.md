@@ -26,6 +26,10 @@ built in.
 - **Safety rails**: per-run / per-company / daily caps, blacklist/whitelist,
   include/exclude keywords, URL + company-role dedupe.
 - **Dry-run & interactive** modes; per-step and on-error screenshots.
+- **Verbose, decision-level logging** — a global `-v/--verbose` flag (or
+  `logging.level: DEBUG`) narrates every field: what was parsed, which answer it
+  resolved and *from where*, and whether it filled or skipped — so you see
+  exactly what the tool is "thinking."
 - **SQLite persistence** of jobs, applications, questions/answers, scores,
   errors — with `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard.
 - **Optional AI advisor** (OpenAI) that only *advises* — it can never submit.
@@ -76,6 +80,10 @@ Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[dev]` (e.g.
 .\.venv\Scripts\python.exe apply.py apply --interactive
 ```
 
+> 💡 Add `-v` **before** any command for full DEBUG narration of every decision,
+> e.g. `.\.venv\Scripts\python.exe apply.py -v apply --dry-run -y`. See
+> **[INIT.MD](INIT.MD)** for a copy-paste run guide covering every option.
+
 Installing the package also exposes a `lea` console script, so `lea init`,
 `lea scan`, `lea apply --dry-run`, etc. work once the venv is active.
 
@@ -94,6 +102,10 @@ Installing the package also exposes a `lea` console script, so `lea init`,
 | `test-form "<question>"`      | Recognise & resolve a single question (offline).        |
 | `test-browser`                | Launch the browser and verify your logged-in session.   |
 | `version`                     | Print the version.                                      |
+
+> **Global option:** add `-v` / `--verbose` **before** any command for
+> DEBUG-level, decision-by-decision logging. For every command's full option list
+> with copy-paste examples, see **[INIT.MD](INIT.MD)**.
 
 ## How it works
 
@@ -117,10 +129,13 @@ resumes/               your resume files (git-ignored)
 docs/                  configuration, developer guide, FAQ, troubleshooting
 tests/                 unit tests for the pure-logic modules
 apply.py               CLI entry point
+INIT.MD                run guide: every command & option with examples
 ```
 
 ## Documentation
 
+- **[Run Guide (INIT.MD)](INIT.MD)** — how to start the tool and **every**
+  command/option with copy-paste examples.
 - [Configuration](docs/configuration.md) — every file and key explained.
 - [Developer Guide](docs/developer_guide.md) — architecture & how to extend.
 - [FAQ](docs/faq.md) — safety, AI, resumes, data storage.
