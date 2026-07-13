@@ -34,7 +34,7 @@ built in.
 ## Requirements
 
 - Python **3.12+**
-- Google Chrome, Microsoft Edge, or bundled Chromium
+- Microsoft Edge (default), Google Chrome, or bundled Chromium
 - A LinkedIn account you are logged into within the chosen browser profile
 
 ## Install
@@ -43,7 +43,7 @@ built in.
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .
 
-# First time only, if you use bundled Chromium:
+# First time only, if you use bundled Chromium (not needed for Edge/Chrome):
 .\.venv\Scripts\python.exe -m playwright install chromium
 ```
 
@@ -60,16 +60,19 @@ Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[dev]` (e.g.
 #    and configs/answers.yaml (your details & skills).
 #    Drop your resume(s) in resumes/ and reference them in config.yaml.
 
-# 3. Confirm your browser session is logged in
+# 3. Sign in to LinkedIn once (opens Edge; session is saved to the profile)
+.\.venv\Scripts\python.exe apply.py login
+
+# 4. Confirm the saved session works
 .\.venv\Scripts\python.exe apply.py test-browser
 
-# 4. Discover & score jobs without applying
+# 5. Discover & score jobs without applying
 .\.venv\Scripts\python.exe apply.py scan
 
-# 5. Practice run — fills everything, never submits
+# 6. Practice run — fills everything, never submits
 .\.venv\Scripts\python.exe apply.py apply --dry-run
 
-# 6. For real, confirming each submission
+# 7. For real, confirming each submission
 .\.venv\Scripts\python.exe apply.py apply --interactive
 ```
 
@@ -81,6 +84,7 @@ Installing the package also exposes a `lea` console script, so `lea init`,
 | Command                       | Description                                             |
 | ----------------------------- | ------------------------------------------------------- |
 | `init`                        | Scaffold example configs and runtime directories.       |
+| `login`                       | Open the browser to sign in to LinkedIn once (reused).  |
 | `apply`                       | Run the Easy Apply automation (`--dry-run`, `--interactive`, `--yes`, `--limit`, `--url`). |
 | `scan`                        | Discover & score jobs without applying.                 |
 | `stats`                       | Print database statistics.                              |

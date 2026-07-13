@@ -24,7 +24,7 @@ class BrowserEngine(StrEnum):
 class BrowserConfig(BaseModel):
     """Controls how the Playwright persistent context is launched."""
 
-    engine: BrowserEngine = BrowserEngine.CHROME
+    engine: BrowserEngine = BrowserEngine.EDGE
     profile_path: Path | None = None
     headless: bool = False
     viewport_width: int = 1440

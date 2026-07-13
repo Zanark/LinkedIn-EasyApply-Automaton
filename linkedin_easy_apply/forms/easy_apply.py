@@ -279,12 +279,32 @@ class EasyApplyWorkflow:
 
     def _discard(self) -> None:
         try:
-            if self._click(self._page, selectors.BTN_DISMISS):
-                self._page.wait_for_timeout(500)
-                self._click(self._page, selectors.BTN_DISCARD)
-                self._page.wait_for_timeout(500)
+            if not self._click(self._page, selectors.BTN_DISMISS):
+                return
+            # LinkedIn shows a "Save this application?" dialog whose *secondary*
+            # button is "Discard" (the primary is "Save"). Force-click Discard -
+            # an error toast may otherwise intercept the click - and verify the
+            # dialog closes, else its overlay blocks the next job card.
+            for _ in range(10):
+                self._page.wait_for_timeout(300)
+                if first(self._page, selectors.DISCARD_CONFIRMATION) is None:
+                    return
+                self._force_click(selectors.BTN_DISCARD)
+            # Last resort: clear any lingering overlay with Escape.
+            self._page.keyboard.press("Escape")
+            self._page.wait_for_timeout(300)
         except Exception as exc:  # pragma: no cover - defensive
             logger.debug("Discard flow error: {}", exc)
+
+    def _force_click(self, selector_list: list[str]) -> bool:
+        button = first(self._page, selector_list)
+        if button is None:
+            return False
+        try:
+            button.click(force=True, timeout=2000)
+            return True
+        except Exception:  # pragma: no cover - defensive
+            return False
 
     def _dismiss_confirmation(self) -> None:
         try:

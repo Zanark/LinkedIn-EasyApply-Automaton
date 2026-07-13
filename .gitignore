@@ -29,9 +29,14 @@ logs/*
 !logs/.gitkeep
 screenshots/*
 !screenshots/.gitkeep
+downloads/*
+!downloads/.gitkeep
 database/*.db
 database/*.sqlite
 database/*.sqlite3
+
+# Generated output (cover letters, etc.)
+generated/
 
 # Local resumes & real secrets
 resumes/*.pdf
@@ -39,7 +44,11 @@ resumes/*.docx
 configs/config.yaml
 configs/answers.yaml
 configs/searches.yaml
+configs/question_bank.yaml
 .env
+
+# Browser profile - contains your logged-in LinkedIn session (NEVER commit)
+.browser-profile/
 
 # IDE
 .idea/

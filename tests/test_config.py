@@ -17,8 +17,23 @@ def test_minimal_config_uses_defaults(tmp_path):
     config = load_config(path)
     assert isinstance(config, AppConfig)
     assert config.jobs.max_per_run == 3
-    assert config.browser.engine is BrowserEngine.CHROME
+    assert config.browser.engine is BrowserEngine.EDGE
     assert config.logging.level == "INFO"
+
+
+def test_browser_engine_selectable(tmp_path):
+    for name, engine in (
+        ("edge", BrowserEngine.EDGE),
+        ("chrome", BrowserEngine.CHROME),
+        ("chromium", BrowserEngine.CHROMIUM),
+    ):
+        config = load_config(_write(tmp_path, f"browser:\n  engine: {name}\n"))
+        assert config.browser.engine is engine
+
+
+def test_invalid_browser_engine_rejected(tmp_path):
+    with pytest.raises(ConfigError):
+        load_config(_write(tmp_path, "browser:\n  engine: safari\n"))
 
 
 def test_env_expansion(tmp_path, monkeypatch):

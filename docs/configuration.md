@@ -41,7 +41,7 @@ rejected so typos surface immediately.
 
 | Key                     | Default            | Description                                             |
 | ----------------------- | ------------------ | ------------------------------------------------------- |
-| `engine`                | `chrome`           | `chrome`, `edge`, or `chromium` (bundled).              |
+| `engine`                | `edge`             | `edge`, `chrome`, or `chromium` (bundled).              |
 | `profile_path`          | `.browser-profile` | User-data dir reused so your login persists.            |
 | `headless`              | `false`            | Run without a visible window.                           |
 | `viewport_width/height` | `1440` / `900`     | Browser viewport size.                                  |

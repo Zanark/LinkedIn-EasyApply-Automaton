@@ -3,9 +3,9 @@
 # String values support ${ENV_VAR} and ${ENV_VAR:-default} expansion.
 
 browser:
-  engine: chrome                 # chrome | edge | chromium
+  engine: edge                   # edge | chrome | chromium
   # Path to a browser profile that is ALREADY logged into LinkedIn.
-  # Windows Chrome example: C:/Users/<you>/AppData/Local/Google/Chrome/User Data
+  # Windows Edge example: C:/Users/<you>/AppData/Local/Microsoft/Edge/User Data
   # Tip: use a dedicated profile and close other windows using it first.
   profile_path: ${LEA_PROFILE:-.browser-profile}
   headless: false                # keep visible so you can intervene

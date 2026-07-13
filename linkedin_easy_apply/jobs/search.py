@@ -15,7 +15,7 @@ from typing import Any
 from loguru import logger
 
 from linkedin_easy_apply.forms import selectors
-from linkedin_easy_apply.forms.dom_utils import first_group
+from linkedin_easy_apply.forms.dom_utils import first, first_group
 from linkedin_easy_apply.jobs.extractor import JobExtractor
 from linkedin_easy_apply.jobs.models import Job
 
@@ -90,17 +90,60 @@ class JobSearch:
         match = _JOB_ID_RE.search(href or "")
         return match.group(1) if match else None
 
+    def _locate_card(self, job_id: str) -> Any:
+        card = self._page.locator(f"[data-job-id='{job_id}']").first
+        if card.count() == 0:
+            card = self._page.locator(f"a[href*='/jobs/view/{job_id}']").first
+        return card
+
     def _open_card(self, job_id: str) -> bool:
+        self._clear_blocking_modal()
         try:
-            card = self._page.locator(f"[data-job-id='{job_id}']").first
-            if card.count() == 0:
-                card = self._page.locator(f"a[href*='/jobs/view/{job_id}']").first
+            card = self._locate_card(job_id)
             card.scroll_into_view_if_needed(timeout=5000)
             card.click(timeout=5000)
             return True
         except Exception as exc:  # pragma: no cover - defensive
+            # A leftover modal overlay (e.g. a discard confirmation from the
+            # previous job) can intercept the click - clear it and retry once.
+            if self._clear_blocking_modal():
+                try:
+                    card = self._locate_card(job_id)
+                    card.scroll_into_view_if_needed(timeout=5000)
+                    card.click(timeout=5000)
+                    return True
+                except Exception as exc2:  # pragma: no cover - defensive
+                    logger.warning("Could not open job {}: {}", job_id, exc2)
+                    return False
             logger.warning("Could not open job {}: {}", job_id, exc)
             return False
+
+    def _force_click(self, selector_list: list[str]) -> bool:
+        button = first(self._page, selector_list)
+        if button is None:
+            return False
+        try:
+            button.click(force=True, timeout=2000)
+            return True
+        except Exception:  # pragma: no cover - defensive
+            return False
+
+    def _clear_blocking_modal(self) -> bool:
+        """Dismiss a leftover Easy Apply / discard-confirmation modal, if present."""
+        try:
+            if first(self._page, selectors.DISCARD_CONFIRMATION) is not None:
+                self._force_click(selectors.BTN_DISCARD)
+                self._page.wait_for_timeout(400)
+                return True
+            if self._page.locator("div.artdeco-modal-overlay").count() > 0:
+                self._force_click(selectors.BTN_DISMISS)
+                self._page.wait_for_timeout(300)
+                self._force_click(selectors.BTN_DISCARD)
+                self._page.wait_for_timeout(300)
+                return True
+        except Exception:  # pragma: no cover - defensive
+            return False
+        return False
 
     def _scroll_list(self, current_count: int) -> bool:
         """Scroll the results list to trigger lazy loading. Returns True if new cards appeared."""

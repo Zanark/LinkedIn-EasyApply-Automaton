@@ -9,25 +9,28 @@ Install Playwright and (for bundled Chromium) its browser binaries:
 .\.venv\Scripts\python.exe -m playwright install chromium
 ```
 
-**`Failed to launch browser 'chrome'` / profile is locked**
+**`Failed to launch browser 'edge'` / profile is locked**
 The profile can only be used by one process at a time. Close every window of
 that browser (and check Task Manager for stray processes), then retry. Or point
 `browser.profile_path` at a **dedicated** profile directory used only by the
 automaton.
 
-**Chrome/Edge not found**
-`engine: chrome` needs Chrome installed; `engine: edge` needs Edge. If you don't
+**Edge/Chrome not found**
+`engine: edge` needs Edge installed; `engine: chrome` needs Chrome. If you don't
 have either, use `engine: chromium` and run `playwright install chromium`.
 
 ## "Not logged in" / redirected to the login page
 
-The tool never logs in for you. Launch the browser once with your profile and
-sign in to LinkedIn manually:
+The tool never logs in for you. Sign in once with the `login` command, which
+opens the browser and waits while you authenticate:
+```powershell
+.\.venv\Scripts\python.exe apply.py login
+```
+Sign in, press Enter to save the session, then verify it with:
 ```powershell
 .\.venv\Scripts\python.exe apply.py test-browser
 ```
-Confirm you land on your feed, keep that profile path in `config.yaml`, and stay
-logged in.
+Keep that profile path in `config.yaml` and stay logged in.
 
 ## No jobs are found
 

@@ -70,6 +70,7 @@ _DEFAULT_SKILLS: tuple[str, ...] = (
     "cicd",
     "jenkins",
     "git",
+    "github",
     "graphql",
     "rest",
     "microservices",
@@ -236,17 +237,21 @@ class QuestionParser:
         return None
 
     def _apply_rules(self, norm: str) -> tuple[QuestionCategory, str | None, float] | None:
-        # Contact details (high precision).
+        # Contact details (high precision). A "how many years ... with GitHub"
+        # style question is about experience, not a profile URL - so only treat
+        # linkedin/github/portfolio as URL questions when there is no experience
+        # hint in the text.
         if _word(norm, "email", "e mail"):
             return QuestionCategory.EMAIL, None, 0.97
         if _word(norm, "phone", "mobile", "whatsapp") or "contact number" in norm:
             return QuestionCategory.PHONE, None, 0.97
-        if "linkedin" in norm:
-            return QuestionCategory.LINKEDIN, None, 0.97
-        if "github" in norm:
-            return QuestionCategory.GITHUB, None, 0.97
-        if _word(norm, "portfolio") or "personal website" in norm or "website url" in norm:
-            return QuestionCategory.PORTFOLIO, None, 0.9
+        if not _EXPERIENCE_HINT.search(norm):
+            if "linkedin" in norm:
+                return QuestionCategory.LINKEDIN, None, 0.97
+            if "github" in norm:
+                return QuestionCategory.GITHUB, None, 0.97
+            if _word(norm, "portfolio") or "personal website" in norm or "website url" in norm:
+                return QuestionCategory.PORTFOLIO, None, 0.9
 
         # Skill-specific experience.
         skill = self._find_skill(norm)

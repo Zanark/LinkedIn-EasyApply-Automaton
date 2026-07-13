@@ -57,7 +57,8 @@ watch what it does and intervene if needed.
 
 ### Which browsers are supported?
 
-Chrome, Edge, and bundled Chromium (`browser.engine`). For Chrome/Edge the
+Microsoft Edge (default), Google Chrome, and bundled Chromium
+(`browser.engine`). For Edge/Chrome the
 matching browser must be installed; for `chromium`, run
 `playwright install chromium` once.
 

@@ -50,8 +50,16 @@ BTN_BACK = [
 ]
 
 # Dialogs that appear when closing/discarding an in-progress application.
+DISCARD_CONFIRMATION = [
+    "[data-test-modal-id='data-test-easy-apply-discard-confirmation']",
+    "div[role='alertdialog']",
+]
 BTN_DISCARD = [
-    "button[data-test-dialog-primary-btn]",
+    "[data-test-modal-id='data-test-easy-apply-discard-confirmation'] "
+    "button[data-test-dialog-secondary-btn]",
+    "[data-test-modal-id='data-test-easy-apply-discard-confirmation'] "
+    "button:has-text('Discard')",
+    "button.artdeco-modal__confirm-dialog-btn:has-text('Discard')",
     "button:has-text('Discard')",
 ]
 BTN_DISMISS = [

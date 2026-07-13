@@ -10,6 +10,7 @@ Commands
 * ``resume-test``  show which resume would be selected for a job
 * ``test-form``    recognise & resolve a single question (offline)
 * ``test-browser`` launch the browser and verify the logged-in session
+* ``login``        open the browser to sign in to LinkedIn once
 * ``init``         scaffold example configuration files
 """
 
@@ -372,6 +373,34 @@ def test_browser(
             console.print(f"Page title: {browser.page.title()}")
             if shot:
                 console.print(f"Screenshot: {shot}")
+    except BrowserLaunchError as exc:
+        console.print(f"[red]Browser launch failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+
+
+@app.command()
+def login(
+    config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c"),
+) -> None:
+    """Open the browser so you can sign in to LinkedIn once (session is reused)."""
+    from linkedin_easy_apply.browser import BrowserLaunchError, BrowserManager
+
+    cfg = _load(config)
+    try:
+        with BrowserManager(cfg.browser) as browser:
+            browser.page.goto("https://www.linkedin.com/login", wait_until="domcontentloaded")
+            console.print(
+                "[cyan]A browser window is open.[/cyan] Sign in to LinkedIn there, "
+                "then return here.\nYour session is saved to the browser profile "
+                f"([dim]{cfg.browser.profile_path or '.browser-profile'}[/dim]) and "
+                "reused on future runs."
+            )
+            typer.prompt(
+                "Press Enter when you have finished signing in",
+                default="",
+                show_default=False,
+            )
+            console.print(f"[green]Signed in as:[/green] {browser.page.title()}")
     except BrowserLaunchError as exc:
         console.print(f"[red]Browser launch failed:[/red] {exc}")
         raise typer.Exit(code=1) from exc
