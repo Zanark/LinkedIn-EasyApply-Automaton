@@ -69,7 +69,9 @@ scoring:
     - { keyword: rust, weight: -30 }
 
 logging:
-  level: INFO
+  level: INFO                    # DEBUG narrates every field decision & data lookup;
+                                 # INFO shows per-field outcomes; use WARNING for quiet runs.
+                                 # Tip: pass -v / --verbose on any command to force DEBUG.
   directory: logs
   rotation: 10 MB
   retention: 14 days

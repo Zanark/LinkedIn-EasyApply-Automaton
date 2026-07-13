@@ -43,6 +43,23 @@ console = Console()
 _DEFAULT_CONFIG = Path("configs/config.yaml")
 _EXAMPLES = Path(__file__).resolve().parents[2] / "configs"
 
+# Set by the top-level --verbose/-v flag; forces DEBUG logging when true.
+_verbose = False
+
+
+@app.callback()
+def _main(
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Verbose DEBUG logging - narrate every decision, data lookup and outcome.",
+    ),
+) -> None:
+    """LinkedIn Easy Apply Automaton."""
+    global _verbose
+    _verbose = verbose
+
 
 # --------------------------------------------------------------------------- #
 # Helpers
@@ -53,6 +70,8 @@ def _load(config_path: Path) -> AppConfig:
     except ConfigError as exc:
         console.print(f"[red]Configuration error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+    if _verbose:
+        config.logging.level = "DEBUG"
     setup_logging(config.logging)
     return config
 

@@ -114,6 +114,16 @@ class Orchestrator:
         run_mode = "scan" if mode == "scan" else ("dry_run" if dry_run else "apply")
         run_id = self._db.start_run(run_mode, [s.name for s in searches])
         summary = RunSummary(run_id=run_id, mode=run_mode)
+        logger.info(
+            "Run starting: mode={} dry_run={} interactive={} max_per_run={} | "
+            "{} enabled search(es): {}",
+            run_mode,
+            dry_run,
+            interactive,
+            max_per_run,
+            len(searches),
+            [s.name for s in searches],
+        )
 
         try:
             with BrowserManager(self._config.browser) as browser:
@@ -183,6 +193,14 @@ class Orchestrator:
         gate = self._pre_apply_checks(job)
         score = self._scoring.score(job.title or "", job.description)
         self._db.record_score(job_id, score.score, score.threshold, score.passed, score.breakdown)
+        logger.debug(
+            "Scored '{}': {} vs threshold {} -> {} (breakdown: {})",
+            job.title,
+            score.score,
+            score.threshold,
+            "PASS" if score.passed else "FAIL",
+            score.breakdown,
+        )
 
         if gate is not None:
             summary.note_skip(gate)
@@ -194,6 +212,8 @@ class Orchestrator:
             return
 
         resume = self._resume_selector.select(job.title or "", job.description)
+        if resume is not None:
+            logger.debug("Selected resume '{}' for '{}'", resume.name, job.title)
         ai_advice = self._advise(job, job_id)
         if ai_advice is False:
             summary.note_skip("ai_advised_against")

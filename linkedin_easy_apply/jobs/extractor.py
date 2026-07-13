@@ -86,7 +86,13 @@ class JobExtractor:
 
         job.easy_apply = self._has_easy_apply(page)
         job.already_applied = self._is_applied(page)
-        logger.debug("Extracted job: {}", job.summary)
+        logger.debug(
+            "Extracted job {}: {} | easy_apply={} already_applied={}",
+            job.external_id,
+            job.summary,
+            job.easy_apply,
+            job.already_applied,
+        )
         return job
 
     # -- helpers --------------------------------------------------------------

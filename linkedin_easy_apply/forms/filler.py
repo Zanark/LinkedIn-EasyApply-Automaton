@@ -61,13 +61,26 @@ class FormFiller:
         if flag is None:
             flag = bool(resolution.value)
         field.control.set_checked(flag)
+        logger.debug("Set checkbox '{}' = {}", field.label, flag)
         return True
 
     def _fill_choice(self, field: FormField, resolution: AnswerResolution) -> bool:
         choice = self._pick_option(field, resolution)
         if choice is None:
-            logger.debug("No matching option for '{}' among {}", field.label, field.options)
+            logger.debug(
+                "No option on '{}' matched {!r} (available options: {})",
+                field.label,
+                resolution.value,
+                field.options,
+            )
             return False
+        logger.debug(
+            "Matched {} option {!r} for '{}' (from {})",
+            field.kind.value,
+            choice,
+            field.label,
+            field.options,
+        )
         if field.kind is FieldKind.SELECT:
             return self._select(field.control, choice)
         return self._check_radio(field, choice)

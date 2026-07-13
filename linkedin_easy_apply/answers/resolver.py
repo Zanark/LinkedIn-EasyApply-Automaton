@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from loguru import logger
+
 from linkedin_easy_apply.answers.store import AnswerStore
 from linkedin_easy_apply.parser.categories import AnswerType, QuestionCategory
 from linkedin_easy_apply.parser.question_parser import ParsedQuestion
@@ -82,24 +84,67 @@ class AnswerResolver:
 
         if category is QuestionCategory.EXPERIENCE_SKILL and question.skill:
             years = self._store.get_skill_years(question.skill)
+            source_key = f"skills.{question.skill}.years"
             if years is None:
                 years = self._store.get("years_experience")
+                source_key = "years_experience (skill unknown - using fallback)"
             if years is not None:
+                logger.debug(
+                    "Resolve EXPERIENCE_SKILL[{}] -> {} (from {})",
+                    question.skill,
+                    years,
+                    source_key,
+                )
                 return AnswerResolution(True, _format_number(years), "yaml", AnswerType.NUMBER)
+            logger.debug(
+                "Resolve EXPERIENCE_SKILL[{}] -> MISSING "
+                "(no per-skill years and no 'years_experience' fallback)",
+                question.skill,
+            )
             return AnswerResolution.missing(AnswerType.NUMBER)
 
         if category in _BOOL_MAP:
-            flag = self._store.get_bool(_BOOL_MAP[category])
+            key = _BOOL_MAP[category]
+            flag = self._store.get_bool(key)
             if flag is None:
+                logger.debug(
+                    "Resolve {} -> MISSING (boolean key '{}' not set in answers)",
+                    category.value,
+                    key,
+                )
                 return AnswerResolution.missing(AnswerType.BOOLEAN)
+            logger.debug(
+                "Resolve {} -> {} (from boolean key '{}')",
+                category.value,
+                "Yes" if flag else "No",
+                key,
+            )
             return AnswerResolution(
                 True, "Yes" if flag else "No", "yaml", AnswerType.BOOLEAN, bool_value=flag
             )
 
-        for key in _FIELD_MAP.get(category, ()):  # ordered fallbacks
+        keys = _FIELD_MAP.get(category, ())
+        for key in keys:  # ordered fallbacks
             value = self._store.get(key)
             if value is not None and str(value).strip():
                 rendered = _format_number(value) if answer_type is AnswerType.NUMBER else str(value)
+                logger.debug(
+                    "Resolve {} -> {!r} (from answers key '{}')",
+                    category.value,
+                    rendered,
+                    key,
+                )
                 return AnswerResolution(True, rendered, "yaml", answer_type)
 
+        if keys:
+            logger.debug(
+                "Resolve {} -> MISSING (none of the answer keys {} are set)",
+                category.value,
+                list(keys),
+            )
+        else:
+            logger.debug(
+                "Resolve {} -> MISSING (no answer-key mapping for this category)",
+                category.value,
+            )
         return AnswerResolution.missing(answer_type)

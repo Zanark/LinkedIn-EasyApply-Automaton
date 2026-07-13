@@ -102,6 +102,12 @@ class EasyApplyWorkflow:
     ) -> ApplyResult:
         """Run the Easy Apply flow on the currently open job page."""
         answers: list[AnsweredQuestion] = []
+        logger.info(
+            "Starting Easy Apply flow (dry_run={}, interactive={}, pause_on_unknown={})",
+            self._settings.dry_run,
+            self._settings.interactive,
+            self._settings.pause_on_unknown,
+        )
         if not self._open_modal():
             return ApplyResult(ApplyStatus.SKIPPED, reason="Easy Apply button not available")
 
@@ -113,11 +119,12 @@ class EasyApplyWorkflow:
         for step in range(1, self._settings.max_steps + 1):
             self._page.wait_for_timeout(600)
             self._screenshot(f"step-{step}")
+            logger.info("--- Easy Apply step {} ---", step)
 
             self._fill_step(modal, answers, resume_path, cover_letter_path)
 
             action = self._detect_action(modal)
-            logger.debug("Step {}: action={}", step, action)
+            logger.debug("Step {}: next action = {}", step, action)
 
             if action == "submit":
                 return self._finalize_submit(answers, step)
@@ -139,16 +146,22 @@ class EasyApplyWorkflow:
     def _open_modal(self) -> bool:
         button = first(self._page, selectors.EASY_APPLY_BUTTON)
         if button is None or not is_visible(button):
+            logger.info("No Easy Apply button on this job (external application?) - skipping")
             return False
         try:
             label = (button.get_attribute("aria-label") or button.inner_text() or "").lower()
         except Exception:  # pragma: no cover - defensive
             label = ""
         if "applied" in label:
+            logger.info("Job already shows 'Applied' - skipping")
             return False
+        logger.info("Clicking 'Easy Apply' to open the application modal")
         button.click()
         self._page.wait_for_timeout(1200)
-        return first(self._page, selectors.MODAL) is not None
+        opened = first(self._page, selectors.MODAL) is not None
+        if not opened:
+            logger.warning("Easy Apply modal did not appear after clicking the button")
+        return opened
 
     def _detect_action(self, modal: Any) -> str:
         if is_visible(first(modal, selectors.BTN_SUBMIT)):
@@ -193,9 +206,27 @@ class EasyApplyWorkflow:
             return
 
         parsed = self._parser.parse(field_.label)
+        understood = parsed.category.value + (f"/{parsed.skill}" if parsed.skill else "")
+        how = f"matched '{parsed.matched}'" if parsed.matched else "keyword rule"
+        logger.debug(
+            "Reading field '{}' [{}] -> understood as '{}' (confidence {:.0%}, {})",
+            field_.label,
+            field_.kind.value,
+            understood,
+            parsed.confidence,
+            how,
+        )
         resolution = self._resolver.resolve(parsed)
 
         if resolution.found and self._filler.fill(field_, resolution):
+            logger.info(
+                "Field '{}' [{}] -> {}: filled with {!r} (source: {})",
+                field_.label,
+                field_.kind.value,
+                understood,
+                resolution.value,
+                resolution.source,
+            )
             answers.append(
                 AnsweredQuestion(
                     field_.label,
@@ -213,6 +244,22 @@ class EasyApplyWorkflow:
         value = self._handle_unknown(field_)
         if value is not None:
             self._apply_manual_value(field_, value)
+            logger.info(
+                "Field '{}' [{}] -> {}: no stored answer, you supplied {!r}",
+                field_.label,
+                field_.kind.value,
+                understood,
+                value,
+            )
+        else:
+            reason = "no matching data in answers" if not resolution.found else "could not fill"
+            logger.info(
+                "Field '{}' [{}] -> {}: {} - left blank",
+                field_.label,
+                field_.kind.value,
+                understood,
+                reason,
+            )
         answers.append(
             AnsweredQuestion(
                 field_.label,
@@ -230,9 +277,17 @@ class EasyApplyWorkflow:
     ) -> None:
         label = field_.label.lower()
         if "cover" in label and cover_letter_path:
+            logger.info("Uploading cover letter to '{}': {}", field_.label, cover_letter_path)
             self._filler.fill(field_, _empty_resolution(), file_path=cover_letter_path)
         elif resume_path:
+            logger.info("Uploading resume to '{}': {}", field_.label, resume_path)
             self._filler.fill(field_, _empty_resolution(), file_path=resume_path)
+        else:
+            logger.warning(
+                "File field '{}' but no {} configured - left empty",
+                field_.label,
+                "cover letter" if "cover" in label else "resume",
+            )
 
     def _apply_manual_value(self, field_: FormField, value: str) -> None:
         from linkedin_easy_apply.answers.resolver import AnswerResolution
@@ -242,31 +297,37 @@ class EasyApplyWorkflow:
 
     def _handle_unknown(self, field_: FormField) -> str | None:
         if not (self._settings.pause_on_unknown and self._on_unknown):
-            logger.warning("Unresolved question (left blank): '{}'", field_.label)
             return None
         shot = self._screenshot(f"unknown-{field_.label}")
-        logger.info("Pausing for manual input on: '{}'", field_.label)
+        logger.info("Pausing for your input on: '{}'", field_.label)
         return self._on_unknown(field_.label, shot)
 
     # -- finalisation ---------------------------------------------------------
     def _finalize_submit(self, answers: list[AnsweredQuestion], step: int) -> ApplyResult:
         if self._settings.dry_run:
+            logger.info(
+                "DRY-RUN: reached the Submit button at step {} - discarding WITHOUT submitting",
+                step,
+            )
             self._discard()
             return ApplyResult(
                 ApplyStatus.DRY_RUN, step, "Dry run - not submitted", answers=answers
             )
         if self._settings.interactive and self._on_confirm and not self._on_confirm():
+            logger.info("You declined submission - discarding the application")
             self._discard()
             return ApplyResult(
                 ApplyStatus.ABORTED, step, "User declined submission", answers=answers
             )
 
+        logger.info("Submitting the application now ({} question(s) answered)", len(answers))
         modal = first(self._page, selectors.MODAL)
         if not self._click(modal, selectors.BTN_SUBMIT):
             return self._abort(answers, step, "Submit button vanished")
         self._page.wait_for_timeout(1500)
         shot = self._screenshot("after-submit")
         self._dismiss_confirmation()
+        logger.info("Application submitted successfully")
         return ApplyResult(
             ApplyStatus.SUBMITTED, step, screenshot=str(shot) if shot else None, answers=answers
         )

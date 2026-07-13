@@ -32,6 +32,14 @@ class FormFieldDetector:
             field = self._classify(container)
             if field is not None:
                 fields.append(field)
+        for f in fields:
+            logger.debug(
+                "  field: '{}' kind={} required={} options={}",
+                f.label,
+                f.kind.value,
+                f.required,
+                f.options if f.options else "-",
+            )
         logger.debug("Detected {} field(s) in current step", len(fields))
         return fields
 
