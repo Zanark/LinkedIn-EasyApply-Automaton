@@ -106,6 +106,11 @@ point to `linkedin.com`. Disabled entries are skipped. You can keep a library in
 Selection order: **mapping match** (score ≥ 60) → **filename-keyword overlap**
 with the job text → **default**.
 
+> 💡 The PDFs in `resumes/` can be generated from one master content file with
+> **[Resume Studio](../resume_studio/README.md)** — run
+> `python resume_studio\render.py publish` and it drops a resume whose filename
+> matches your `mapping`/`default` here.
+
 ### `scoring`
 
 ```yaml

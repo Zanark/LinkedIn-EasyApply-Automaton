@@ -23,6 +23,9 @@ built in.
 - **Weighted job scoring** with whole-word matching (so `go` ≠ `google`) and
   punctuation keywords (`c++`, `.net`).
 - **Automatic resume selection** (mapping → keyword overlap → default).
+- **Resume Studio** — one master file (`master.yaml`) → a pixel-tuned one-page
+  PDF (Raleway, seafoam accent), previewable across 20 fonts and published
+  straight into `resumes/`. See **[resume_studio/](resume_studio/README.md)**.
 - **Safety rails**: per-run / per-company / daily caps, blacklist/whitelist,
   include/exclude keywords, URL + company-role dedupe.
 - **Dry-run & interactive** modes; per-step and on-error screenshots.
@@ -126,6 +129,7 @@ linkedin_easy_apply/   the package (config, parser, scoring, answers, forms,
                        orchestrator.py)
 configs/               *.example.yaml templates (init copies these)
 resumes/               your resume files (git-ignored)
+resume_studio/         generate a pixel-tuned resume from one master file
 docs/                  configuration, developer guide, FAQ, troubleshooting
 tests/                 unit tests for the pure-logic modules
 apply.py               CLI entry point
@@ -137,6 +141,8 @@ INIT.MD                run guide: every command & option with examples
 - **[Run Guide (INIT.MD)](INIT.MD)** — how to start the tool and **every**
   command/option with copy-paste examples.
 - [Configuration](docs/configuration.md) — every file and key explained.
+- [Resume Studio](resume_studio/README.md) — generate & fine-tune the resume the
+  automaton submits, from one master content file.
 - [Developer Guide](docs/developer_guide.md) — architecture & how to extend.
 - [FAQ](docs/faq.md) — safety, AI, resumes, data storage.
 - [Troubleshooting](docs/troubleshooting.md) — fixes for common problems.
@@ -157,6 +163,8 @@ patterns used at bigger companies:
   relational schema used, each with complexity and where industry uses it.
 - [Algorithms](docs/algorithms.md) — normalization, fuzzy matching, weighted
   scoring, backoff and more, each with a real-world example.
+- [Resume Studio](docs/resume-studio.md) — content/presentation separation, the
+  renderer bake-off, headless-browser PDF generation, and typography-as-engineering.
 
 ## Development
 

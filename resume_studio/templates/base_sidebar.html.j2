@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ b.name }} - Resume</title>
+{{ font_links|safe }}
+<style>
+  :root {
+    --accent: #1f3a5f;
+    --side-bg: #1f3a5f;
+    --side-ink: #ffffff;
+    --side-soft: #c9d8ec;
+    --side-rule: #7f9bc0;
+    --ink: #1a1a1a;
+    --muted: #5b6470;
+    --rule: #d9dee5;
+    --subhead: #33404f;
+    --body-font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --head-font: var(--body-font);
+    --fs: 9.7pt;
+    --lh: 1.4;
+    --side-w: 33%;
+    --main-h2-color: var(--accent);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--body-font); color: var(--ink);
+    font-size: var(--fs); line-height: var(--lh);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .wrap { display: flex; align-items: stretch; min-height: 100vh; }
+  .aside {
+    width: var(--side-w); background: var(--side-bg); color: var(--side-ink);
+    padding: 24px 16px; }
+  .main { flex: 1; padding: 24px 22px; }
+
+  .s-name { font-family: var(--head-font); font-size: 19pt; font-weight: 800; line-height: 1.08; }
+  .s-title { font-size: 10.5pt; color: var(--side-soft); margin-top: 3px; }
+  .s-h { font-size: 10pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+         margin: 16px 0 5px; padding-bottom: 3px; border-bottom: 1px solid var(--side-rule); }
+  .s-contact div { font-size: 8.9pt; margin: 2px 0; word-break: break-word; }
+  .s-contact a { color: var(--side-ink); text-decoration: none; }
+  .s-skill { margin-bottom: 6px; }
+  .s-skill .cat { font-weight: 700; color: #dbe6f4; font-size: 9pt; }
+  .s-skill .items { font-size: 8.7pt; color: #eaf0f8; }
+  .s-cert { font-size: 8.7pt; margin: 2px 0; }
+  .s-award { font-size: 8.9pt; font-weight: 700; color: #dbe6f4; margin: 3px 0; }
+
+  .main h2 {
+    font-family: var(--head-font); font-size: 11pt; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--main-h2-color); font-weight: 700;
+    margin: 0 0 7px; border-bottom: 1.5px solid var(--main-h2-color); padding-bottom: 3px; }
+  .main section { margin-top: 13px; }
+  .main section:first-child { margin-top: 0; }
+  .entry { margin-bottom: 10px; }
+  .entry-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .entry-title { font-weight: 700; }
+  .entry-title .role { font-weight: 600; color: var(--ink); }
+  .entry-meta { color: var(--muted); font-size: 9pt; white-space: nowrap; text-align: right; }
+  ul { margin: 4px 0 0; padding-left: 16px; }
+  li { margin: 2px 0; }
+  .group { margin-top: 5px; }
+  .group-name { font-weight: 700; font-size: 9.6pt; color: var(--subhead); }
+  .group ul { margin-top: 1px; }
+
+{{ theme_css|safe }}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <aside class="aside">
+    <div class="s-name">{{ b.name }}</div>
+    {% if b.title %}<div class="s-title">{{ b.title }}</div>{% endif %}
+
+    <div class="s-h">Contact</div>
+    <div class="s-contact">
+      {% if b.location %}<div>{{ b.location }}</div>{% endif %}
+      {% if b.email %}<div><a href="mailto:{{ b.email }}">{{ b.email }}</a></div>{% endif %}
+      {% if b.phone %}<div>{{ b.phone }}</div>{% endif %}
+      {% for l in b.links %}<div><a href="{{ l.url }}">{{ l.url|striphttp }}</a></div>{% endfor %}
+    </div>
+
+    {% if skills %}
+    <div class="s-h">Skills</div>
+    {% for s in skills %}
+    <div class="s-skill">
+      <span class="cat">{{ s.category }}</span><br>
+      <span class="items">{{ s['items']|join(', ') }}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if certifications %}
+    <div class="s-h">Certifications</div>
+    {% for c in certifications %}<div class="s-cert">{{ c }}</div>{% endfor %}
+    {% endif %}
+
+    {% if awards %}
+    <div class="s-h">Awards</div>
+    {% for a in awards %}<div class="s-award">{{ a.title }}</div>{% endfor %}
+    {% endif %}
+  </aside>
+
+  <main class="main">
+    {% if b.summary %}
+    <section>
+      <h2>Summary</h2>
+      <div>{{ b.summary }}</div>
+    </section>
+    {% endif %}
+
+    {% if experience %}
+    <section>
+      <h2>Work Experience</h2>
+      {% for e in experience %}
+      <div class="entry">
+        <div class="entry-head">
+          <div class="entry-title">{{ e.company }} <span class="role">/ {{ e.role }}</span></div>
+          <div class="entry-meta">{{ e.start|mon }} &ndash; {{ e.end|mon }}{% if e.location %} &middot; {{ e.location }}{% endif %}</div>
+        </div>
+        {% if e.highlights %}<ul>{% for h in e.highlights %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}
+        {% if e.groups %}{% for g in e.groups %}
+        <div class="group">
+          <div class="group-name">{{ g.name }}</div>
+          <ul>{% for h in g.highlights %}<li>{{ h }}</li>{% endfor %}</ul>
+        </div>
+        {% endfor %}{% endif %}
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if education %}
+    <section>
+      <h2>Education</h2>
+      {% for e in education %}
+      <div class="entry">
+        <div class="entry-head">
+          <div class="entry-title">{{ e.institution }}{% if e.degree %} <span class="role">/ {{ e.degree }}{% if e.area %}, {{ e.area }}{% endif %}</span>{% endif %}</div>
+          <div class="entry-meta">{{ e.start|mon }} &ndash; {{ e.end|mon }}</div>
+        </div>
+        {% if e.highlights %}<ul>{% for h in e.highlights %}<li>{{ h }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </main>
+
+</div>
+</body>
+</html>
