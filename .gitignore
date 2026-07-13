@@ -38,6 +38,10 @@ database/*.sqlite3
 # Generated output (cover letters, etc.)
 generated/
 
+# Exported application data (may contain personal data)
+applications.csv
+exports/
+
 # Local resumes & real secrets
 resumes/*.pdf
 resumes/*.docx
