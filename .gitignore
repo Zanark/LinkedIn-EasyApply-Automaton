@@ -55,6 +55,7 @@ configs/question_bank.yaml
 # The tooling (render.py, templates/) stays committable; only PII is ignored.
 resume_studio/master.yaml
 resume_studio/out/
+resume_studio/career-dossier.md
 
 # Browser profile - contains your logged-in LinkedIn session (NEVER commit)
 .browser-profile/

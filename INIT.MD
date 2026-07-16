@@ -69,7 +69,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe apply.py init
 ```
 
-Then edit `configs\config.yaml` (searches, scoring) and `configs\answers.yaml` (your data). Drop your resume at `resumes\Debashish_Mishra_Resume.pdf`.
+Then edit `configs\config.yaml` (searches, scoring) and `configs\answers.yaml` (your data). Put a resume in `resumes\` whose filename matches `resume.default` in `config.yaml` (e.g. `Debashish_Mishra_1page.pdf`), or generate a tailored set with [resume_studio](resume_studio/README.md) (`render.py publish-variants`).
 
 ---
 

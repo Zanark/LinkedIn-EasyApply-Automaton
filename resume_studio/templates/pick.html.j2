@@ -77,6 +77,20 @@
   .award-date { color: var(--muted); font-size: var(--fs-meta); white-space: nowrap; }
   .award-detail { font-size: var(--fs-body); }
 </style>
+{% if compact %}
+<style>
+  /* compact density for the 1-page variant: identical fonts + sizes, only the
+     vertical rhythm is tightened so the recency-weighted content lands on one
+     page with breathing room. Wins over the base rules by cascade order. */
+  body { line-height: 1.34; }
+  section { margin-top: 10px; }
+  h2 { margin: 0 0 5px; }
+  .entry { margin-bottom: 7px; }
+  ul { margin-top: 1px; }
+  li { margin: 1px 0; }
+  .skill-row { margin: 1.8px 0; }
+</style>
+{% endif %}
 </head>
 <body>
 

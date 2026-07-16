@@ -119,7 +119,7 @@ Invoke as `.\.venv\Scripts\python.exe resume_studio\render.py <command>`.
 | `pick`       | Build the resume. Renders the HTML design → `hybrid_html.pdf` **and** the RenderCV twin → `hybrid.pdf`, plus preview PNGs. | `out/pick/` |
 | `pick-fonts` | Render the design across **20 distinct fonts** and stitch a labelled contact sheet to shortlist a typeface. | `out/pick/fonts/` |
 | `publish`    | Render the design and **copy the PDF into `resumes/`** so the automaton submits it. Optional filename arg; any existing file of that name is backed up first. | `resumes/` |
-| `publish-variants` | Render **one PDF per role** from the `variants:` block in `master.yaml` (tailored headline + skills emphasis) and copy each into `resumes/`. | `resumes/` |
+| `publish-variants` | Render **one PDF per variant** from the `variants:` block in `master.yaml` (role emphasis and/or page-length cut) and copy each into `resumes/`. | `resumes/` |
 
 ```powershell
 .\.venv\Scripts\python.exe resume_studio\render.py publish                       # -> resumes/<Your_Name>_Resume.pdf
@@ -195,29 +195,48 @@ git-ignore rule), so your previous resume is never lost.
 
 ---
 
-## Role variants
+## Variants — role & page length
 
-Want a resume tuned per role? Add a `variants:` block to `master.yaml` — the
-**same** content, only re-emphasized (headline + skills order). Nothing is
-invented or removed:
+Want a resume tuned per role, or a one- vs two-page cut? Add a `variants:` block
+to `master.yaml`. Every variant is the **same** content, only re-emphasized or
+filtered — nothing is invented, and the master is never mutated:
 
 ```yaml
 variants:
+  # role emphasis: same content, headline + skills order tuned per search
   - key: software-engineer
     filename: Debashish_Mishra_SoftwareEngineer.pdf
     title: "Software Engineer · Backend, Cloud & AI"
-    skills_order: [".NET & Backend", "Cloud & DevOps", "Data", "Frontend"]
+    skills_order: [".NET & Backend", "Cloud & DevOps", "Data & AI", "Frontend"]
   - key: full-stack
     filename: Debashish_Mishra_FullStack.pdf
     title: "Full Stack Engineer · .NET, React & Azure"
-    skills_order: ["Frontend", ".NET & Backend", "Cloud & DevOps", "Data"]
+    skills_order: ["Frontend", ".NET & Backend", "Cloud & DevOps", "Data & AI"]
+
+  # page-length cuts: a recency-weighted 1-pager and the full 2-pager
+  - key: onepage
+    filename: Debashish_Mishra_1page.pdf
+    condense_older: true        # current role in full; older roles -> their `summary`
+    include_awards: false       # drop the Awards section
+    compact: true               # same fonts/sizes, tighter line spacing
+  - key: twopage
+    filename: Debashish_Mishra_2page.pdf
+    include_awards: true        # full detail + awards (the default look)
 ```
 
-| Field         | Effect                                                                    |
-| ------------- | ------------------------------------------------------------------------- |
-| `filename`    | The PDF written into `resumes/` — point `config.yaml → resume.mapping` at it |
-| `title`       | Overrides the headline under your name                                    |
-| `skills_order`| Reorders the skills **categories** (any not listed sink to the end)       |
+| Field            | Effect                                                                       |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `filename`       | The PDF written into `resumes/` — point `config.yaml → resume.mapping` at it  |
+| `title`          | Overrides the headline under your name                                       |
+| `skills_order`   | Reorders the skills **categories** (any not listed sink to the end)          |
+| `include_awards` | `false` hides the Awards section                                             |
+| `condense_older` | `true` keeps the most-recent role in full and collapses older roles to their short `summary:` list |
+| `compact`        | `true` keeps every font size but tightens the vertical rhythm so a dense cut still fits one page |
+
+`condense_older` needs each older experience entry to carry a `summary:` list
+(2–3 quantified lines) alongside its full `groups:` — the 2-pager renders the
+groups, the 1-pager swaps in the summary. Role emphasis and page cuts compose
+freely (a variant can set `skills_order` *and* `condense_older`).
 
 ```powershell
 .\.venv\Scripts\python.exe resume_studio\render.py publish-variants
@@ -227,10 +246,11 @@ Then map each search to its variant:
 
 ```yaml
 resume:
-  default: Debashish_Mishra_Resume.pdf          # the general one, for anything unmapped
+  default: Debashish_Mishra_1page.pdf           # generic 1-page, for anything unmapped
   mapping:
-    software engineer: Debashish_Mishra_SoftwareEngineer.pdf
-    full stack developer: Debashish_Mishra_FullStack.pdf
+    software engineer: Debashish_Mishra_SoftwareEngineer.pdf     # 1-page, role-tailored
+    full stack developer: Debashish_Mishra_FullStack.pdf         # 1-page, role-tailored
+# Debashish_Mishra_2page.pdf stays in resumes/ as a manual full-detail backup (unmapped).
 ```
 
 ---

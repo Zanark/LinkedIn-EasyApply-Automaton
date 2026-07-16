@@ -62,6 +62,15 @@ That's the "single source, many views" rule again: you don't fork the résumé p
 role, you *derive* each view. `publish-variants` writes one PDF per variant so the
 automaton's `resume.mapping` can send a tailored file to each search.
 
+**Page-length cuts are the sharpest projection.** The same `_apply_variant` also
+filters *how much* of the store a view shows: `include_awards: false` drops a whole
+section, and `condense_older: true` keeps the most-recent role in full while
+swapping every older role's rich `groups:` for its short `summary:` list. The
+master still holds everything — the one-pager is just a smaller projection of it,
+and a `compact: true` flag tightens the CSS line-rhythm (never the font sizes) so
+that denser cut lands on a single page. Two files, `Debashish_Mishra_1page.pdf`
+and `_2page.pdf`, fall out of the *same* YAML with zero duplicated content.
+
 `load_master()` is the whole "repository" here — one function, one YAML read. The
 rest of the system depends on the *shape* of that dict, not on any file format.
 

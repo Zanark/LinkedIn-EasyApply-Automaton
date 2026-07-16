@@ -979,7 +979,8 @@ def render_pick(m: dict) -> Path:
 # stacked RIGHT, like the attachment) and (8) a bigger per-entry title font.
 # Same content (master.yaml), same teal palette + Raleway.
 # --------------------------------------------------------------------------- #
-def render_pick_html(m: dict, dest: Path | None = None, previews: bool = True) -> Path:
+def render_pick_html(m: dict, dest: Path | None = None, previews: bool = True,
+                     compact: bool = False) -> Path:
     from jinja2 import Environment, FileSystemLoader, select_autoescape
     from playwright.sync_api import sync_playwright
 
@@ -989,7 +990,7 @@ def render_pick_html(m: dict, dest: Path | None = None, previews: bool = True) -
                       autoescape=select_autoescape(["html"]))
     env.filters["mon"] = mon
     env.filters["striphttp"] = strip_http
-    html = env.get_template("pick.html.j2").render(**_html_context(m))
+    html = env.get_template("pick.html.j2").render(compact=compact, **_html_context(m))
     pdf = dest or (pdir / "hybrid_html.pdf")
     src = pdir / f"_{pdf.stem}_input.html"
     src.write_text(html, encoding="utf-8")
@@ -1150,10 +1151,12 @@ def render_publish(m: dict, name: str | None = None) -> Path:
 
 
 # --------------------------------------------------------------------------- #
-# role variants: the SAME master content, tailored per role. A `variants:` list
-# in master.yaml may override the headline `title` and reorder `skills` (by
-# category name via `skills_order`) so each search can map to a role-focused
-# resume. Content is never invented — only emphasized/reordered.
+# variants: the SAME master content, projected per target. A `variants:` list
+# in master.yaml may override the headline `title`, reorder `skills` (by
+# category name via `skills_order`), toggle the Awards section
+# (`include_awards`), and produce a recency-weighted one-pager that keeps the
+# current role in full while collapsing older roles to their short `summary`
+# (`condense_older`). Content is never invented - only emphasized/reordered/hidden.
 # --------------------------------------------------------------------------- #
 def _apply_variant(m: dict, v: dict) -> dict:
     import copy
@@ -1168,6 +1171,17 @@ def _apply_variant(m: dict, v: dict) -> dict:
             mv.get("skills", []),
             key=lambda s: rank.get(s.get("category"), len(order)),
         )
+    # --- page-length controls (opt-in; role variants leave these unset) ---
+    if v.get("include_awards") is False:          # drop the Awards section
+        mv["awards"] = []
+    if v.get("condense_older"):                   # recency-weighted 1-pager:
+        # keep the most-recent role in full; collapse older roles to their
+        # short `summary` bullets (no-op for a role without a summary).
+        for e in (mv.get("experience") or [])[1:]:
+            summ = e.get("summary")
+            if summ:
+                e["highlights"] = list(summ)
+                e.pop("groups", None)
     return mv
 
 
@@ -1178,7 +1192,7 @@ def render_publish_variants(m: dict) -> list:
         stem = _slug(str(v.get("key") or v.get("filename") or "variant"))
         mv = _apply_variant(m, v)
         tmp = OUT / "pick" / f"_variant_{stem}.pdf"
-        render_pick_html(mv, dest=tmp, previews=False)
+        render_pick_html(mv, dest=tmp, previews=False, compact=bool(v.get("compact")))
         name = v.get("filename") or f"{stem}.pdf"
         dest = _place_in_resumes(tmp, name)
         tmp.unlink(missing_ok=True)
