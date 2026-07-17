@@ -99,6 +99,7 @@ flowchart TD
 | **AnswerResolver** | `answers/resolver.py` | Map a parsed question → a concrete value from the store. | pure |
 | **ScoringEngine** | `scoring/engine.py` | Weighted-keyword score + pass/fail vs threshold. | pure |
 | **ResumeSelector** | `answers/resume_selector.py` | Pick the best resume (mapping → overlap → default). | pure |
+| **DynamicResumeBuilder** | `answers/dynamic_resume.py` | Optional: detect a job's cluster (keyword/AI) and shell out to the external builder to render a résumé tailored per job; caches per run; falls back on error. | I/O |
 | **option matchers** | `forms/matching.py` | `best_option` / `boolean_option` for select/radio. | pure |
 | **CoverLetterGenerator** | `answers/cover_letter.py` | Render a templated cover letter (Jinja2). | pure-ish |
 | **BrowserManager** | `browser/manager.py` | Own the Playwright lifecycle; reuse your logged-in profile. | I/O |

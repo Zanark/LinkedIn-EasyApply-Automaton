@@ -7,6 +7,22 @@ from typing import Any
 
 
 @dataclass(slots=True)
+class TailoringSuggestion:
+    """A re-emphasis suggestion for a job: which existing content to surface.
+
+    The provider chooses only from the candidate's *existing* skill categories -
+    it never invents experience. ``skills_order`` is a subset/ordering of the
+    category names passed to the provider; ``title`` is a headline drawn from the
+    real profile. Consumed by the dynamic resume builder to render one PDF.
+    """
+
+    title: str | None = None
+    skills_order: list[str] = field(default_factory=list)
+    cluster: str | None = None  # short label for logging/caching
+    reason: str | None = None
+
+
+@dataclass(slots=True)
 class AIResult:
     """Advisory output describing how well a candidate matches a job."""
 

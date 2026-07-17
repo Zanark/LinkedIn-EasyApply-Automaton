@@ -52,6 +52,22 @@ In order: an explicit `resume.mapping` match (role/keyword → filename), then
 filename-keyword overlap with the job text, then `resume.default`. See
 `docs/configuration.md`.
 
+If you enable `resume.builder`, a resume is **generated per job** first (see the
+next question); the static order above is the fallback.
+
+### Can it tailor a fresh resume to each job?
+
+Yes — opt in with `resume.builder` (see `docs/configuration.md`). Download the
+[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder), point
+`resume.builder.path` at it, and define keyword **clusters** (e.g. an `ai`
+cluster). Just before applying, the automaton detects the job's cluster and asks
+the builder to render a resume that surfaces the most relevant existing content
+first (e.g. `Data & AI` skills under an AI headline). `mode: keyword` is offline
+and deterministic; `mode: ai` asks your AI provider to choose the emphasis. Either
+way it only **re-emphasises** your `master.yaml` — it never invents experience.
+On no match or any error it falls back to static selection, and `scan` never
+triggers a render.
+
 ### Where do the resume PDFs come from?
 
 You can drop any PDF in `generated/resume/`, **or** generate one with the

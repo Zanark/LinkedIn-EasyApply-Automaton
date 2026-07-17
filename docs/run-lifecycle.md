@@ -126,12 +126,18 @@ For **every** job, in order:
 17. **`_advise(...)`** runs the optional AI advisor; if it says *no*, skip as
     `ai_advised_against` (no-op when AI is disabled).
 18. If **`mode == "scan"`** → note `scan_only` and return — **scan never opens
-    the application form.** Otherwise → `_attempt_application(...)`.
+    the application form** (and never renders a tailored résumé). Otherwise, if
+    `resume.builder.enabled`, **`_tailor_resume(job)`** asks the standalone
+    builder to render a résumé tailored to this job and, on a match, **overrides**
+    the static pick from step 16 (else the static pick stands); then →
+    `_attempt_application(...)`. See
+    [*Dynamic résumé generation*](configuration.md#resumebuilder-dynamic-per-job-resumes).
 
 ```
 INFO  orchestrator:_process_job - Job: Lead Back End Engineer @ HDFC Bank (1 day ago)
 DEBUG orchestrator:_process_job - Scored 'Lead Back End Engineer': 16 vs threshold 20 -> FAIL (breakdown: {'sql': 8, 'backend': 8})
 INFO  orchestrator:_process_job - Skip (score 16 < 20) - Lead Back End Engineer @ HDFC Bank (1 day ago)
+INFO  orchestrator:_tailor_resume - Tailored resume 'Debashish_Mishra_ai.pdf' for 'Senior AI Engineer' (tailored: keyword cluster 'ai' (score 8))
 ```
 
 (See [`configuration.md` → scoring](configuration.md#scoring) and
@@ -240,6 +246,10 @@ Two safe ways to test, and exactly where each stops:
 | --- | --- | --- | --- |
 | `apply.py scan` | ❌ no | ❌ never | Phase 3 step 18 (`scan_only`) — only discovers + scores |
 | `apply.py apply --dry-run -y` | ✅ yes, fills everything | ❌ never | Phase 6 — discards at the Submit button (`DRY_RUN`) |
+
+> Note: `--dry-run` still runs step 18 fully, so if `resume.builder.enabled` it
+> **will render tailored résumés** into `generated/resume/` (a safe side effect —
+> nothing is submitted). Use `scan` if you want zero rendering.
 | `apply.py apply --interactive` | ✅ yes | only if you confirm | Phase 6 — asks you per submit |
 
 - **`scan`** is the fastest sanity check: "which jobs would it target, and what

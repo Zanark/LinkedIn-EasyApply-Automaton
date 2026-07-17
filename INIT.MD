@@ -71,6 +71,8 @@ python -m venv .venv
 
 Then edit `configs\config.yaml` (searches, scoring) and `configs\answers.yaml` (your data). Put a resume in `generated\resume\` whose filename matches `resume.default` in `config.yaml` (e.g. `Debashish_Mishra_1page.pdf`), or generate a tailored set with the standalone [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder) (`render.py publish-variants --out-dir <this-repo>\generated\resume`).
 
+> **Optional — a fresh résumé per job.** Download the [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder), set `resume.builder.enabled: true` and `resume.builder.path: C:\path\to\dynamic-resume-builder` in `config.yaml`, and the automaton renders a résumé **tailored to each job** right before applying (e.g. an AI-heavy posting → your AI skills first). Keyword clusters work offline; see [`docs/configuration.md → resume.builder`](docs/configuration.md#resumebuilder-dynamic-per-job-resumes).
+
 ---
 
 ## 3. Two ways to run the tool

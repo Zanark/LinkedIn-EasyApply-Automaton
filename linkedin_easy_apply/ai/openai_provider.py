@@ -7,7 +7,7 @@ import os
 
 from loguru import logger
 
-from linkedin_easy_apply.ai.models import AIResult
+from linkedin_easy_apply.ai.models import AIResult, TailoringSuggestion
 from linkedin_easy_apply.ai.provider import AIProvider
 from linkedin_easy_apply.config.models import AIConfig
 
@@ -17,6 +17,17 @@ _SYSTEM_PROMPT = (
     "keys: match_percent (0-100 number), missing_skills (list of strings), "
     "recommendation (short string), reasons (list of strings), should_apply "
     "(boolean). Do not include any prose outside the JSON."
+)
+
+_TAILOR_SYSTEM_PROMPT = (
+    "You help re-emphasise an EXISTING resume for a specific job. You must NOT "
+    "invent experience. You are given the job and the candidate's resume skill "
+    "categories. Choose the best short headline (drawn from the candidate's real "
+    "profile) and reorder the given categories from most to least relevant to the "
+    "job. Respond ONLY with a compact JSON object with keys: title (short string), "
+    "skills_order (list containing ONLY names from the provided categories, most "
+    "relevant first), reason (short string). Do not add categories that were not "
+    "provided. Do not include any prose outside the JSON."
 )
 
 
@@ -74,6 +85,69 @@ class OpenAIProvider(AIProvider):
         except Exception as exc:  # pragma: no cover - network/optional
             logger.warning("AI evaluation failed: {}", exc)
             return AIResult(recommendation=f"AI error: {exc}", should_apply=None)
+
+    def suggest_tailoring(
+        self,
+        *,
+        job_title: str,
+        job_description: str,
+        available_categories: list[str],
+        master_title: str | None = None,
+    ) -> TailoringSuggestion | None:
+        if not available_categories:
+            return None
+        user_prompt = (
+            f"JOB TITLE:\n{job_title}\n\n"
+            f"JOB DESCRIPTION:\n{(job_description or '')[:6000]}\n\n"
+            f"CANDIDATE HEADLINE (current):\n{master_title or 'Not provided'}\n\n"
+            f"AVAILABLE SKILL CATEGORIES (choose/reorder ONLY from these):\n"
+            f"{', '.join(available_categories)}"
+        )
+        try:
+            client = self._get_client()
+            response = client.chat.completions.create(
+                model=self._config.model,
+                temperature=self._config.temperature,
+                max_tokens=self._config.max_tokens,
+                messages=[
+                    {"role": "system", "content": _TAILOR_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            content = response.choices[0].message.content or "{}"
+            return self._parse_tailoring(content, available_categories)
+        except Exception as exc:  # pragma: no cover - network/optional
+            logger.warning("AI tailoring failed: {}", exc)
+            return None
+
+    @staticmethod
+    def _parse_tailoring(
+        content: str, available_categories: list[str]
+    ) -> TailoringSuggestion | None:
+        text = content.strip()
+        if text.startswith("```"):
+            text = text.strip("`")
+            text = text.split("\n", 1)[-1] if "\n" in text else text
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            return None
+        # Constrain to real categories only - never trust the model to add content.
+        allowed = {c.lower(): c for c in available_categories}
+        order = [
+            allowed[str(c).lower()]
+            for c in (data.get("skills_order") or [])
+            if str(c).lower() in allowed
+        ]
+        title = data.get("title")
+        if not title and not order:
+            return None
+        return TailoringSuggestion(
+            title=(str(title).strip() or None) if title else None,
+            skills_order=order,
+            cluster="ai",
+            reason=str(data.get("reason") or "AI re-emphasis"),
+        )
 
     @staticmethod
     def _parse(content: str) -> AIResult:

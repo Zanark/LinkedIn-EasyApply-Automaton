@@ -104,6 +104,56 @@ class AnswersConfig(BaseModel):
     fuzzy_threshold: int = 80  # 0-100 similarity score for question matching
 
 
+class ResumeBuilderMode(StrEnum):
+    """How the dynamic builder decides what to emphasise for a job."""
+
+    KEYWORD = "keyword"  # deterministic keyword-cluster matching (offline)
+    AI = "ai"  # ask the configured AI provider (needs an API key)
+
+
+class ResumeClusterConfig(BaseModel):
+    """A keyword-detected job cluster mapped to a resume emphasis.
+
+    All emphasis fields map 1:1 to the builder's ``tailor`` flags. Content is
+    only re-emphasised/reordered/hidden - never invented.
+    """
+
+    key: str
+    keywords: list[str] = Field(default_factory=list)
+    title: str | None = None  # headline override
+    skills_order: list[str] = Field(default_factory=list)
+    compact: bool = False
+    roomy: bool = False
+    include_awards: bool | None = None  # None -> leave as master default
+    condense_older: bool = False
+    filename: str | None = None  # output name; default derived from key
+
+    @field_validator("keywords")
+    @classmethod
+    def _lower_keywords(cls, value: list[str]) -> list[str]:
+        return [k.strip().lower() for k in value if k.strip()]
+
+
+class ResumeBuilderConfig(BaseModel):
+    """Per-job dynamic resume generation via the external dynamic-resume-builder.
+
+    Opt-in. When enabled, the orchestrator asks the builder to render a resume
+    tailored to each job just before applying, falling back to static selection
+    when disabled, unmatched, or on any error.
+    """
+
+    enabled: bool = False
+    path: Path | None = None  # folder holding the builder's render.py + master.yaml
+    python: Path | None = None  # interpreter to run it (None -> this process's own)
+    mode: ResumeBuilderMode = ResumeBuilderMode.KEYWORD
+    ai_fallback_keyword: bool = True  # in AI mode, fall back to keyword clusters
+    cache: bool = True  # render each cluster at most once per run
+    timeout: int = 180  # subprocess timeout, seconds
+    title_weight: int = 3  # keyword hit weight for the title vs the description
+    min_score: int = 1  # minimum weighted hits required to tailor
+    clusters: list[ResumeClusterConfig] = Field(default_factory=list)
+
+
 class ResumeConfig(BaseModel):
     """Resume selection configuration."""
 
@@ -111,6 +161,8 @@ class ResumeConfig(BaseModel):
     default: str | None = None
     # role/keyword -> resume filename
     mapping: dict[str, str] = Field(default_factory=dict)
+    # optional per-job dynamic generation (see ResumeBuilderConfig)
+    builder: ResumeBuilderConfig = Field(default_factory=ResumeBuilderConfig)
 
 
 class ScoringRule(BaseModel):

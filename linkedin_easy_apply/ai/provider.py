@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from linkedin_easy_apply.ai.models import AIResult
+from linkedin_easy_apply.ai.models import AIResult, TailoringSuggestion
 
 
 class AIProvider(ABC):
@@ -28,6 +28,22 @@ class AIProvider(ABC):
         resume_text: str | None = None,
     ) -> AIResult:
         """Return an advisory evaluation for the given job."""
+
+    def suggest_tailoring(
+        self,
+        *,
+        job_title: str,
+        job_description: str,
+        available_categories: list[str],
+        master_title: str | None = None,
+    ) -> TailoringSuggestion | None:
+        """Optionally suggest how to re-emphasise an *existing* resume for a job.
+
+        The suggestion may only reorder/select from ``available_categories`` and
+        propose a headline; it must never invent content. The default returns
+        ``None`` (no suggestion) so non-AI providers stay pure no-ops.
+        """
+        return None
 
 
 class NullAIProvider(AIProvider):

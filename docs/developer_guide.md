@@ -24,7 +24,7 @@ linkedin_easy_apply/
 ├── config/        Pydantic models + YAML loader (env expansion)
 ├── logging/       Loguru setup (console + rotating file)
 ├── database/      SQLite schema + repository (db.py, sql/schema.sql)
-├── answers/       AnswerStore, AnswerResolver, ResumeSelector, CoverLetter
+├── answers/       AnswerStore, AnswerResolver, ResumeSelector, DynamicResumeBuilder, CoverLetter
 ├── parser/        QuestionParser + QuestionCategory/AnswerType enums
 ├── scoring/       ScoringEngine (weighted keyword rules)
 ├── browser/       BrowserManager (persistent context)
@@ -101,6 +101,21 @@ algorithm (matching modes, breakdown, worked examples).
    an `AIResult`.
 2. Register it in `ai/factory.build_provider` and extend `AIProviderName`.
 Providers must remain advisory — never submit.
+To let a provider drive **résumé tailoring** too, override `suggest_tailoring(...)`
+to return a `TailoringSuggestion` (title + a reorder of the *given* categories);
+it must never add content outside `available_categories`.
+
+### Tailor a résumé per job (dynamic builder)
+
+- **No code** for a new job type: add a `key`/`keywords`/`title`/`skills_order`
+  entry under `resume.builder.clusters` in `config.yaml`
+  ([config reference](configuration.md#resumebuilder-dynamic-per-job-resumes)).
+  Keywords match at word boundaries; `skills_order` names must equal the builder
+  `master.yaml` categories.
+- **Detection logic** lives in `answers/dynamic_resume.py` (`_detect_cluster`
+  weights title hits over description hits). It shells out to the builder's
+  `tailor` command via `_run_builder` (isolated for tests) and caches one render
+  per cluster per run. Unit-test pure bits in `tests/test_dynamic_resume.py`.
 
 ### Support a new form control
 

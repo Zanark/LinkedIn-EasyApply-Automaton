@@ -8,7 +8,7 @@ auto-submits. Providers implement :class:`AIProvider`; the default
 from __future__ import annotations
 
 from linkedin_easy_apply.ai.factory import build_provider
-from linkedin_easy_apply.ai.models import AIResult
+from linkedin_easy_apply.ai.models import AIResult, TailoringSuggestion
 from linkedin_easy_apply.ai.provider import AIProvider, NullAIProvider
 
-__all__ = ["AIProvider", "NullAIProvider", "AIResult", "build_provider"]
+__all__ = ["AIProvider", "NullAIProvider", "AIResult", "TailoringSuggestion", "build_provider"]

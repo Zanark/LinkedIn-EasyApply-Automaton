@@ -350,6 +350,12 @@ Optional LLM recommendation
 
 Fallback to default resume
 
+**Per-job dynamic generation (optional).** When `resume.builder.enabled`, the
+orchestrator invokes the external [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)
+just before applying to render a résumé tailored to the job (keyword clusters or
+an LLM re-emphasis of the existing `master.yaml`). Falls back to the strategies
+above on no match or any error. See `docs/configuration.md → resume.builder`.
+
 ---
 
 # Job Scoring

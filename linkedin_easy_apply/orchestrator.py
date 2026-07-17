@@ -21,6 +21,7 @@ from loguru import logger
 
 from linkedin_easy_apply.ai import AIProvider, build_provider
 from linkedin_easy_apply.answers.cover_letter import CoverLetterGenerator
+from linkedin_easy_apply.answers.dynamic_resume import DynamicResumeBuilder
 from linkedin_easy_apply.answers.resolver import AnswerResolver
 from linkedin_easy_apply.answers.resume_selector import ResumeChoice, ResumeSelector
 from linkedin_easy_apply.answers.store import AnswerStore
@@ -90,9 +91,25 @@ class Orchestrator:
         self._resume_selector = ResumeSelector(config.resume)
         self._cover = CoverLetterGenerator()
         self._ai = ai_provider or build_provider(config.ai)
+        self._dynamic_resume = self._make_dynamic_resume()
         self._screenshots = ScreenshotManager(
             config.screenshots.directory, config.screenshots.enabled
         )
+
+    def _make_dynamic_resume(self) -> DynamicResumeBuilder | None:
+        """Construct the optional per-job resume builder, or ``None`` if disabled."""
+        cfg = self._config.resume.builder
+        if not cfg.enabled:
+            return None
+        try:
+            return DynamicResumeBuilder(
+                cfg,
+                resume_dir=Path(self._config.resume.directory),
+                ai=self._ai,
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Dynamic resume builder unavailable: {}", exc)
+            return None
 
     # -- public API -----------------------------------------------------------
     def run(
@@ -223,7 +240,29 @@ class Orchestrator:
             summary.note_skip("scan_only")
             return
 
+        tailored = self._tailor_resume(job)
+        if tailored is not None:
+            resume = tailored
+
         self._attempt_application(browser, job, job_id, resume, summary, settings)
+
+    def _tailor_resume(self, job: Job) -> ResumeChoice | None:
+        """Ask the dynamic builder for a job-tailored resume (or ``None``).
+
+        Only runs when we are actually about to apply, so scans never pay the
+        render cost. Any failure returns ``None`` and the statically selected
+        resume is used instead.
+        """
+        if self._dynamic_resume is None or not self._dynamic_resume.enabled:
+            return None
+        try:
+            choice = self._dynamic_resume.tailor_for(job)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Dynamic resume build failed for '{}': {}", job.title, exc)
+            return None
+        if choice is not None:
+            logger.info("Tailored resume '{}' for '{}' ({})", choice.name, job.title, choice.reason)
+        return choice
 
     def _pre_apply_checks(self, job: Job) -> str | None:
         """Return a skip reason, or ``None`` if the job passes the gates."""

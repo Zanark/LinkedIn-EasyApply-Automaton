@@ -111,6 +111,66 @@ with the job text → **default**.
 > run `python render.py publish-variants --out-dir <this-repo>\generated\resume`
 > there and it drops resumes whose filenames match your `mapping`/`default` here.
 
+#### `resume.builder`: dynamic per-job resumes
+
+Off by default. When enabled, the automaton asks the **downloaded**
+[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder) to
+render a resume **tailored to each job right before applying** — e.g. an AI-heavy
+posting surfaces your `Data & AI` skills first under an AI headline. It only
+**re-emphasises / reorders / hides** content that already exists in the builder's
+`master.yaml`; it never invents experience. On no match or any error it falls
+back to the static `mapping`/`default` above. Rendering runs only when actually
+applying (never during `scan`) and each cluster renders at most once per run.
+
+```yaml
+resume:
+  builder:
+    enabled: true
+    path: C:\path\to\dynamic-resume-builder   # folder with render.py + master.yaml
+    # python: C:\path\to\python.exe           # optional; defaults to this tool's own
+    mode: keyword            # keyword (offline) | ai (needs ai.enabled + OPENAI_API_KEY)
+    clusters:
+      - key: ai
+        keywords: [ai, ml, machine learning, llm, genai]
+        title: AI / ML Engineer
+        skills_order: [Data & AI, .NET & Backend, Cloud & DevOps]
+        compact: true
+        condense_older: true
+        include_awards: false
+```
+
+| Key                   | Default   | Description                                                                 |
+| --------------------- | --------- | --------------------------------------------------------------------------- |
+| `enabled`             | `false`   | Master switch for dynamic generation.                                       |
+| `path`                | `null`    | Folder holding the builder's `render.py` + `master.yaml`.                   |
+| `python`              | `null`    | Interpreter to run it; defaults to the automaton's own (has the deps).      |
+| `mode`                | `keyword` | `keyword` (deterministic, offline) or `ai` (asks `ai.*` provider).          |
+| `ai_fallback_keyword` | `true`    | In `ai` mode, fall back to keyword clusters if the model abstains.          |
+| `cache`               | `true`    | Render each cluster at most once per run.                                   |
+| `timeout`             | `180`     | Seconds to wait for one render.                                             |
+| `title_weight`        | `3`       | A keyword hit in the job **title** counts this much (vs `1` in the body).   |
+| `min_score`           | `1`       | Minimum weighted keyword hits before tailoring overrides the static pick.   |
+| `clusters`            | `[]`      | Job-keyword → emphasis rules (below).                                       |
+
+Each **cluster** maps job keywords to one emphasis. `skills_order` names must
+match the `category:` names in the builder's `master.yaml` **exactly**; keywords
+match at word boundaries (so `ai` matches `ai/ml` but not `email`).
+
+| Cluster key       | Meaning                                                              |
+| ----------------- | ------------------------------------------------------------------- |
+| `key`             | Short id; also names the output PDF + the per-run cache slot.        |
+| `keywords`        | Lower-cased list matched against the job title + description.        |
+| `title`           | Headline override for this cluster.                                  |
+| `skills_order`    | Skill categories to list first (rest keep their master order).       |
+| `compact`/`roomy` | Denser / airier layout.                                              |
+| `include_awards`  | `false` hides Awards, `true` forces them, omitted keeps master's.    |
+| `condense_older`  | Recency 1-pager: newest role full, older roles collapsed.           |
+| `filename`        | Optional explicit output name (default `<Name>_<key>.pdf`).          |
+
+> **AI mode** reuses the `ai:` provider (see below). The model may only reorder
+> the categories you already have and pick a headline — it is constrained to the
+> real `master.yaml` categories and cannot fabricate content.
+
 ### `scoring`
 
 ```yaml

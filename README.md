@@ -23,6 +23,12 @@ built in.
 - **Weighted job scoring** with whole-word matching (so `go` ≠ `google`) and
   punctuation keywords (`c++`, `.net`).
 - **Automatic resume selection** (mapping → keyword overlap → default).
+- **Per-job dynamic résumés (opt-in)** — point `resume.builder.path` at the
+  downloaded builder and the automaton renders a résumé **tailored to each job**
+  right before applying (e.g. an AI-heavy posting surfaces your `Data & AI`
+  skills first). Deterministic keyword clusters offline, or an optional AI mode;
+  either way it only re-emphasises your `master.yaml`, never fabricates. See
+  [configuration → `resume.builder`](docs/configuration.md#resumebuilder-dynamic-per-job-resumes).
 - **Resumes from one master file** — the automaton attaches PDFs from
   `generated/resume/`, built by the standalone
   **[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)**
