@@ -117,7 +117,7 @@ linkedin_easy_apply/
 
     configs/
 
-    resumes/
+    generated/
 
     logs/
 
@@ -309,7 +309,7 @@ Support multiple resumes.
 Example:
 
 ```
-resumes/
+generated/resume/
 
 Backend.pdf
 

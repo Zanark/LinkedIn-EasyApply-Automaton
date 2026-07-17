@@ -23,9 +23,11 @@ built in.
 - **Weighted job scoring** with whole-word matching (so `go` ≠ `google`) and
   punctuation keywords (`c++`, `.net`).
 - **Automatic resume selection** (mapping → keyword overlap → default).
-- **Resume Studio** — one master file (`master.yaml`) → a pixel-tuned one-page
-  PDF (Raleway, seafoam accent), previewable across 20 fonts and published
-  straight into `resumes/`. See **[resume_studio/](resume_studio/README.md)**.
+- **Resumes from one master file** — the automaton attaches PDFs from
+  `generated/resume/`, built by the standalone
+  **[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)**
+  (one `master.yaml` → a pixel-tuned one-page PDF, Raleway + seafoam accent,
+  publishable straight into `generated/resume/` with `--out-dir`).
 - **Safety rails**: per-run / per-company / daily caps, blacklist/whitelist,
   include/exclude keywords, URL + company-role dedupe.
 - **Dry-run & interactive** modes; per-step and on-error screenshots.
@@ -65,7 +67,7 @@ Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[dev]` (e.g.
 
 # 2. Edit configs/config.yaml (searches, scoring, limits)
 #    and configs/answers.yaml (your details & skills).
-#    Drop your resume(s) in resumes/ and reference them in config.yaml.
+#    Put your resume PDF(s) in generated/resume/ and reference them in config.yaml.
 
 # 3. Sign in to LinkedIn once (opens Edge; session is saved to the profile)
 .\.venv\Scripts\python.exe apply.py login
@@ -128,8 +130,8 @@ linkedin_easy_apply/   the package (config, parser, scoring, answers, forms,
                        browser, jobs, ai, database, cli, dashboard, utils,
                        orchestrator.py)
 configs/               *.example.yaml templates (init copies these)
-resumes/               your resume files (git-ignored)
-resume_studio/         generate a pixel-tuned resume from one master file
+generated/resume/      resume PDFs the automaton attaches (git-ignored)
+generated/coverletter/ auto-generated cover letters (git-ignored)
 docs/                  configuration, developer guide, FAQ, troubleshooting
 tests/                 unit tests for the pure-logic modules
 apply.py               CLI entry point
@@ -141,8 +143,8 @@ INIT.MD                run guide: every command & option with examples
 - **[Run Guide (INIT.MD)](INIT.MD)** — how to start the tool and **every**
   command/option with copy-paste examples.
 - [Configuration](docs/configuration.md) — every file and key explained.
-- [Resume Studio](resume_studio/README.md) — generate & fine-tune the resume the
-  automaton submits, from one master content file.
+- [Resume generation](generated/resume/README.md) — how the automaton gets the
+  resume it submits (built by the external dynamic-resume-builder).
 - [Developer Guide](docs/developer_guide.md) — architecture & how to extend.
 - [FAQ](docs/faq.md) — safety, AI, resumes, data storage.
 - [Troubleshooting](docs/troubleshooting.md) — fixes for common problems.
@@ -163,8 +165,9 @@ patterns used at bigger companies:
   relational schema used, each with complexity and where industry uses it.
 - [Algorithms](docs/algorithms.md) — normalization, fuzzy matching, weighted
   scoring, backoff and more, each with a real-world example.
-- [Resume Studio](docs/resume-studio.md) — content/presentation separation, the
-  renderer bake-off, headless-browser PDF generation, and typography-as-engineering.
+- [Resume generation](docs/resume-studio.md) — how content/presentation are kept
+  separate, and why the resume builder is a standalone tool the automaton merely
+  consumes finished PDFs from.
 
 ## Development
 

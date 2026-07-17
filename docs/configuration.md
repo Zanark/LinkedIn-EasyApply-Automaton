@@ -99,17 +99,17 @@ point to `linkedin.com`. Disabled entries are skipped. You can keep a library in
 
 | Key         | Default   | Description                                          |
 | ----------- | --------- | --------------------------------------------------- |
-| `directory` | `resumes` | Folder holding your resume files.                   |
+| `directory` | `generated/resume` | Folder holding your resume files.           |
 | `default`   | `null`    | Fallback resume filename.                           |
 | `mapping`   | `{}`      | `role/keyword -> filename`; best match wins.        |
 
 Selection order: **mapping match** (score ≥ 60) → **filename-keyword overlap**
 with the job text → **default**.
 
-> 💡 The PDFs in `resumes/` can be generated from one master content file with
-> **[Resume Studio](../resume_studio/README.md)** — run
-> `python resume_studio\render.py publish` and it drops a resume whose filename
-> matches your `mapping`/`default` here.
+> 💡 The PDFs in `generated/resume/` are built from one master content file by
+> the standalone **[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)** —
+> run `python render.py publish-variants --out-dir <this-repo>\generated\resume`
+> there and it drops resumes whose filenames match your `mapping`/`default` here.
 
 ### `scoring`
 

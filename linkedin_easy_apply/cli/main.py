@@ -116,7 +116,14 @@ def init(
     force: bool = typer.Option(False, "--force", help="Overwrite existing config files."),
 ) -> None:
     """Scaffold example configuration files into ./configs and create directories."""
-    for directory in ("configs", "resumes", "logs", "screenshots", "database"):
+    for directory in (
+        "configs",
+        "generated/resume",
+        "generated/coverletter",
+        "logs",
+        "screenshots",
+        "database",
+    ):
         Path(directory).mkdir(parents=True, exist_ok=True)
 
     pairs = [

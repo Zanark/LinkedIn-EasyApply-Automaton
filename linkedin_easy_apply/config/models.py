@@ -107,7 +107,7 @@ class AnswersConfig(BaseModel):
 class ResumeConfig(BaseModel):
     """Resume selection configuration."""
 
-    directory: Path = Path("resumes")
+    directory: Path = Path("generated/resume")
     default: str | None = None
     # role/keyword -> resume filename
     mapping: dict[str, str] = Field(default_factory=dict)

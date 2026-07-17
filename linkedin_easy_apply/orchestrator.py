@@ -43,7 +43,7 @@ from linkedin_easy_apply.utils.screenshots import ScreenshotManager
 UnknownHandler = Callable[[str, "Path | None"], "str | None"]
 ConfirmHandler = Callable[[Job], bool]
 
-_COVER_DIR = Path("generated/cover_letters")
+_COVER_DIR = Path("generated/coverletter")
 
 
 @dataclass(slots=True)

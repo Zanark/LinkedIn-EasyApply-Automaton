@@ -45,7 +45,7 @@ answers:
   fuzzy_threshold: 80
 
 resume:
-  directory: resumes
+  directory: generated/resume
   default: Backend.pdf
   mapping:
     backend engineer: Backend.pdf

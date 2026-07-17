@@ -54,11 +54,12 @@ filename-keyword overlap with the job text, then `resume.default`. See
 
 ### Where do the resume PDFs come from?
 
-You can drop any PDF in `resumes/`, **or** generate one with the bundled
-[Resume Studio](../resume_studio/README.md): keep your content in one
-`master.yaml`, run `python resume_studio\render.py publish`, and it renders a
-pixel-tuned one-page PDF straight into `resumes/`. See the studio's
-[learning guide](resume-studio.md) for how it works.
+You can drop any PDF in `generated/resume/`, **or** generate one with the
+standalone [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder):
+keep your content in one `master.yaml`, run
+`python render.py publish --out-dir <this-repo>\generated\resume`, and it renders
+a pixel-tuned one-page PDF straight into `generated/resume/`. See the
+[resume-generation guide](resume-studio.md) for how it works.
 
 ### How do I control which jobs it applies to?
 

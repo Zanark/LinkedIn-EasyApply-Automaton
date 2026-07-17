@@ -35,27 +35,28 @@ database/*.db
 database/*.sqlite
 database/*.sqlite3
 
-# Generated output (cover letters, etc.)
-generated/
+# Generated output — runtime resumes & cover letters are personal (git-ignored),
+# but keep the folder structure + guidance in the repo.
+generated/*
+!generated/resume/
+!generated/coverletter/
+generated/resume/*
+generated/coverletter/*
+!generated/resume/.gitkeep
+!generated/resume/README.md
+!generated/coverletter/.gitkeep
+!generated/coverletter/README.md
 
 # Exported application data (may contain personal data)
 applications.csv
 exports/
 
-# Local resumes & real secrets
-resumes/*.pdf
-resumes/*.docx
+# Real secrets (personal config, never commit)
 configs/config.yaml
 configs/answers.yaml
 configs/searches.yaml
 configs/question_bank.yaml
 .env
-
-# Resume studio - master content + generated PDFs contain personal data.
-# The tooling (render.py, templates/) stays committable; only PII is ignored.
-resume_studio/master.yaml
-resume_studio/out/
-resume_studio/career-dossier.md
 
 # Browser profile - contains your logged-in LinkedIn session (NEVER commit)
 .browser-profile/
