@@ -9,11 +9,15 @@ Point `configs/config.yaml` at this folder:
 ```yaml
 resume:
   directory: generated/resume
-  default: Your_Name_1page.pdf
+  default: Your_Name_Seafoam-Light.pdf
   mapping:
-    software engineer: Your_Name_SoftwareEngineer.pdf
-    full stack developer: Your_Name_FullStack.pdf
+    software engineer: Your_Name_Seafoam-Light.pdf
+    full stack developer: Your_Name_Seafoam-Light.pdf
 ```
+
+> The **Seafoam** design ships in a light (`Seafoam-Light`, white background,
+> print/ATS-safe) and a dark (`Seafoam-Dark`, soft charcoal) variant. Use the
+> light one for applications; the dark one is a stylistic alternate.
 
 ## How resumes get here
 
