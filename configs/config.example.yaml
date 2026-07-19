@@ -65,6 +65,7 @@ resume:
     enabled: false
     path: C:\path\to\dynamic-resume-builder    # folder holding render.py + master.yaml
     # python: C:\path\to\python.exe            # optional; defaults to this tool's own
+    design: Seafoam-Light     # builder HTML design for tailored resumes (e.g. Seafoam-Light | Seafoam-Dark | focus)
     mode: keyword             # keyword (offline) | ai (needs ai.enabled + OPENAI_API_KEY)
     ai_fallback_keyword: true # in ai mode, fall back to keyword clusters if the model abstains
     cache: true               # render each cluster at most once per run

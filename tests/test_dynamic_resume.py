@@ -113,6 +113,20 @@ def test_build_command_maps_flags(tmp_path):
     assert "--no-awards" in cmd  # include_awards False
     assert "--condense-older" in cmd
     assert "--out-dir" in cmd
+    assert cmd[cmd.index("--design") + 1] == "Seafoam-Light"  # default design
+
+
+def test_build_command_design_override(tmp_path):
+    drb = _builder(tmp_path, design="Seafoam-Dark")
+    emphasis = drb._emphasis_from_cluster(_AI, reason="x")
+    cmd = drb._build_command(emphasis)
+    assert cmd[cmd.index("--design") + 1] == "Seafoam-Dark"
+
+
+def test_builder_design_default_and_override():
+    assert ResumeBuilderConfig().design == "Seafoam-Light"
+    cfg = ResumeBuilderConfig.model_validate({"design": "Seafoam-Dark"})
+    assert cfg.design == "Seafoam-Dark"
 
 
 def test_default_filename_from_master(tmp_path):

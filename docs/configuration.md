@@ -144,6 +144,7 @@ resume:
 | `enabled`             | `false`   | Master switch for dynamic generation.                                       |
 | `path`                | `null`    | Folder holding the builder's `render.py` + `master.yaml`.                   |
 | `python`              | `null`    | Interpreter to run it; defaults to the automaton's own (has the deps).      |
+| `design`              | `Seafoam-Light` | Builder HTML design used for tailored resumes (e.g. `Seafoam-Light`, `Seafoam-Dark`, `focus`). |
 | `mode`                | `keyword` | `keyword` (deterministic, offline) or `ai` (asks `ai.*` provider).          |
 | `ai_fallback_keyword` | `true`    | In `ai` mode, fall back to keyword clusters if the model abstains.          |
 | `cache`               | `true`    | Render each cluster at most once per run.                                   |

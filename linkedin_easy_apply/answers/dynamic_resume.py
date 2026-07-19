@@ -239,6 +239,8 @@ class DynamicResumeBuilder:
             "--out-dir",
             str(self._resume_dir),
         ]
+        if self._config.design:
+            cmd += ["--design", self._config.design]
         if emphasis.title:
             cmd += ["--title", emphasis.title]
         if emphasis.skills_order:

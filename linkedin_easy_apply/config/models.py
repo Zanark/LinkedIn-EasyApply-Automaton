@@ -145,6 +145,7 @@ class ResumeBuilderConfig(BaseModel):
     enabled: bool = False
     path: Path | None = None  # folder holding the builder's render.py + master.yaml
     python: Path | None = None  # interpreter to run it (None -> this process's own)
+    design: str = "Seafoam-Light"  # builder HTML design used for tailored resumes
     mode: ResumeBuilderMode = ResumeBuilderMode.KEYWORD
     ai_fallback_keyword: bool = True  # in AI mode, fall back to keyword clusters
     cache: bool = True  # render each cluster at most once per run
