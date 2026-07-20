@@ -326,6 +326,46 @@ prompt defaults to **Yes**, so pressing Enter submits); omit it to submit
 automatically. The global `-v` / `--verbose` flag (placed **before** the
 command) forces `DEBUG` logging for that run.
 
+### `outreach`
+
+Opt-in post-apply messaging to the **"Meet the hiring team"** recruiters shown on
+a job page. After an application is submitted, the tool finds each recruiter card
+that exposes a free **Message** button, drafts a short personalised note, and
+**pauses for your approval** before sending it (never sends silently). Disabled by
+default.
+
+| Key                | Default | Description                                                        |
+| ------------------ | ------- | ------------------------------------------------------------------ |
+| `enabled`          | `false` | Master switch. Overridden per-run by `--message-hiring-team` / `--no-message-hiring-team`. |
+| `max_per_run`      | `5`     | Safety cap on the number of messages sent in a single run.         |
+| `template`         | *(none)* | Optional path to a custom Jinja2 message template. Falls back to the built-in template. |
+| `skip_if_messaged` | `true`  | Never message the same person twice (deduped by profile URL, else name). |
+
+```yaml
+outreach:
+  enabled: false          # opt-in
+  max_per_run: 5
+  # template: configs/hiring_message.j2
+  skip_if_messaged: true
+```
+
+Requirements & behaviour:
+
+- **Draft-and-approve only.** A message is always shown for your approval (Enter
+  sends, `n` skips) — so outreach needs an **interactive** run. It does nothing
+  under `-y`/`--yes` (all prompts off) and nothing during `--dry-run` (no submit
+  → no outreach).
+- **InMail-only cards are skipped** — only recruiters with a free Message button
+  are contacted.
+- Every drafted message (sent, declined, or failed) is recorded in the
+  `outreach_messages` table for auditing and dedupe.
+- The message context includes the role, company, your name, years of experience
+  and the job's matched skills; the recruiter's first name personalises the
+  greeting.
+
+> ⚠️ Sending unsolicited messages at volume can look like spam and put your
+> account at risk. Keep `max_per_run` small and review every draft.
+
 ---
 
 ## `answers.yaml`

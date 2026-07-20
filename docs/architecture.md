@@ -58,6 +58,7 @@ flowchart TD
         RESUME["answers/resume_selector.py<br/>ResumeSelector"]
         MATCH["forms/matching.py<br/>option matchers"]
         COVER["answers/cover_letter.py<br/>CoverLetterGenerator"]
+        MESSENGER["answers/hiring_message.py<br/>HiringTeamMessenger"]
     end
 
     subgraph IO["Imperative shell (side effects)"]
@@ -67,6 +68,7 @@ flowchart TD
         WORKFLOW["forms/easy_apply.py<br/>EasyApplyWorkflow"]
         DETECT["forms/detector.py<br/>FormFieldDetector"]
         FILLER["forms/filler.py<br/>FormFiller"]
+        OUTREACH["forms/outreach.py<br/>HiringTeamOutreach"]
         DB["database/db.py<br/>Database (Repository)"]
         SHOTS["utils/screenshots.py"]
     end
@@ -84,6 +86,8 @@ flowchart TD
     ORCH --> BROWSER --> SEARCH --> EXTRACT
     ORCH --> WORKFLOW --> DETECT
     WORKFLOW --> FILLER --> MATCH
+    ORCH --> OUTREACH --> MESSENGER
+    OUTREACH --> DB
     ORCH --> DB
     ORCH --> SHOTS
 ```
@@ -102,12 +106,14 @@ flowchart TD
 | **DynamicResumeBuilder** | `answers/dynamic_resume.py` | Optional: detect a job's cluster (keyword/AI) and shell out to the external builder to render a résumé tailored per job; caches per run; falls back on error. | I/O |
 | **option matchers** | `forms/matching.py` | `best_option` / `boolean_option` for select/radio. | pure |
 | **CoverLetterGenerator** | `answers/cover_letter.py` | Render a templated cover letter (Jinja2) to text, a `.pdf` (for uploads), and a `.txt`. | pure-ish |
+| **HiringTeamMessenger** | `answers/hiring_message.py` | Render a short personalised outreach message (Jinja2) for a hiring-team recruiter. | pure |
 | **BrowserManager** | `browser/manager.py` | Own the Playwright lifecycle; reuse your logged-in profile. | I/O |
 | **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator). | I/O |
 | **JobExtractor** | `jobs/extractor.py` | Read the detail pane → a `Job` value object. | I/O |
 | **EasyApplyWorkflow** | `forms/easy_apply.py` | Multi-step form state machine: detect→fill→next→submit/discard. | I/O |
 | **FormFieldDetector** | `forms/detector.py` | Discover fields + their options in the current step. | I/O |
 | **FormFiller** | `forms/filler.py` | Type/select/check a field using the pure matchers. | I/O |
+| **HiringTeamOutreach** | `forms/outreach.py` | Opt-in post-apply: detect "Meet the hiring team" cards, draft + (approved) send a message, dedupe + cap. | I/O |
 | **Database** | `database/db.py` | Repository over SQLite; intention-revealing methods. | I/O |
 | **AIProvider / Factory** | `ai/*` | Optional advisor. Strategy chosen by a Factory; never submits. | I/O |
 

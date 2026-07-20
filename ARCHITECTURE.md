@@ -719,6 +719,30 @@ to keep rendering crash-free.
 
 ---
 
+# Meet-the-Hiring-Team Outreach (opt-in)
+
+After a successful application the job page often shows a **"Meet the hiring
+team"** section with recruiter cards that expose a free **Message** button. When
+enabled (`outreach.enabled` or `--message-hiring-team`), the orchestrator runs a
+post-submit outreach pass that is deliberately conservative and **human-approved**:
+
+- `answers/hiring_message.py` — `HiringTeamMessenger` renders a short personalised
+  message from a Jinja2 template (built-in default, or a user `template` path),
+  mirroring the cover-letter generator.
+- `forms/outreach.py` — `HiringTeamOutreach` detects the section and cards, reads
+  each recruiter's name / profile URL / Message button, drafts a message, calls an
+  **approval callback**, and only then types (into the contenteditable compose box,
+  without emitting Enter) and sends. It de-duplicates against people already
+  messaged (`database.has_messaged_person`), skips InMail-only cards, honours a
+  per-run cap, and records every draft (`sent` / `declined` / `failed`) in the
+  `outreach_messages` table via `database.record_outreach`.
+
+It only ever acts when an approval handler is wired (so it never sends under
+`--yes`), and only after an actual submit (never during `--dry-run`). Errors are
+swallowed with a warning so outreach can never fail an otherwise-successful apply.
+
+---
+
 # Logging
 
 Every action should be logged.

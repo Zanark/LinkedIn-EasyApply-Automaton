@@ -177,3 +177,43 @@ Full suite **163 tests** green · `ruff`/`black`/`mypy` clean. Not committed —
 - [x] Docs synced: `docs/{configuration,faq,run-lifecycle}.md`, `ARCHITECTURE.md`.
 - [x] All 4 config YAMLs parse; tier keys load (3200000/3500000/4000000, default 3200000).
 - [ ] **Commit** (awaiting your OK) and push after the live test.
+
+## new todo — Notice period as a plain number (2026-07-21) — DONE (committed `9635c68`)
+
+- [x] Always answer notice-period questions with a plain integer — `45`, never `"45 days"`.
+  `notice_period_days` now wins for **every** notice phrasing (not just "…in days"); a
+  free-text `notice_period` has its first integer parsed out; a genuinely non-numeric value
+  (e.g. `Immediate`) is only kept for a non-"days" question.
+  - **Files:** `answers/resolver.py` (`_resolve_notice_period`), `tests/test_salary_notice.py`
+    (updated/added notice tests), `configs/answers*.yaml` comments, `docs/{configuration,faq}.md`.
+  - Full suite **176** green; ruff/black/mypy clean. Committed `9635c68` (not pushed).
+
+## new todo — Meet-the-hiring-team outreach (opt-in) (2026-07-21) — DONE (uncommitted)
+
+After a successful application, optionally message the **"Meet the hiring team"** recruiters —
+**draft-and-approve** so nothing is ever sent without your OK.
+
+- [x] **Opt-in config + flag.** `outreach:` block (`enabled` off by default, `max_per_run: 5`,
+  optional `template`, `skip_if_messaged`) + `--message-hiring-team / --no-message-hiring-team`
+  CLI override. Runs only in an interactive session (never under `-y`) and only after a real
+  submit (never during `--dry-run`).
+- [x] **Personalised draft.** `answers/hiring_message.py` `HiringTeamMessenger` renders a short
+  Jinja2 message (role / company / your background / recruiter first name); optional user template.
+- [x] **Detect + send.** `forms/outreach.py` `HiringTeamOutreach` finds the section + recruiter
+  cards, reads name / profile URL / Message button, drafts, **pauses for approval**, then types
+  into the contenteditable compose box (no premature Enter) and clicks Send; closes the overlay.
+- [x] **Dedupe + audit.** New `outreach_messages` table + `Database.has_messaged_person` /
+  `record_outreach`; dedupes by profile URL (else name), skips InMail-only cards, caps per run,
+  records every draft as `sent` / `declined` / `failed`.
+  - **Files:** `config/models.py` (`OutreachConfig`), `answers/hiring_message.py`,
+    `forms/outreach.py`, `forms/selectors.py` (HIRING_TEAM_* / MSG_*), `database/db.py` +
+    `database/sql/schema.sql`, `orchestrator.py` (`_make_outreach`, `_reach_out_to_hiring_team`,
+    call site after `_persist_result` on `SUBMITTED`), `cli/main.py` (flag + approval callback),
+    `configs/config*.yaml`.
+- [x] Tests: new `tests/test_outreach.py` (9: message render + defaults, DB dedup, sent/declined,
+  already-messaged skip, InMail-only skip, per-run cap, no-section). Full suite **185** green;
+  ruff/black/mypy clean; all 4 YAMLs parse.
+- [x] Docs synced: `README.md`, `INIT.MD`, `ARCHITECTURE.md`, `docs/{configuration,faq,run-lifecycle,architecture}.md`.
+- [ ] **Live-test the selectors** — `forms/selectors.py` HIRING_TEAM_* / MSG_* are screenshot-derived
+  and unvalidated against the live DOM. Needs a job that shows a "Meet the hiring team" card.
+- [ ] **Commit** (awaiting your OK) and push after the live test.

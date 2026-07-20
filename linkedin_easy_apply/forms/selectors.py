@@ -147,3 +147,61 @@ JOB_INSIGHT_TEXT = [
     ".job-details-jobs-unified-top-card__job-insight",
     ".jobs-unified-top-card__job-insight",
 ]
+
+# --- "Meet the hiring team" post-apply outreach ------------------------------
+# The section on a job page listing hiring-team members you can message.
+HIRING_TEAM_SECTION = [
+    "section:has(h2:has-text('Meet the hiring team'))",
+    "div:has(> h2:has-text('Meet the hiring team'))",
+    ".job-details-people-who-can-help__section",
+    "section.hirer-card__container",
+]
+# A single recruiter card within the section.
+HIRING_TEAM_CARD = [
+    ".hirer-card__container",
+    ".job-details-people-who-can-help__list-item",
+    "li:has(a[href*='/in/']):has(button)",
+    "div:has(> a[href*='/in/']):has(button)",
+]
+# The recruiter's display name inside a card.
+HIRING_TEAM_NAME = [
+    ".hirer-card__hirer-information a span[aria-hidden='true']",
+    "a[href*='/in/'] span[aria-hidden='true']",
+    ".hirer-card__hirer-information a",
+    "a[href*='/in/']",
+]
+# The link to the recruiter's profile (used as a stable dedup key).
+HIRING_TEAM_PROFILE_LINK = [
+    ".hirer-card__hirer-information a[href*='/in/']",
+    "a[href*='/in/']",
+]
+# The free "Message" button (skip cards that only offer paid InMail).
+HIRING_TEAM_MESSAGE_BUTTON = [
+    "button[aria-label*='Message']",
+    "button:has-text('Message')",
+    "a[aria-label*='Message']",
+    "a:has-text('Message')",
+]
+
+# The messaging compose overlay that opens after clicking "Message".
+MSG_OVERLAY = [
+    ".msg-overlay-conversation-bubble",
+    ".msg-overlay-installed",
+    "div[role='dialog']:has(.msg-form__contenteditable)",
+]
+# The contenteditable compose box (NOT a textarea).
+MSG_COMPOSE_BOX = [
+    ".msg-form__contenteditable",
+    "div[contenteditable='true'][role='textbox']",
+    "div[aria-label*='Write a message']",
+]
+MSG_SEND_BUTTON = [
+    "button.msg-form__send-button",
+    "button[type='submit']:has-text('Send')",
+    "button:has-text('Send')",
+]
+MSG_OVERLAY_CLOSE = [
+    "button[aria-label*='Close your conversation']",
+    ".msg-overlay-bubble-header__control--close-btn",
+    "button[aria-label='Dismiss']",
+]

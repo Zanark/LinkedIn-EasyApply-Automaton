@@ -131,3 +131,17 @@ CREATE TABLE IF NOT EXISTS errors (
     traceback  TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Record of "Meet the hiring team" outreach messages (dedup + audit trail).
+CREATE TABLE IF NOT EXISTS outreach_messages (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id       INTEGER REFERENCES runs(id) ON DELETE SET NULL,
+    job_id       INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+    person_name  TEXT,
+    person_key   TEXT NOT NULL,        -- dedup key: profile URL, else normalized name
+    profile_url  TEXT,
+    message      TEXT,
+    status       TEXT NOT NULL DEFAULT 'sent', -- sent | declined | failed | dry_run
+    created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_outreach_person ON outreach_messages(person_key);

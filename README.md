@@ -39,6 +39,11 @@ confirmation, dedupe and daily limits built in.
   include/exclude keywords, URL + company-role dedupe.
 - **Dry-run & interactive** modes; graceful Ctrl+C shutdown; per-step and
   on-error screenshots with automatic cleanup of unreferenced captures.
+- **Meet-the-hiring-team outreach (opt-in)** — after a successful application,
+  optionally draft a short, personalised message to each recruiter card that
+  exposes a free **Message** button and **pause for your approval** before
+  sending; dedupes people already messaged and caps messages per run. Enable
+  with `--message-hiring-team` or `outreach.enabled`.
 - **Verbose, decision-level logging** — a global `-v/--verbose` flag (or
   `logging.level: DEBUG`) narrates every field: what was parsed, which answer it
   resolved and *from where*, and whether it filled or skipped — so you see
@@ -110,7 +115,7 @@ Installing the package also exposes a `lea` console script, so `lea init`,
 | ----------------------------- | ------------------------------------------------------- |
 | `init`                        | Scaffold example configs and runtime directories.       |
 | `login`                       | Open the browser to sign in to LinkedIn once (reused).  |
-| `apply`                       | Run the Easy Apply automation (`--dry-run`, `--confirm-submit`, `--yes`, `--limit`, `--url`). |
+| `apply`                       | Run the Easy Apply automation (`--dry-run`, `--confirm-submit`, `--message-hiring-team`, `--yes`, `--limit`, `--url`). |
 | `scan`                        | Discover & score jobs without applying.                 |
 | `stats`                       | Print database statistics.                              |
 | `export`                      | Export applications (joined with jobs) to CSV/XLSX.     |

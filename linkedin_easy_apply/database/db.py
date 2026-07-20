@@ -344,6 +344,35 @@ class Database:
                 (run_id, job_id, context, message, traceback, _now()),
             )
 
+    # -- outreach -------------------------------------------------------------
+    def has_messaged_person(self, person_key: str) -> bool:
+        """True if we already sent an outreach message to this person."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM outreach_messages WHERE person_key=? AND status='sent' LIMIT 1",
+                (person_key,),
+            ).fetchone()
+            return row is not None
+
+    def record_outreach(
+        self,
+        *,
+        person_key: str,
+        person_name: str | None = None,
+        profile_url: str | None = None,
+        message: str | None = None,
+        status: str = "sent",
+        run_id: int | None = None,
+        job_id: int | None = None,
+    ) -> int:
+        with self.connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO outreach_messages (run_id, job_id, person_name, person_key,"
+                " profile_url, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (run_id, job_id, person_name, person_key, profile_url, message, status, _now()),
+            )
+            return _last_id(cur)
+
     # -- stats ----------------------------------------------------------------
     def stats(self) -> dict[str, Any]:
         """Aggregate counts used by the CLI ``stats`` command and dashboard."""

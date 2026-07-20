@@ -247,6 +247,20 @@ class RunConfig(BaseModel):
     resume_review_pause: float = 3.0
 
 
+class OutreachConfig(BaseModel):
+    """Post-apply outreach to the 'Meet the hiring team' recruiters (opt-in).
+
+    When enabled, after a successful application the tool drafts a short,
+    personalised message to each messageable hiring-team member and pauses for
+    the user's approval before sending. It is off by default and requires an
+    interactive session (it cannot run under ``--yes``)."""
+
+    enabled: bool = False  # opt-in
+    max_per_run: int = 5  # safety cap on messages sent per run
+    template: Path | None = None  # optional custom Jinja2 message template file
+    skip_if_messaged: bool = True  # never message the same person twice
+
+
 class AppConfig(BaseModel):
     """Root application configuration aggregating every section."""
 
@@ -261,5 +275,6 @@ class AppConfig(BaseModel):
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     screenshots: ScreenshotConfig = Field(default_factory=ScreenshotConfig)
     run: RunConfig = Field(default_factory=RunConfig)
+    outreach: OutreachConfig = Field(default_factory=OutreachConfig)
 
     model_config = {"extra": "forbid"}

@@ -168,6 +168,21 @@ No. If a text, number, select, checkbox, or radio field already contains the
 same value the tool would use, it logs that the field is already filled and
 leaves it as-is instead of rewriting it.
 
+### Can it message the "Meet the hiring team" recruiters after applying?
+
+Yes — it's an **opt-in, draft-and-approve** feature. Enable it with
+`--message-hiring-team` (or set `outreach.enabled: true`). After a job is
+submitted, the tool looks for the *Meet the hiring team* recruiter cards, and for
+each one that shows a free **Message** button it drafts a short, personalised note
+(role, company, your background) and **shows it to you for approval** — press
+Enter to send, `n` to skip. It never sends without your OK, never messages the
+same person twice, skips InMail-only cards, and stops after `outreach.max_per_run`
+messages. Because it always asks for approval it needs an interactive run: it does
+nothing under `-y` and nothing during `--dry-run` (no submit means no outreach).
+See [configuration → `outreach`](configuration.md#outreach). Sending lots of
+unsolicited messages can look like spam, so keep the cap small and review each
+draft.
+
 ### Where is my data stored?
 
 Locally only. A SQLite database (`database.path`) records jobs, applications,

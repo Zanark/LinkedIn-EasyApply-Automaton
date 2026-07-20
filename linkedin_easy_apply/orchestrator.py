@@ -23,6 +23,7 @@ from loguru import logger
 from linkedin_easy_apply.ai import AIProvider, build_provider
 from linkedin_easy_apply.answers.cover_letter import CoverLetterGenerator, RenderedCoverLetter
 from linkedin_easy_apply.answers.dynamic_resume import DynamicResumeBuilder
+from linkedin_easy_apply.answers.hiring_message import HiringTeamMessenger
 from linkedin_easy_apply.answers.resolver import AnswerResolver, _parse_amount
 from linkedin_easy_apply.answers.resume_selector import ResumeChoice, ResumeSelector
 from linkedin_easy_apply.answers.store import AnswerStore
@@ -36,6 +37,7 @@ from linkedin_easy_apply.forms import (
     WorkflowSettings,
 )
 from linkedin_easy_apply.forms.easy_apply import AnsweredQuestion, ApplyResult, ApplyStatus
+from linkedin_easy_apply.forms.outreach import ApproveHandler, HiringTeamOutreach
 from linkedin_easy_apply.jobs import Job, JobExtractor, JobSearch
 from linkedin_easy_apply.jobs.seniority import DEFAULT_SENIORITY, detect_seniority
 from linkedin_easy_apply.parser import QuestionParser
@@ -77,6 +79,7 @@ class Orchestrator:
         *,
         on_unknown: UnknownHandler | None = None,
         on_confirm_submit: ConfirmHandler | None = None,
+        on_approve_message: ApproveHandler | None = None,
         ai_provider: AIProvider | None = None,
     ) -> None:
         self._config = config
@@ -96,6 +99,24 @@ class Orchestrator:
         self._dynamic_resume = self._make_dynamic_resume()
         self._screenshots = ScreenshotManager(
             config.screenshots.directory, config.screenshots.enabled
+        )
+        self._outreach = self._make_outreach(on_approve_message)
+
+    def _make_outreach(self, on_approve: ApproveHandler | None) -> HiringTeamOutreach | None:
+        """Build the opt-in hiring-team messenger, or ``None`` if it can't run.
+
+        Requires both an approval handler (draft-and-approve is mandatory) and
+        ``outreach.enabled`` in config."""
+        cfg = self._config.outreach
+        if on_approve is None or not cfg.enabled:
+            return None
+        return HiringTeamOutreach(
+            HiringTeamMessenger(cfg.template),
+            on_approve=on_approve,
+            has_messaged=self._db.has_messaged_person,
+            record=self._db.record_outreach,
+            max_per_run=cfg.max_per_run,
+            skip_if_messaged=cfg.skip_if_messaged,
         )
 
     def _make_dynamic_resume(self) -> DynamicResumeBuilder | None:
@@ -449,6 +470,30 @@ class Orchestrator:
             return
 
         self._persist_result(application_id, result, summary, job)
+        if result.status is ApplyStatus.SUBMITTED and self._outreach is not None:
+            self._reach_out_to_hiring_team(browser, job, job_id, summary.run_id)
+
+    def _reach_out_to_hiring_team(
+        self, browser: BrowserManager, job: Job, job_id: int, run_id: int | None
+    ) -> None:
+        """Optionally message the job's 'Meet the hiring team' recruiters."""
+        if self._outreach is None:
+            return
+        try:
+            base_context = {
+                "role": job.title or "this role",
+                "company": job.company or "your company",
+                "candidate_name": self._answers.get_str("full_name", ""),
+                "years_experience": self._answers.get("years_experience"),
+                "tech_stack": self._scoring.score(
+                    job.title or "", job.description
+                ).matched_keywords,
+            }
+            self._outreach.reach_out(browser.page, base_context, run_id=run_id, job_id=job_id)
+        except KeyboardInterrupt:
+            raise
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Hiring-team outreach skipped for '{}': {}", job.summary, exc)
 
     def _persist_result(
         self, application_id: int, result: ApplyResult, summary: RunSummary, job: Job

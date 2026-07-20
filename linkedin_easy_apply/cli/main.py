@@ -168,6 +168,13 @@ def apply(
     ),
     limit: int | None = typer.Option(None, "--limit", "-n", help="Max applications this run."),
     url: str | None = typer.Option(None, "--url", help="Override searches with a single URL."),
+    message_hiring_team: bool | None = typer.Option(
+        None,
+        "--message-hiring-team/--no-message-hiring-team",
+        help="After a successful apply, draft a message to each 'Meet the hiring team' "
+        "recruiter and pause for your approval before sending. Needs an interactive "
+        "session. Defaults to the outreach.enabled config value.",
+    ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Never prompt; auto-answer/submit."),
 ) -> None:
     """Run the Easy Apply automation."""
@@ -175,7 +182,13 @@ def apply(
     if url:
         cfg.search = SearchConfig(searches=[SearchEntry(name="cli", url=url)])
     _run_orchestrator(
-        cfg, mode="apply", dry_run=dry_run, interactive=interactive, limit=limit, yes=yes
+        cfg,
+        mode="apply",
+        dry_run=dry_run,
+        interactive=interactive,
+        limit=limit,
+        yes=yes,
+        message_hiring_team=message_hiring_team,
     )
 
 
@@ -189,7 +202,15 @@ def scan(
     cfg = _load(config)
     if url:
         cfg.search = SearchConfig(searches=[SearchEntry(name="cli", url=url)])
-    _run_orchestrator(cfg, mode="scan", dry_run=False, interactive=False, limit=limit, yes=True)
+    _run_orchestrator(
+        cfg,
+        mode="scan",
+        dry_run=False,
+        interactive=False,
+        limit=limit,
+        yes=True,
+        message_hiring_team=False,
+    )
 
 
 def _run_orchestrator(
@@ -200,6 +221,7 @@ def _run_orchestrator(
     interactive: bool | None,
     limit: int | None,
     yes: bool,
+    message_hiring_team: bool | None = None,
 ) -> None:
     from linkedin_easy_apply.orchestrator import Orchestrator
 
@@ -224,8 +246,38 @@ def _run_orchestrator(
 
         on_confirm = _confirm
 
+    # Hiring-team outreach is opt-in and always draft-and-approve, so it needs an
+    # interactive session (never runs under --yes).
+    do_outreach = cfg.outreach.enabled if message_hiring_team is None else message_hiring_team
+    on_approve_message: Callable[[str, str], str | None] | None = None
+    if do_outreach and prompts:
+
+        def _approve(person: str, message: str) -> str | None:
+            console.print(
+                f"\n[bold cyan]Draft message to {person}:[/bold cyan]\n"
+                f"[dim]{'-' * 48}[/dim]\n{message}\n[dim]{'-' * 48}[/dim]"
+            )
+            try:
+                if typer.confirm(f"Send this message to {person}?", default=True):
+                    return message
+            except (KeyboardInterrupt, EOFError, typer.Abort) as exc:
+                raise KeyboardInterrupt from exc
+            return None
+
+        on_approve_message = _approve
+    elif do_outreach and not prompts:
+        console.print(
+            "[yellow]Hiring-team messaging needs interactive approval; "
+            "skipped because --yes was set.[/yellow]"
+        )
+
     orchestrator = Orchestrator(
-        cfg, db, answers, on_unknown=on_unknown, on_confirm_submit=on_confirm
+        cfg,
+        db,
+        answers,
+        on_unknown=on_unknown,
+        on_confirm_submit=on_confirm,
+        on_approve_message=on_approve_message,
     )
     try:
         summary = orchestrator.run(

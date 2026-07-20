@@ -258,6 +258,36 @@ INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at 
 
 ---
 
+## Phase 7.5 — Meet-the-hiring-team outreach (opt-in) — *only after a real submit*
+
+Runs **only** when outreach is wired: `outreach.enabled` (or
+`--message-hiring-team`) **and** an interactive session (an approval callback
+exists — never under `-y`), and **only** when Phase 6 actually submitted
+(`ApplyStatus.SUBMITTED`). Back in `_attempt_application`, after
+`_persist_result`, the orchestrator calls **`_reach_out_to_hiring_team(...)`** →
+**`HiringTeamOutreach.reach_out(page, base_context, ...)`**:
+
+27a. Find the **"Meet the hiring team"** section and its recruiter cards. No
+     section → returns 0 (logged at DEBUG).
+27b. For each card: read the name, profile URL and **Message** button. Cards with
+     no free Message button (InMail only) are skipped, logged at INFO.
+27c. Skip anyone already messaged (`db.has_messaged_person(key)`, deduped by
+     profile URL else name) when `skip_if_messaged`.
+27d. Draft a personalised message (`HiringTeamMessenger.render`) and call the
+     **approval callback** — the draft is printed and `typer.confirm(default=True)`
+     waits: Enter sends, `n` skips.
+27e. On approval, `_send` clicks **Message**, fills the compose box (a
+     contenteditable — filled without emitting Enter so it can't send early),
+     clicks **Send**, and closes the overlay. Declines and sends alike are written
+     to `outreach_messages` (`declined` / `sent` / `failed`), and a per-run cap
+     (`max_per_run`) stops further messages.
+
+Any error here is swallowed with a warning (outreach must never fail an
+otherwise-successful application); `KeyboardInterrupt` is re-raised so Ctrl+C
+still exits cleanly.
+
+---
+
 ## Phase 8 — Finishing the run (`run` → `finally`)
 
 28. After all searches finish (or a limit is hit), **`db.finish_run(run_id,
