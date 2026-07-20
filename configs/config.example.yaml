@@ -144,5 +144,11 @@ screenshots:
 
 run:
   dry_run: false
+  # interactive: confirm each final submit in the terminal (prompt defaults to
+  # Yes, so Enter submits). false = submit automatically. The --confirm-submit /
+  # --no-confirm-submit CLI flag overrides this per run.
   interactive: false
   pause_on_unknown_question: true
+  # Seconds to pause after logging the chosen resume so you can read which
+  # resume was picked before the application starts. Set to 0 to disable.
+  resume_review_pause: 3.0

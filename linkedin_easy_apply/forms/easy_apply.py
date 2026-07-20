@@ -104,7 +104,11 @@ class EasyApplyWorkflow:
         self._answer_lookup = answer_lookup
 
     def apply(
-        self, *, resume_path: str | None = None, cover_letter_path: str | None = None
+        self,
+        *,
+        resume_path: str | None = None,
+        cover_letter_path: str | None = None,
+        cover_letter_text: str | None = None,
     ) -> ApplyResult:
         """Run the Easy Apply flow on the currently open job page."""
         answers: list[AnsweredQuestion] = []
@@ -127,7 +131,7 @@ class EasyApplyWorkflow:
             self._screenshot(f"step-{step}")
             logger.info("--- Easy Apply step {} ---", step)
 
-            self._fill_step(modal, answers, resume_path, cover_letter_path)
+            self._fill_step(modal, answers, resume_path, cover_letter_path, cover_letter_text)
 
             action = self._detect_action(modal)
             logger.debug("Step {}: next action = {}", step, action)
@@ -196,10 +200,18 @@ class EasyApplyWorkflow:
         answers: list[AnsweredQuestion],
         resume_path: str | None,
         cover_letter_path: str | None,
+        cover_letter_text: str | None = None,
     ) -> None:
         resume_handled = self._ensure_resume_selected(modal, resume_path)
         for field_ in self._detector.detect(modal):
-            self._fill_field(field_, answers, resume_path, cover_letter_path, resume_handled)
+            self._fill_field(
+                field_,
+                answers,
+                resume_path,
+                cover_letter_path,
+                cover_letter_text,
+                resume_handled,
+            )
 
     def _fill_field(
         self,
@@ -207,6 +219,7 @@ class EasyApplyWorkflow:
         answers: list[AnsweredQuestion],
         resume_path: str | None,
         cover_letter_path: str | None,
+        cover_letter_text: str | None = None,
         resume_handled: bool = False,
     ) -> None:
         if field_.kind is FieldKind.FILE:
@@ -230,6 +243,16 @@ class EasyApplyWorkflow:
         # place; only flag when a different code is already selected.
         if parsed.category is QuestionCategory.PHONE_COUNTRY_CODE:
             self._handle_country_code(field_, parsed, understood, answers)
+            return
+
+        # Inline cover-letter textarea: fill it with the letter we generated for
+        # this job rather than prompting the user for free text.
+        if (
+            parsed.category is QuestionCategory.COVER_LETTER
+            and field_.kind in {FieldKind.TEXTAREA, FieldKind.TEXT}
+            and cover_letter_text
+        ):
+            self._fill_cover_textarea(field_, parsed, understood, cover_letter_text, answers)
             return
 
         resolution = self._resolver.resolve(parsed)
@@ -334,6 +357,41 @@ class EasyApplyWorkflow:
             self._record(answers, field_, parsed, option, "default", True)
             return
 
+        value, source = self._resolve_interactively(field_)
+        self._record(answers, field_, parsed, value, source, value is not None)
+
+    def _fill_cover_textarea(
+        self,
+        field_: FormField,
+        parsed: Any,
+        understood: str,
+        cover_letter_text: str,
+        answers: list[AnsweredQuestion],
+    ) -> None:
+        """Fill an inline cover-letter textarea with the generated letter."""
+        resolution = AnswerResolution(True, cover_letter_text, "cover_letter", parsed.answer_type)
+        if self._filler.matches_current(field_, resolution, field_.current_value):
+            logger.info(
+                "Field '{}' [{}] -> cover letter: already filled - leaving as is",
+                field_.label,
+                field_.kind.value,
+            )
+            self._record(answers, field_, parsed, field_.current_value, "prefilled", True)
+            return
+        if self._filler.fill(field_, resolution):
+            logger.info(
+                "Field '{}' [{}] -> cover letter: filled inline ({} chars)",
+                field_.label,
+                field_.kind.value,
+                len(cover_letter_text),
+            )
+            self._record(answers, field_, parsed, cover_letter_text, "cover_letter", True)
+            return
+        logger.warning(
+            "Field '{}' [{}] -> cover letter: could not fill inline - pausing",
+            field_.label,
+            field_.kind.value,
+        )
         value, source = self._resolve_interactively(field_)
         self._record(answers, field_, parsed, value, source, value is not None)
 
@@ -526,7 +584,7 @@ class EasyApplyWorkflow:
             return ApplyResult(
                 ApplyStatus.DRY_RUN, step, "Dry run - not submitted", answers=answers
             )
-        if self._settings.interactive and self._on_confirm and not self._on_confirm():
+        if self._on_confirm and not self._on_confirm():
             logger.info("You declined submission - discarding the application")
             self._discard()
             return ApplyResult(

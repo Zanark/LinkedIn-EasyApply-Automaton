@@ -101,7 +101,7 @@ flowchart TD
 | **ResumeSelector** | `answers/resume_selector.py` | Pick the best resume (mapping → overlap → default). | pure |
 | **DynamicResumeBuilder** | `answers/dynamic_resume.py` | Optional: detect a job's cluster (keyword/AI) and shell out to the external builder to render a résumé tailored per job; caches per run; falls back on error. | I/O |
 | **option matchers** | `forms/matching.py` | `best_option` / `boolean_option` for select/radio. | pure |
-| **CoverLetterGenerator** | `answers/cover_letter.py` | Render a templated cover letter (Jinja2). | pure-ish |
+| **CoverLetterGenerator** | `answers/cover_letter.py` | Render a templated cover letter (Jinja2) to text, a `.pdf` (for uploads), and a `.txt`. | pure-ish |
 | **BrowserManager** | `browser/manager.py` | Own the Playwright lifecycle; reuse your logged-in profile. | I/O |
 | **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator). | I/O |
 | **JobExtractor** | `jobs/extractor.py` | Read the detail pane → a `Job` value object. | I/O |

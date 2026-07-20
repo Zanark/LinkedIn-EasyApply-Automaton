@@ -240,8 +240,11 @@ class RunConfig(BaseModel):
     """High level run behaviour toggles."""
 
     dry_run: bool = False
-    interactive: bool = False  # prompt before final submit
+    interactive: bool = False  # confirm before final submit (prompt defaults to Yes)
     pause_on_unknown_question: bool = True
+    # Seconds to pause after logging the chosen resume so the pick is readable
+    # in the live log before applying. Set to 0 to disable the pause.
+    resume_review_pause: float = 3.0
 
 
 class AppConfig(BaseModel):

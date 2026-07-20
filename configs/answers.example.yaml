@@ -21,11 +21,27 @@ website: https://janedoe.dev
 
 # --- Preferences ------------------------------------------------------------
 years_experience: 8            # total years of professional experience
-notice_period: 30 days
-current_ctc: 3500000           # numbers can be plain integers
-expected_ctc: 5000000
-current_salary: 3500000
-expected_salary: 5000000
+notice_period: 45 days         # free-text form (used for most notice questions)
+notice_period_days: 45         # numeric-only, for "notice period in days" questions
+# Salary/CTC figures are the ANNUAL amount as a plain integer (no commas, no
+# currency). "amount in INR" questions get just the number (no commas).
+current_ctc: 3000000           # e.g. 30 LPA INR
+# Expected CTC is chosen by the role's seniority tier (detected from the job
+# title): SDE 3 / senior+ gets the ceiling, SDE 1 / junior the floor. When the
+# level can't be inferred the tool defaults to the SDE 1 band.
+expected_ctc_sde1: 3200000     # SDE 1 / junior  (e.g. 32 LPA) - also the default
+expected_ctc_sde2: 3500000     # SDE 2 / mid     (e.g. 35 LPA)
+expected_ctc_sde3: 4000000     # SDE 3 / senior+ (e.g. 40 LPA, the ceiling)
+expected_ctc: 3200000          # fallback if a tier key above is missing
+# A MONTHLY salary question divides the annual figure by 12: expected salary is
+# rounded to the nearest 100,000, current salary to the nearest 10,000. To pin an
+# exact monthly figure per tier instead, set expected_ctc_monthly_<tier> (these
+# override the division for expected-salary "monthly" questions):
+expected_ctc_monthly_sde1: 300000   # SDE 1 monthly
+expected_ctc_monthly_sde2: 320000   # SDE 2 monthly
+expected_ctc_monthly_sde3: 340000   # SDE 3 monthly
+current_salary: 3000000        # annual fallback if current_ctc is unset
+expected_salary: 3200000       # annual fallback if the expected_ctc keys are unset
 start_date: 2 weeks
 education: Bachelor's Degree
 

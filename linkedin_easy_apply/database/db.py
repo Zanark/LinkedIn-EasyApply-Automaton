@@ -226,7 +226,7 @@ class Database:
         with self.connect() as conn:
             row = conn.execute(
                 "SELECT COUNT(*) AS n FROM applications "
-                "WHERE status=? AND date(started_at)=date('now')",
+                "WHERE status=? AND date(started_at)=date('now', 'localtime')",
                 (status,),
             ).fetchone()
             return int(row["n"])
@@ -361,7 +361,7 @@ class Database:
                 ),
                 "applications_today": scalar(
                     "SELECT COUNT(*) FROM applications "
-                    "WHERE status='submitted' AND date(started_at)=date('now')"
+                    "WHERE status='submitted' AND date(started_at)=date('now', 'localtime')"
                 ),
                 "applications_failed": scalar(
                     "SELECT COUNT(*) FROM applications WHERE status='failed'"

@@ -316,11 +316,14 @@ every screenshot for debugging. Cleanup is gated by `enabled` too.
 | Key                          | Default | Description                                        |
 | ---------------------------- | ------- | -------------------------------------------------- |
 | `dry_run`                    | `false` | Fill everything but never click final submit.      |
-| `interactive`                | `false` | Ask for confirmation before each final submit.     |
+| `interactive`                | `false` | Confirm before each final submit (prompt defaults to Yes). `false` submits automatically. |
 | `pause_on_unknown_question`  | `true`  | Prompt you when a question can't be recognised.    |
+| `resume_review_pause`        | `3.0`   | Seconds to pause after logging the resume pick (0 disables). |
 
-CLI flags (`--dry-run`, `--interactive`, `--yes`, `--limit`, `--url`) override
-these per invocation. The global `-v` / `--verbose` flag (placed **before** the
+CLI flags (`--dry-run`, `--confirm-submit`, `--yes`, `--limit`, `--url`) override
+these per invocation. `--confirm-submit` turns on the terminal confirmation (its
+prompt defaults to **Yes**, so pressing Enter submits); omit it to submit
+automatically. The global `-v` / `--verbose` flag (placed **before** the
 command) forces `DEBUG` logging for that run.
 
 ---
@@ -335,8 +338,16 @@ phone: "+91-9000000000"
 phone_country_code: India (+91)
 email: jane@example.com
 years_experience: 8
-expected_ctc: 5000000
-notice_period: 30 days
+current_ctc: 3000000         # ANNUAL, plain integer (e.g. 30 LPA INR)
+expected_ctc_sde1: 3200000   # expected CTC by seniority tier — SDE 1 / junior
+expected_ctc_sde2: 3500000   # SDE 2 / mid
+expected_ctc_sde3: 4000000   # SDE 3 / senior+ (the ceiling)
+expected_ctc: 3200000        # fallback / default tier (SDE 1)
+expected_ctc_monthly_sde1: 300000  # exact monthly per tier (overrides annual/12)
+expected_ctc_monthly_sde2: 320000
+expected_ctc_monthly_sde3: 340000
+notice_period: 45 days       # free-text form
+notice_period_days: 45       # numeric-only, for "notice period in days" questions
 authorization: true          # yes/no questions accept true/false or yes/no
 visa: false
 relocation: true
@@ -363,8 +374,33 @@ Lookups are **alias-aware and normalised**, so `"Java"`, `"Core Java"`, and
 `phone_country_code` for LinkedIn's separate country-code picker; match the
 visible option label (for example `India (+91)`). If it is omitted, the tool
 silently uses `+91` and only prompts when the portal is already set to a
-*different* country code. Questions the resolver can map are documented in
-`docs/developer_guide.md` (the `QuestionCategory` table).
+*different* country code.
+
+**Salary, INR and monthly questions.** Store `current_ctc` as the **annual**
+amount (plain integer, no commas or currency). **Expected** salary is chosen per
+job by the role's **seniority tier** — inferred from the job title (falling back
+to LinkedIn's experience level) — via `expected_ctc_sde1` / `expected_ctc_sde2` /
+`expected_ctc_sde3` (SDE 1 / 2 / 3). When the level can't be inferred it defaults
+to the **SDE 1** band, and `expected_ctc` is the catch-all fallback. Answers are
+always just the number (so an "amount in INR" field gets `4000000`, never
+`40,00,000`). If a question asks for a **monthly** figure, the tool prefers an
+**exact per-tier monthly** value when configured — `expected_ctc_monthly_sde1` /
+`_sde2` / `_sde3` (e.g. `300000` / `320000` / `340000`) — so each tier reports a
+hand-picked take-home rather than a division artefact. When no monthly key is set
+it divides the annual amount by 12 instead: **expected** salary rounds to the
+nearest **100,000** while **current** salary rounds to the nearest **10,000**
+(30 LPA → `250000`/month) so it stays accurate. Expected values are recomputed per
+job and never persisted; a computed current-salary value is saved so it is reused
+without recomputing.
+
+**Notice period.** `notice_period` is the free-text answer (e.g. `45 days`) used
+for most phrasings; `notice_period_days` is the numeric-only value returned when a
+question specifically asks for the notice period **in days** (e.g. `45`). If
+`notice_period_days` is absent, the tool falls back to the number inside
+`notice_period`.
+
+Questions the resolver can map are documented in `docs/developer_guide.md` (the
+`QuestionCategory` table).
 
 ---
 

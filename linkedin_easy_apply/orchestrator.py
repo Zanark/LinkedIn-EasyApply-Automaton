@@ -12,6 +12,7 @@ interactive-approval modes, and persists everything to the database.
 from __future__ import annotations
 
 import functools
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -20,9 +21,9 @@ from typing import Any
 from loguru import logger
 
 from linkedin_easy_apply.ai import AIProvider, build_provider
-from linkedin_easy_apply.answers.cover_letter import CoverLetterGenerator
+from linkedin_easy_apply.answers.cover_letter import CoverLetterGenerator, RenderedCoverLetter
 from linkedin_easy_apply.answers.dynamic_resume import DynamicResumeBuilder
-from linkedin_easy_apply.answers.resolver import AnswerResolver
+from linkedin_easy_apply.answers.resolver import AnswerResolver, _parse_amount
 from linkedin_easy_apply.answers.resume_selector import ResumeChoice, ResumeSelector
 from linkedin_easy_apply.answers.store import AnswerStore
 from linkedin_easy_apply.browser import BrowserManager
@@ -36,6 +37,7 @@ from linkedin_easy_apply.forms import (
 )
 from linkedin_easy_apply.forms.easy_apply import AnsweredQuestion, ApplyResult, ApplyStatus
 from linkedin_easy_apply.jobs import Job, JobExtractor, JobSearch
+from linkedin_easy_apply.jobs.seniority import DEFAULT_SENIORITY, detect_seniority
 from linkedin_easy_apply.parser import QuestionParser
 from linkedin_easy_apply.scoring import ScoringEngine
 from linkedin_easy_apply.utils.paths import ensure_dir
@@ -257,7 +259,18 @@ class Orchestrator:
 
         resume = self._resume_selector.select(job.title or "", job.description)
         if resume is not None:
-            logger.debug("Selected resume '{}' for '{}'", resume.name, job.title)
+            logger.info(
+                "Best resume for '{}': '{}' ({})",
+                job.title,
+                resume.name,
+                resume.reason,
+            )
+            if mode != "scan":
+                self._pause_for_resume_review()
+        else:
+            logger.warning(
+                "No resume matched '{}' - relying on any file already attached", job.title
+            )
         ai_advice = self._advise(job, job_id)
         if ai_advice is False:
             summary.note_skip("ai_advised_against")
@@ -272,6 +285,14 @@ class Orchestrator:
             resume = tailored
 
         self._attempt_application(browser, job, job_id, resume, summary, settings)
+
+    def _pause_for_resume_review(self) -> None:
+        """Hold briefly after logging the resume pick so it is readable in the
+        live log before the application starts (configurable; 0 disables)."""
+        seconds = self._config.run.resume_review_pause
+        if seconds and seconds > 0:
+            logger.debug("Pausing {:.0f}s so the resume pick is readable", seconds)
+            time.sleep(seconds)
 
     def _tailor_resume(self, job: Job) -> ResumeChoice | None:
         """Ask the dynamic builder for a job-tailored resume (or ``None``).
@@ -339,6 +360,43 @@ class Orchestrator:
             logger.info("AI match {:.0f}% - {}", result.match_percent, result.recommendation)
         return False if result.should_apply is False else None
 
+    def _apply_expected_ctc_tier(self, job: Job) -> None:
+        """Pick the expected-CTC band for this job from its seniority tier and
+        hand it to the resolver, so the expected-salary answer scales with the
+        role (SDE 3 > SDE 2 > SDE 1). An optional per-tier monthly figure
+        (``expected_ctc_monthly_<tier>``) overrides the annual/12 computation.
+        Falls back to the default tier when the level cannot be inferred."""
+        tier = detect_seniority(job.title, job.experience_level) or DEFAULT_SENIORITY
+        annual = _parse_amount(self._tier_value(f"expected_ctc_{tier}", "expected_ctc"))
+        monthly = _parse_amount(
+            self._tier_value(f"expected_ctc_monthly_{tier}", "expected_ctc_monthly")
+        )
+        self._resolver.set_expected_ctc(annual, monthly)
+        if annual is not None:
+            note = f", monthly {int(monthly)}" if monthly is not None else ""
+            logger.info(
+                "Seniority tier for '{}': {} -> expected CTC {} ({:g} LPA){}",
+                job.title,
+                tier.upper(),
+                int(annual),
+                annual / 100000,
+                note,
+            )
+        else:
+            logger.warning(
+                "No expected-CTC configured for tier {} ('{}') - expected-salary "
+                "questions fall back to the stored value",
+                tier,
+                job.title,
+            )
+
+    def _tier_value(self, tier_key: str, fallback_key: str) -> object:
+        """Return the tier-specific answer value, falling back to a generic key."""
+        value = self._answers.get(tier_key)
+        if value is None or not str(value).strip():
+            value = self._answers.get(fallback_key)
+        return value
+
     def _attempt_application(
         self,
         browser: BrowserManager,
@@ -351,7 +409,8 @@ class Orchestrator:
         resume_id = self._db.register_resume(resume.name, str(resume.path)) if resume else None
         application_id = self._db.create_application(job_id, summary.run_id, resume_id, "pending")
 
-        cover_path = self._maybe_cover_letter(job)
+        self._apply_expected_ctc_tier(job)
+        cover = self._maybe_cover_letter(job)
         workflow = EasyApplyWorkflow(
             browser.page,
             self._parser,
@@ -370,7 +429,8 @@ class Orchestrator:
         try:
             result = workflow.apply(
                 resume_path=str(resume.path) if resume else None,
-                cover_letter_path=cover_path,
+                cover_letter_path=str(cover.pdf_path) if cover else None,
+                cover_letter_text=cover.text if cover else None,
             )
         except KeyboardInterrupt:
             logger.warning("Interrupted mid-application - discarding '{}'", job.summary)
@@ -420,9 +480,10 @@ class Orchestrator:
             self._db.record_application_answer(
                 application_id, answer.question, answer.value, answer.source, question_id
             )
-            # Learn answers the user gave us (typed or filled on the page) so
-            # future runs resolve them automatically without asking again.
-            if answer.source in {"manual", "portal"} and answer.value:
+            # Learn answers the user gave us (typed or filled on the page) plus
+            # derived values (e.g. a monthly salary computed from annual CTC) so
+            # future runs resolve them automatically without asking or recomputing.
+            if answer.source in {"manual", "portal", "computed"} and answer.value:
                 self._db.learn_answer(question_id, answer.value, answer.source)
 
     def _cleanup_screenshots(self) -> None:
@@ -456,7 +517,7 @@ class Orchestrator:
                 len(keep),
             )
 
-    def _maybe_cover_letter(self, job: Job) -> str | None:
+    def _maybe_cover_letter(self, job: Job) -> RenderedCoverLetter | None:
         try:
             context = {
                 "company": job.company or "your company",
@@ -469,7 +530,14 @@ class Orchestrator:
                 "summary": self._answers.get_str("summary"),
             }
             ensure_dir(_COVER_DIR)
-            return str(self._cover.render_to_file(context, _COVER_DIR))
+            cover = self._cover.render_all(context, _COVER_DIR)
+            logger.info(
+                "Generated cover letter for '{}' -> {} (inline text ready, {} chars)",
+                job.company or job.title or "job",
+                cover.pdf_path,
+                len(cover.text),
+            )
+            return cover
         except Exception as exc:  # pragma: no cover - defensive
             logger.debug("Cover letter generation skipped: {}", exc)
             return None

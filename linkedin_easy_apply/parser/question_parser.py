@@ -227,7 +227,29 @@ class QuestionParser:
             skill=skill,
             confidence=confidence,
             matched=matched,
+            tags=self._detect_tags(category, norm),
         )
+
+    @staticmethod
+    def _detect_tags(category: QuestionCategory, norm: str) -> list[str]:
+        """Pick up unit/period/currency modifiers that change how an answer is
+        rendered (e.g. a *monthly* salary or a notice period *in days*)."""
+        tags: list[str] = []
+        if category in {QuestionCategory.SALARY_EXPECTED, QuestionCategory.SALARY_CURRENT}:
+            if _word(norm, "monthly", "month", "months", "pm", "mo") or "per month" in norm:
+                tags.append("monthly")
+            elif _word(norm, "annual", "annually", "yearly", "annum", "pa", "lpa", "year"):
+                tags.append("annual")
+            if _word(norm, "inr", "rupee", "rupees", "rs", "lpa", "lakh", "lakhs", "lac", "lacs"):
+                tags.append("inr")
+        elif category is QuestionCategory.NOTICE_PERIOD:
+            if _word(norm, "day", "days"):
+                tags.append("days")
+            elif _word(norm, "month", "months"):
+                tags.append("months")
+            elif _word(norm, "week", "weeks"):
+                tags.append("weeks")
+        return tags
 
     def _find_skill(self, norm: str) -> str | None:
         padded = f" {norm} "

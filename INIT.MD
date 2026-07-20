@@ -34,7 +34,7 @@ A copy‑paste friendly guide to **starting the tool** and **every command / opt
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y
 
 # 3) Go live — actually submit applications (see the safety notes first!)
-.\.venv\Scripts\python.exe apply.py apply --interactive
+.\.venv\Scripts\python.exe apply.py apply --confirm-submit   # Enter = submit; auto-submits without this flag
 ```
 
 > 🟢 `--dry-run` = safe (never submits). 🔴 no `--dry-run` = real applications are submitted.
@@ -146,8 +146,8 @@ Run these top to bottom the first time:
 # 7. Full dry‑run: fill every form but never submit, with full logs
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y
 
-# 8. When you're happy, go live (confirm each submit)
-.\.venv\Scripts\python.exe apply.py apply --interactive
+# 8. When you're happy, go live (auto-submits; add --confirm-submit to approve each, Enter = submit)
+.\.venv\Scripts\python.exe apply.py apply --confirm-submit
 ```
 
 ---
@@ -263,7 +263,7 @@ Run the actual Easy Apply automation. **This is the main command** — see §7 f
 | --- | --- | --- |
 | `-c, --config PATH` | Config file. | `configs\config.yaml` |
 | `--dry-run` | Fill every form but **never submit** (reaches Submit, then discards). | off (live!) |
-| `--interactive` / `--no-interactive` | Ask you to confirm before **each** submit / don't ask. | don't ask |
+| `--confirm-submit` / `--no-confirm-submit` | Confirm before **each** submit (prompt defaults to **Yes**, so Enter submits) / submit automatically. | auto‑submit |
 | `-n, --limit INT` | Max applications (submissions) this run. | config `jobs.max_per_run` |
 | `--url TEXT` | Ignore configured searches; use this one search URL. | — |
 | `-y, --yes` | Never prompt — auto‑answer unknown questions and auto‑submit. | prompts on |
@@ -272,8 +272,8 @@ Run the actual Easy Apply automation. **This is the main command** — see §7 f
 # 🟢 Safest test: fill everything, submit nothing, no prompts, full logs
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y
 
-# 🔴 Go live but confirm each submission yourself
-.\.venv\Scripts\python.exe apply.py apply --interactive
+# 🔴 Go live but confirm each submission yourself (Enter = submit)
+.\.venv\Scripts\python.exe apply.py apply --confirm-submit
 ```
 
 > ⚠️ Running `apply` **without** `--dry-run` submits **real** applications to LinkedIn. Start with `--dry-run`.
@@ -382,47 +382,47 @@ Three flags decide **what the tool prompts you for and whether it submits**. Und
 | --- | --- |
 | `--dry-run` | If present, the tool **never submits** (fills, then discards). If absent, it **submits for real**. |
 | `-y, --yes` | If present, **no prompts at all** — unknown questions are auto‑handled and submits are automatic. |
-| `--interactive` | If present (and not `-y`), asks **"Submit this application?"** before every submission. |
+| `--confirm-submit` | If present (and not `-y`), asks **"Submit application to …?"** before every submission. The prompt **defaults to Yes**, so a bare Enter submits; type `n` to skip. Omit it to submit automatically. |
 
 ### The 8 core combinations
 
 | # | Command | Submits? | Prompts for unknown Qs? | Asks before each submit? |
 | --- | --- | :---: | :---: | :---: |
-| 1 | `apply` | 🔴 Yes | Yes | No |
-| 2 | `apply --interactive` | 🔴 Yes | Yes | **Yes** |
+| 1 | `apply` | 🔴 Yes | Yes | No (auto) |
+| 2 | `apply --confirm-submit` | 🔴 Yes | Yes | **Yes** (Enter = submit) |
 | 3 | `apply -y` | 🔴 Yes | No | No |
-| 4 | `apply -y --interactive` | 🔴 Yes | No | No¹ |
+| 4 | `apply -y --confirm-submit` | 🔴 Yes | No | No¹ |
 | 5 | `apply --dry-run` | 🟢 No | Yes | — |
-| 6 | `apply --dry-run --interactive` | 🟢 No | Yes | — |
+| 6 | `apply --dry-run --confirm-submit` | 🟢 No | Yes | — |
 | 7 | `apply --dry-run -y` | 🟢 No | No | — |
-| 8 | `apply --dry-run -y --interactive` | 🟢 No | No | — |
+| 8 | `apply --dry-run -y --confirm-submit` | 🟢 No | No | — |
 
-¹ `-y` disables all prompting, so `--interactive` has **no effect** when combined with `-y`.
+¹ `-y` disables all prompting, so `--confirm-submit` has **no effect** when combined with `-y`.
 
 ```powershell
 # 1) Live, auto‑submit, but pause to ask YOU any question it can't answer
 .\.venv\Scripts\python.exe apply.py apply
 
-# 2) Live, safest live mode — confirm every single submission yourself
-.\.venv\Scripts\python.exe apply.py apply --interactive
+# 2) Live, safest live mode — confirm every submission (Enter = submit, n = skip)
+.\.venv\Scripts\python.exe apply.py apply --confirm-submit
 
 # 3) Live, fully unattended — most aggressive, submits everything it can
 .\.venv\Scripts\python.exe apply.py apply -y
 
-# 4) Same as #3 (‑y wins; ‑‑interactive ignored)
-.\.venv\Scripts\python.exe apply.py apply -y --interactive
+# 4) Same as #3 (‑y wins; ‑‑confirm-submit ignored)
+.\.venv\Scripts\python.exe apply.py apply -y --confirm-submit
 
 # 5) Dry‑run, still asks you unknown questions (never submits)
 .\.venv\Scripts\python.exe apply.py apply --dry-run
 
-# 6) Dry‑run + interactive — nothing submits, so it just fills & asks unknowns
-.\.venv\Scripts\python.exe apply.py apply --dry-run --interactive
+# 6) Dry‑run + confirm-submit — nothing submits, so it just fills & asks unknowns
+.\.venv\Scripts\python.exe apply.py apply --dry-run --confirm-submit
 
 # 7) 🟢 RECOMMENDED for testing: dry‑run, no prompts, unattended
 .\.venv\Scripts\python.exe apply.py apply --dry-run -y
 
-# 8) Same as #7 (‑‑interactive has no effect with ‑y)
-.\.venv\Scripts\python.exe apply.py apply --dry-run -y --interactive
+# 8) Same as #7 (‑‑confirm-submit has no effect with ‑y)
+.\.venv\Scripts\python.exe apply.py apply --dry-run -y --confirm-submit
 ```
 
 ### Modifiers you can add to ANY of the above
@@ -431,8 +431,8 @@ These stack onto any combination:
 
 ```powershell
 # --limit / -n : cap the number of REAL submissions
-.\.venv\Scripts\python.exe apply.py apply -y -n 5            # submit at most 5, unattended
-.\.venv\Scripts\python.exe apply.py apply --interactive -n 3 # confirm each, stop after 3
+.\.venv\Scripts\python.exe apply.py apply -y -n 5              # submit at most 5, unattended
+.\.venv\Scripts\python.exe apply.py apply --confirm-submit -n 3 # confirm each, stop after 3
 
 # --url : run against ONE custom search instead of your config's searches
 .\.venv\Scripts\python.exe apply.py apply --dry-run -y --url "https://www.linkedin.com/jobs/search/?keywords=full%20stack%20developer&location=India&f_AL=true&f_JT=F"
@@ -443,8 +443,8 @@ These stack onto any combination:
 # -v (before the command) : full DEBUG narration of every field
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y
 
-# --no-interactive : be explicit that no per‑submit confirmation is wanted
-.\.venv\Scripts\python.exe apply.py apply -y --no-interactive
+# --no-confirm-submit : be explicit that submission should be automatic
+.\.venv\Scripts\python.exe apply.py apply --no-confirm-submit
 
 # Everything at once: verbose dry‑run, single URL, capped, alternate config
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y -n 10 -c configs\config.yaml --url "https://www.linkedin.com/jobs/search/?keywords=python&location=India&f_AL=true"
@@ -465,7 +465,7 @@ These stack onto any combination:
 | `database\easy_apply.db` | SQLite DB of jobs, applications, questions. Used by `stats`/`export`. |
 | `.browser-profile\` | Your saved LinkedIn browser session. Never commit this. |
 | `generated\resume\` | Resume PDF(s) the automaton attaches (git-ignored). Build them with the external dynamic-resume-builder. |
-| `generated\coverletter\` | Auto-generated cover letters, one `.txt` per job (git-ignored). |
+| `generated\coverletter\` | Auto-generated cover letters, a `.pdf` (for upload fields) and a `.txt` per job (git-ignored). |
 
 Watch the log live in a second PowerShell window:
 
@@ -478,7 +478,7 @@ Get-Content -Wait -Tail 40 logs\easy_apply_2026-07-13.log
 ## 9. Safety notes
 
 - 🟢 **Always start with `--dry-run`.** It fills forms and reaches the Submit button, then discards — nothing is ever sent.
-- 🔴 **`apply` without `--dry-run` submits real applications.** Use `--interactive` your first few live runs so you approve each one.
+- 🔴 **`apply` without `--dry-run` submits real applications.** Use `--confirm-submit` your first few live runs so you approve each one (Enter = submit).
 - 🧍 **Don't run two browser commands at once** (e.g. `login` and `apply`) — they share the `.browser-profile` and will collide.
 - 🔐 The tool **never** stores your LinkedIn password. You log in yourself via `login`; only the browser session cookie is reused.
 - 🧾 Logs may contain your personal data (name, phone, CTC) by design — that's why `logs\` is git‑ignored. Don't paste raw logs publicly.
@@ -528,7 +528,7 @@ Re‑run `.\.venv\Scripts\python.exe apply.py login`.
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y
 
 # Go live
-.\.venv\Scripts\python.exe apply.py apply --interactive        # confirm each
+.\.venv\Scripts\python.exe apply.py apply --confirm-submit     # approve each (Enter = submit)
 .\.venv\Scripts\python.exe apply.py apply -y -n 10             # unattended, cap 10
 
 # Review

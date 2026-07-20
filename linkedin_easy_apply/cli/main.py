@@ -161,7 +161,10 @@ def apply(
     config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c", help="Path to config.yaml."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Inspect and fill but never submit."),
     interactive: bool | None = typer.Option(
-        None, "--interactive/--no-interactive", help="Confirm before each submit."
+        None,
+        "--confirm-submit/--no-confirm-submit",
+        help="Ask in the terminal before each submit (defaults to Yes, so Enter submits). "
+        "Omit it to submit automatically.",
     ),
     limit: int | None = typer.Option(None, "--limit", "-n", help="Max applications this run."),
     url: str | None = typer.Option(None, "--url", help="Override searches with a single URL."),
@@ -205,12 +208,17 @@ def _run_orchestrator(
 
     prompts = not yes
     on_unknown = _interactive_unknown if prompts else None
+    # Submit confirmation is independent of unknown-question prompting: it only
+    # kicks in with --confirm-submit (or run.interactive), and even then it
+    # defaults to Yes so a bare Enter submits. Without it, submission is automatic.
+    do_confirm = cfg.run.interactive if interactive is None else interactive
+    confirm_active = bool(do_confirm) and prompts
     on_confirm: Callable[[Any], bool] | None = None
-    if interactive and prompts:
+    if confirm_active:
 
         def _confirm(job: Any) -> bool:
             try:
-                return typer.confirm(f"Submit application to {job.summary}?")
+                return typer.confirm(f"Submit application to {job.summary}?", default=True)
             except (KeyboardInterrupt, EOFError, typer.Abort) as exc:
                 raise KeyboardInterrupt from exc
 
@@ -221,7 +229,7 @@ def _run_orchestrator(
     )
     try:
         summary = orchestrator.run(
-            mode=mode, dry_run=dry_run, interactive=bool(interactive), limit=limit
+            mode=mode, dry_run=dry_run, interactive=confirm_active, limit=limit
         )
     except Exception as exc:  # noqa: BLE001
         console.print(f"[red]Run failed:[/red] {exc}")

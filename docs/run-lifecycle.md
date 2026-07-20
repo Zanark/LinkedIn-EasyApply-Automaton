@@ -59,8 +59,10 @@ The CLI (`cli/main.py`) prepares everything before any browser opens:
 3. **`_database()`** opens the SQLite file and runs `initialize()` (creates the
    schema on first use).
 4. **`_run_orchestrator()`** wires the interactive callbacks based on your flags
-   (`on_unknown` to ask about unrecognised questions, `on_confirm` to confirm a
-   submit), constructs the `Orchestrator`, and calls `orchestrator.run(...)`.
+   (`on_unknown` to ask about unrecognised questions — on unless `--yes`;
+   `on_confirm` to confirm a submit — **only** with `--confirm-submit`, and its
+   prompt defaults to Yes), constructs the `Orchestrator`, and calls
+   `orchestrator.run(...)`.
 
 ---
 
@@ -125,7 +127,9 @@ For **every** job, in order:
     - else if `score < threshold` → `Skip (score N < T)` and return;
     - else continue.
 16. **`_resume_selector.select(...)`** picks the best résumé (mapping → keyword
-    overlap → default).
+    overlap → default) and logs it at INFO — `Best resume for '<job>': '<file>'
+    (<reason>)` — then, when actually applying, pauses `run.resume_review_pause`
+    seconds (default 3) so the pick is readable in the live log before the form opens.
 17. **`_advise(...)`** runs the optional AI advisor; if it says *no*, skip as
     `ai_advised_against` (no-op when AI is disabled).
 18. If **`mode == "scan"`** → note `scan_only` and return — **scan never opens
@@ -154,11 +158,21 @@ gate + score logic.)
 
 19. **`db.create_application(...)`** inserts an `applications` row with status
     `pending` and returns `application_id` (so a crash still leaves a record).
-20. Optionally render a cover letter (`_maybe_cover_letter`).
+    Then **`_apply_expected_ctc_tier(job)`** infers the role's **seniority tier**
+    from the title (default **SDE 1**) and hands the matching `expected_ctc_<tier>`
+    (plus any `expected_ctc_monthly_<tier>`) to the resolver — logged at INFO, e.g.
+    `Seniority tier for '<job>': SDE3 -> expected CTC 4000000 (40 LPA), monthly
+    340000` — so the expected-salary answer scales with the level.
+20. Render a cover letter for the job (`_maybe_cover_letter`): writes both a
+    `.pdf` (the artefact upload fields expect) and a `.txt`, and returns the
+    letter **text** too so inline cover-letter textareas can be auto-filled.
+    Logged at INFO (`Generated cover letter for '<company>' -> <path>`).
 21. Build an **`EasyApplyWorkflow`**, injecting the collaborators: parser,
     resolver, field detector, filler, screenshot manager, settings, and the
     unknown/confirm callbacks.
-22. Call `workflow.apply(resume_path, cover_letter_path)` (Phase 5). If it throws,
+22. Call `workflow.apply(resume_path, cover_letter_path, cover_letter_text)`
+    (Phase 5) — the PDF path feeds file-upload fields, the text feeds inline
+    textareas. If it throws,
     log the error, mark the application `failed`, bump `summary.failed`, return.
     On success → `_persist_result(...)` (Phase 7).
 
@@ -209,13 +223,16 @@ When the **Submit** button is reached, the mode decides the ending:
 | Situation | What happens | Result status |
 | --- | --- | --- |
 | **`--dry-run`** (a test run) | Logs `DRY-RUN: reached the Submit button … discarding WITHOUT submitting`, then **`_discard()`** clicks *Discard* and confirms the discard dialog | `DRY_RUN` |
-| **`--interactive`** and you decline the confirm prompt | `_discard()` | `SKIPPED` |
-| **Real apply** (no dry-run, confirmed) | Clicks **Submit** | `SUBMITTED` |
+| **Default (auto-submit)** — no `--confirm-submit` | Clicks **Submit** straight away | `SUBMITTED` |
+| **`--confirm-submit`** and you accept (Enter / `y`) | Clicks **Submit** | `SUBMITTED` |
+| **`--confirm-submit`** and you decline (`n`) | `_discard()` | `ABORTED` |
 | Loop couldn't progress / no button | `_abort()` → `_discard()` | `ABORTED` |
 
 > **This is the safety guarantee of a test run:** in `--dry-run` the tool walks
 > the entire form to the very last step and then **throws it away** — nothing is
-> ever sent to LinkedIn.
+> ever sent to LinkedIn. The submit confirmation is a *separate* opt-in
+> (`--confirm-submit`) whose prompt defaults to **Yes**; by default `apply`
+> submits automatically.
 
 ```
 INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at step 3 - discarding WITHOUT submitting
@@ -228,10 +245,13 @@ INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at 
 25. **`db.update_application(...)`** writes the final status, reason, step count
     and screenshot path, and marks it finished.
 26. **`_record_answers(...)`** stores every question the run encountered:
-    `upsert_question` + `record_application_answer`, and for any **manually** or
-    portal-supplied answer, **`learn_answer(...)`** — so the **next run checks
-    the learned-answer DB before pausing** (durable memoization /
-    human-in-the-loop learning; ek baar batao, baar-baar nahi).
+    `upsert_question` + `record_application_answer`, and for any **manually**,
+    portal-supplied, or **computed** (e.g. a monthly *current* salary derived
+    from annual CTC) answer, **`learn_answer(...)`** — so the **next run checks
+    the learned-answer DB before pausing** (durable memoization / human-in-the-loop
+    learning; ek baar batao, baar-baar nahi). *Expected*-salary answers are tagged
+    `tier` and deliberately **not** learned, since they are job-specific and
+    recomputed per role.
 27. If `SUBMITTED`: bump `summary.applied`, log a success line, and
     **`_maybe_pause()`** throttles (a human-like pause every N applications). If
     `FAILED`: bump `summary.failed`. Otherwise: `note_skip(status)`.
@@ -268,7 +288,8 @@ Two safe ways to test, and exactly where each stops:
 > Note: `--dry-run` still runs step 18 fully, so if `resume.builder.enabled` it
 > **will render tailored résumés** into `generated/resume/` (a safe side effect —
 > nothing is submitted). Use `scan` if you want zero rendering.
-| `apply.py apply --interactive` | ✅ yes | only if you confirm | Phase 6 — asks you per submit |
+| `apply.py apply --confirm-submit` | ✅ yes | only if you accept (Enter = Yes) | Phase 6 — asks you per submit |
+| `apply.py apply` (or `-y`) | ✅ yes | ✅ automatically | Phase 6 — submits without asking |
 
 - **`scan`** is the fastest sanity check: "which jobs would it target, and what
   score did each get?" Nothing touches the application form.

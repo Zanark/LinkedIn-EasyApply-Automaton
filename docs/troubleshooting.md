@@ -89,7 +89,9 @@ to see whether LinkedIn showed the expected card or exposed a file input.
 ## The form filled but never submitted
 
 That's the point of dry-run. If you want real submissions, drop `--dry-run` and
-ensure `run.dry_run: false`. With `--interactive`, confirm at the prompt.
+ensure `run.dry_run: false` — `apply` then submits automatically. Add
+`--confirm-submit` if you'd rather approve each one at the terminal (the prompt
+defaults to Yes, so pressing Enter submits).
 
 ## It stops mid-application on an unknown question
 

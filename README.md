@@ -3,8 +3,8 @@
 A production-quality, **modular** framework that automates the LinkedIn **Easy
 Apply** workflow: it discovers jobs from your saved searches, scores them against
 your criteria, picks the right resume, fills every question from your own answer
-file, and applies — with dry-run, interactive approval, dedupe and daily limits
-built in.
+file, and applies — automatically by default, with dry-run, optional per-submit
+confirmation, dedupe and daily limits built in.
 
 > ⚠️ **Read this first.** Automating LinkedIn violates their Terms of Service and
 > can get your account restricted. This project is provided for educational
@@ -90,8 +90,11 @@ Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[dev]` (e.g.
 # 6. Practice run — fills everything, never submits
 .\.venv\Scripts\python.exe apply.py apply --dry-run
 
-# 7. For real, confirming each submission
-.\.venv\Scripts\python.exe apply.py apply --interactive
+# 7. For real — submits automatically (no clicks)
+.\.venv\Scripts\python.exe apply.py apply --limit 1
+
+# 7b. For real, but confirm each submit in the terminal (Enter = submit)
+.\.venv\Scripts\python.exe apply.py apply --confirm-submit
 ```
 
 > 💡 Add `-v` **before** any command for full DEBUG narration of every decision,
@@ -107,7 +110,7 @@ Installing the package also exposes a `lea` console script, so `lea init`,
 | ----------------------------- | ------------------------------------------------------- |
 | `init`                        | Scaffold example configs and runtime directories.       |
 | `login`                       | Open the browser to sign in to LinkedIn once (reused).  |
-| `apply`                       | Run the Easy Apply automation (`--dry-run`, `--interactive`, `--yes`, `--limit`, `--url`). |
+| `apply`                       | Run the Easy Apply automation (`--dry-run`, `--confirm-submit`, `--yes`, `--limit`, `--url`). |
 | `scan`                        | Discover & score jobs without applying.                 |
 | `stats`                       | Print database statistics.                              |
 | `export`                      | Export applications (joined with jobs) to CSV/XLSX.     |
@@ -140,7 +143,7 @@ linkedin_easy_apply/   the package (config, parser, scoring, answers, forms,
                        orchestrator.py)
 configs/               *.example.yaml templates (init copies these)
 generated/resume/      resume PDFs the automaton attaches (git-ignored)
-generated/coverletter/ auto-generated cover letters (git-ignored)
+generated/coverletter/ auto-generated cover letters, `.pdf` + `.txt` per job (git-ignored)
 docs/                  configuration, developer guide, FAQ, troubleshooting
 tests/                 unit tests for the pure-logic modules
 apply.py               CLI entry point

@@ -18,7 +18,9 @@ own risk**. Start with `scan` and `--dry-run`. See the disclaimer in the README.
 
 1. `lea scan` — discovers and scores jobs, writes nothing to LinkedIn.
 2. `lea apply --dry-run` — fills every field but never clicks the final submit.
-3. `lea apply --interactive` — asks you to confirm before each submission.
+3. `lea apply --confirm-submit` — asks you to confirm before each submission
+   (the prompt defaults to **Yes**, so pressing Enter submits). Without this
+   flag `lea apply` submits automatically.
 
 ### Is AI required?
 
@@ -40,6 +42,22 @@ Yes. Either type the answer in the terminal and the tool fills LinkedIn for you,
 or fill the field directly on the LinkedIn page and press Enter in the terminal.
 It reads the final value back from the page, records whether it came from
 `manual` input or the `portal`, and saves it for future runs.
+
+### How does it answer salary and notice-period questions?
+
+Store `current_ctc` as an **annual** plain integer (e.g. `3000000` for 30 LPA).
+**Expected** salary is picked per job by the role's **seniority tier** — inferred
+from the job title — using `expected_ctc_sde1/2/3` (SDE 1/2/3), defaulting to the
+SDE 1 band when the level is unclear. Answers are always just the number — an
+"amount in INR" field gets `4000000`, never `40,00,000`. If a question asks for a
+**monthly** figure, the tool uses an exact per-tier value when you set
+`expected_ctc_monthly_sde1/2/3` (e.g. `300000` / `320000` / `340000`); otherwise it
+divides by 12 — expected salary rounds to the nearest **100,000** and current
+salary to the nearest **10,000** (30 LPA → `250000`/month). Expected values are
+recomputed per job; a computed current-salary value is saved so it is reused. For
+notice period, `notice_period` (e.g. `45 days`) covers most phrasings while
+`notice_period_days` (e.g. `45`) is used when a field asks for the number of days
+specifically.
 
 ### How do I see exactly what the tool is doing (and why)?
 

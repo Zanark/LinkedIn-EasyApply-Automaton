@@ -70,6 +70,8 @@ mypy
 
 Jinja2 (if templates become useful)
 
+fpdf2 (cover-letter PDF rendering)
+
 Optional:
 
 Streamlit dashboard
@@ -350,6 +352,9 @@ Optional LLM recommendation
 
 Fallback to default resume
 
+Log the chosen resume at INFO with its reason, then pause `run.resume_review_pause`
+seconds (default 3) before applying so the pick is readable in the live log.
+
 When attaching inside LinkedIn, first inspect the on-page resume cards and
 select the one whose filename matches the target. Upload the PDF only when no
 matching card exists, then select the uploaded card. Ask for manual upload only
@@ -545,6 +550,17 @@ Treat phone country code as a distinct category from phone number. Default it to
 `+91` / `India (+91)` and prompt only when the portal is pre-set to a different
 country code.
 
+Detect answer modifiers (tags) that change how a value is rendered: a salary
+asked **monthly** vs **annual**, a currency hint (**INR**), and a notice period
+asked **in days**. Current salary is stored annually and divided by 12 (rounded
+to the nearest 10,000) for monthly questions. **Expected** salary is chosen per
+job by the role's **seniority tier** (SDE 1/2/3, inferred from the job title;
+default SDE 1); its monthly form uses an exact per-tier value when
+`expected_ctc_monthly_sde1/2/3` is configured and otherwise divides by 12 and
+rounds to the nearest 100,000. INR/number questions get a plain integer with no
+commas; a computed *current*-salary value is persisted as a learned combo, while
+*expected* salary (job-specific) is not.
+
 ---
 
 # Answers Database
@@ -564,7 +580,15 @@ email:
 
 notice_period:
 
+notice_period_days:
+
 current_ctc:
+
+expected_ctc_sde1:
+
+expected_ctc_sde2:
+
+expected_ctc_sde3:
 
 expected_ctc:
 
@@ -686,7 +710,12 @@ Role
 
 Tech stack
 
-Automatically generate personalized cover letters if requested.
+Automatically generate personalized cover letters if requested. Each letter is
+rendered once and persisted as a **`.pdf`** (the artefact LinkedIn upload fields
+expect) and a **`.txt`**; the letter text is also used to auto-fill inline
+cover-letter **textareas**. PDF rendering uses the pure-Python `fpdf2` engine
+(core Helvetica font, A4), so non-Latin-1 punctuation is sanitised down to ASCII
+to keep rendering crash-free.
 
 ---
 
