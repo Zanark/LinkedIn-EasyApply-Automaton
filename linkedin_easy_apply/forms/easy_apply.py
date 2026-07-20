@@ -597,7 +597,6 @@ class EasyApplyWorkflow:
             return self._abort(answers, step, "Submit button vanished")
         self._page.wait_for_timeout(1500)
         shot = self._screenshot("after-submit")
-        self._dismiss_confirmation()
         logger.info("Application submitted successfully")
         return ApplyResult(
             ApplyStatus.SUBMITTED, step, screenshot=str(shot) if shot else None, answers=answers
@@ -643,6 +642,15 @@ class EasyApplyWorkflow:
             self._click(self._page, selectors.BTN_DISMISS)
         except Exception:  # pragma: no cover - defensive
             pass
+
+    def dismiss_confirmation(self) -> None:
+        """Close the post-submit 'application sent' modal.
+
+        Called by the orchestrator *after* any hiring-team outreach has read the
+        modal, so the recruiter cards it carries are still present during
+        outreach. Safe to call when the modal is already gone.
+        """
+        self._dismiss_confirmation()
 
     def _screenshot(self, label: str) -> Path | None:
         if not self._screenshots.enabled:

@@ -6,12 +6,16 @@ flow driven through a tiny fake of the Playwright locator API.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import MagicMock
 
 from linkedin_easy_apply.answers.hiring_message import HiringTeamMessenger
+from linkedin_easy_apply.config.models import OutreachConfig
 from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.forms import selectors
 from linkedin_easy_apply.forms.outreach import HiringTeamOutreach
+from linkedin_easy_apply.orchestrator import Orchestrator
 
 # Map each selector list's FIRST candidate to a role so the fake can answer
 # ``locator(selector)`` the way the real DOM would (the code always matches on
@@ -257,3 +261,25 @@ def test_outreach_respects_per_run_cap():
 def test_outreach_no_section_returns_zero():
     flow = _outreach(lambda n, m: m)
     assert flow.reach_out(_Page(section=None), _CTX) == 0
+
+
+# -- orchestrator gating ------------------------------------------------------
+
+
+def _orch_with(outreach_cfg: OutreachConfig) -> Orchestrator:
+    orch = object.__new__(Orchestrator)
+    orch._config = SimpleNamespace(outreach=outreach_cfg)
+    orch._db = MagicMock()
+    return orch
+
+
+def test_make_outreach_needs_a_handler():
+    # No approval handler -> nothing to build, even if enabled.
+    assert _orch_with(OutreachConfig(enabled=True))._make_outreach(None) is None
+
+
+def test_make_outreach_trusts_the_handler_over_config_enabled():
+    # The CLI only wires a handler when outreach should run (flag/config already
+    # resolved), so a handler must build the messenger even if enabled is False.
+    orch = _orch_with(OutreachConfig(enabled=False))
+    assert orch._make_outreach(lambda n, m: m) is not None

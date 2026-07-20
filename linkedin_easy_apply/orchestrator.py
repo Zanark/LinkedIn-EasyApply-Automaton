@@ -105,11 +105,14 @@ class Orchestrator:
     def _make_outreach(self, on_approve: ApproveHandler | None) -> HiringTeamOutreach | None:
         """Build the opt-in hiring-team messenger, or ``None`` if it can't run.
 
-        Requires both an approval handler (draft-and-approve is mandatory) and
-        ``outreach.enabled`` in config."""
-        cfg = self._config.outreach
-        if on_approve is None or not cfg.enabled:
+        Draft-and-approve is mandatory, so the messenger only exists when an
+        approval handler is supplied. The caller (CLI) owns the enable/flag
+        decision and only wires a handler when outreach should run (respecting
+        both ``outreach.enabled`` and the ``--message-hiring-team`` override), so
+        we deliberately do **not** re-check ``cfg.enabled`` here."""
+        if on_approve is None:
             return None
+        cfg = self._config.outreach
         return HiringTeamOutreach(
             HiringTeamMessenger(cfg.template),
             on_approve=on_approve,
@@ -469,9 +472,14 @@ class Orchestrator:
             summary.failed += 1
             return
 
+        if result.status is ApplyStatus.SUBMITTED:
+            # The post-submit "application sent" modal is what carries the "Meet
+            # the hiring team" recruiter cards, so message them BEFORE closing it
+            # (and before _persist_result's throttle pause could let it auto-close).
+            if self._outreach is not None:
+                self._reach_out_to_hiring_team(browser, job, job_id, summary.run_id)
+            workflow.dismiss_confirmation()
         self._persist_result(application_id, result, summary, job)
-        if result.status is ApplyStatus.SUBMITTED and self._outreach is not None:
-            self._reach_out_to_hiring_team(browser, job, job_id, summary.run_id)
 
     def _reach_out_to_hiring_team(
         self, browser: BrowserManager, job: Job, job_id: int, run_id: int | None

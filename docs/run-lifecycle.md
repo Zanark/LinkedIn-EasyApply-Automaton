@@ -263,12 +263,16 @@ INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at 
 Runs **only** when outreach is wired: `outreach.enabled` (or
 `--message-hiring-team`) **and** an interactive session (an approval callback
 exists — never under `-y`), and **only** when Phase 6 actually submitted
-(`ApplyStatus.SUBMITTED`). Back in `_attempt_application`, after
-`_persist_result`, the orchestrator calls **`_reach_out_to_hiring_team(...)`** →
+(`ApplyStatus.SUBMITTED`). Crucially, Phase 6 now leaves the post-submit
+**"application sent" modal open** (it no longer dismisses it itself), because
+that modal is what carries the recruiter cards. Back in `_attempt_application`,
+**before** `_persist_result` and its throttle pause, the orchestrator calls
+**`_reach_out_to_hiring_team(...)`** →
 **`HiringTeamOutreach.reach_out(page, base_context, ...)`**:
 
 27a. Find the **"Meet the hiring team"** section and its recruiter cards. No
-     section → returns 0 (logged at DEBUG).
+     section (or no cards) → returns 0, logged at INFO so a `-v`-less run still
+     shows outreach ran.
 27b. For each card: read the name, profile URL and **Message** button. Cards with
      no free Message button (InMail only) are skipped, logged at INFO.
 27c. Skip anyone already messaged (`db.has_messaged_person(key)`, deduped by
@@ -282,9 +286,11 @@ exists — never under `-y`), and **only** when Phase 6 actually submitted
      to `outreach_messages` (`declined` / `sent` / `failed`), and a per-run cap
      (`max_per_run`) stops further messages.
 
-Any error here is swallowed with a warning (outreach must never fail an
-otherwise-successful application); `KeyboardInterrupt` is re-raised so Ctrl+C
-still exits cleanly.
+Afterwards the orchestrator calls **`workflow.dismiss_confirmation()`** to close
+the "application sent" modal (always, whether or not outreach ran), then
+`_persist_result` finishes. Any error inside outreach is swallowed with a warning
+(outreach must never fail an otherwise-successful application);
+`KeyboardInterrupt` is re-raised so Ctrl+C still exits cleanly.
 
 ---
 

@@ -214,6 +214,14 @@ After a successful application, optionally message the **"Meet the hiring team"*
   already-messaged skip, InMail-only skip, per-run cap, no-section). Full suite **185** green;
   ruff/black/mypy clean; all 4 YAMLs parse.
 - [x] Docs synced: `README.md`, `INIT.MD`, `ARCHITECTURE.md`, `docs/{configuration,faq,run-lifecycle,architecture}.md`.
+- [x] **Fix (live test #1 found it sent nothing):** two bugs stopped outreach from ever running —
+  (1) `_make_outreach` re-checked `outreach.enabled`, so `--message-hiring-team` alone couldn't
+  enable it (the flag built the approval handler but the orchestrator discarded it); now it trusts
+  the handler (the CLI already resolves flag-vs-config). (2) `_finalize_submit` dismissed the
+  post-submit "application sent" modal — the very thing that carries the recruiter cards — before
+  outreach could read it; dismissal moved to the orchestrator, **after** outreach. Added INFO logs
+  so a run visibly shows outreach ran + what it found; enabled `outreach` in the local
+  `configs/config.yaml`. New gating tests; full suite **187** green; ruff/black/mypy clean.
 - [ ] **Live-test the selectors** — `forms/selectors.py` HIRING_TEAM_* / MSG_* are screenshot-derived
   and unvalidated against the live DOM. Needs a job that shows a "Meet the hiring team" card.
 - [ ] **Commit** (awaiting your OK) and push after the live test.

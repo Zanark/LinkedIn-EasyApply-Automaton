@@ -86,19 +86,20 @@ class HiringTeamOutreach:
     ) -> int:
         """Message the hiring team for the current job page. Returns the count
         of messages actually sent."""
+        logger.info("Outreach: scanning for 'Meet the hiring team' recruiters...")
         if self._sent_this_run >= self._max_per_run:
             logger.info("Outreach: per-run cap ({}) reached - skipping", self._max_per_run)
             return 0
 
         section = first(page, selectors.HIRING_TEAM_SECTION)
         if section is None:
-            logger.debug("Outreach: no 'Meet the hiring team' section on this job")
+            logger.info("Outreach: no 'Meet the hiring team' section found on this page")
             return 0
 
         cards = first_group(section, selectors.HIRING_TEAM_CARD)
         count = cards.count() if cards is not None else 0
         if cards is None or not count:
-            logger.debug("Outreach: hiring-team section present but no recruiter cards")
+            logger.info("Outreach: hiring-team section present but no recruiter cards found")
             return 0
         logger.info("Outreach: found {} hiring-team card(s)", count)
 
