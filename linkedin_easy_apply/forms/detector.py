@@ -14,6 +14,7 @@ from loguru import logger
 from linkedin_easy_apply.forms import selectors
 from linkedin_easy_apply.forms.dom_utils import first, first_group, safe_text
 from linkedin_easy_apply.forms.field import FieldKind, FormField
+from linkedin_easy_apply.forms.values import current_value_of
 
 
 class FormFieldDetector:
@@ -31,13 +32,15 @@ class FormFieldDetector:
             container = containers.nth(index)
             field = self._classify(container)
             if field is not None:
+                field.current_value = current_value_of(field)
                 fields.append(field)
         for f in fields:
             logger.debug(
-                "  field: '{}' kind={} required={} options={}",
+                "  field: '{}' kind={} required={} current={!r} options={}",
                 f.label,
                 f.kind.value,
                 f.required,
+                f.current_value,
                 f.options if f.options else "-",
             )
         logger.debug("Detected {} field(s) in current step", len(fields))

@@ -137,6 +137,10 @@ screenshots:
   directory: screenshots
   on_error: true
   each_step: true
+  # Delete step/unknown screenshots at the end of a run, keeping only the ones
+  # referenced by an application record (e.g. after-submit evidence). Set to
+  # false to keep every screenshot for debugging.
+  cleanup: true
 
 run:
   dry_run: false

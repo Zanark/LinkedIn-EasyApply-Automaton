@@ -350,6 +350,11 @@ Optional LLM recommendation
 
 Fallback to default resume
 
+When attaching inside LinkedIn, first inspect the on-page resume cards and
+select the one whose filename matches the target. Upload the PDF only when no
+matching card exists, then select the uploaded card. Ask for manual upload only
+when no programmatic file input is available.
+
 **Per-job dynamic generation (optional).** When `resume.builder.enabled`, the
 orchestrator invokes the external [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)
 just before applying to render a résumé tailored to the job (keyword clusters or
@@ -390,6 +395,9 @@ User configurable.
 
 Only jobs above threshold continue.
 
+Emit an INFO scoring decision for every job as `[SCORE PASS] score/threshold |`
+or `[SCORE FAIL] score/threshold |`, while keeping the full breakdown at DEBUG.
+
 ---
 
 # Easy Apply Workflow
@@ -421,6 +429,9 @@ Close
 Detect progress.
 
 Handle unexpected dialogs.
+
+Skip filling any text, number, select, checkbox or radio field that already
+contains the resolved value.
 
 ---
 
@@ -455,6 +466,8 @@ Cover letter upload
 Numeric input
 
 Phone number
+
+Phone country code
 
 Email
 
@@ -528,6 +541,10 @@ Do NOT rely only on exact text matching.
 
 Support fuzzy matching.
 
+Treat phone country code as a distinct category from phone number. Default it to
+`+91` / `India (+91)` and prompt only when the portal is pre-set to a different
+country code.
+
 ---
 
 # Answers Database
@@ -540,6 +557,8 @@ Example:
 
 ```
 phone:
+
+phone_country_code:
 
 email:
 
@@ -593,6 +612,9 @@ Years of Java Experience
 
 Should all resolve to the same answer.
 
+Before prompting for an unconfigured answer, query previously learned question
+answers in SQLite and reuse a match automatically.
+
 ---
 
 # Unknown Questions
@@ -611,7 +633,10 @@ HTML
 
 Allow manual input.
 
-Store answer.
+Allow the user to type in the terminal, or fill the field directly in the
+LinkedIn page and press Enter so the automaton reads the portal value back.
+
+Store the final answer with source `manual` or `portal`.
 
 Learn for future runs.
 
@@ -715,6 +740,10 @@ Errors
 
 Store by timestamp.
 
+At the end of a run, when screenshot capture and cleanup are enabled, delete
+orphan step/unknown screenshots and keep screenshots referenced by application
+records, such as after-submit evidence or aborted-state captures.
+
 ---
 
 # Database
@@ -812,9 +841,15 @@ Unexpected popups
 
 Resume upload failures
 
+Ctrl+C / keyboard interrupt during any step or prompt
+
 Rate limiting
 
 Retry intelligently.
+
+On Ctrl+C, discard any open Easy Apply modal, mark the current application as
+aborted, close the browser, clean orphan screenshots, and return the normal run
+summary instead of a stack trace.
 
 ---
 

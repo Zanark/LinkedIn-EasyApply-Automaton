@@ -23,6 +23,7 @@ _FIELD_MAP: dict[QuestionCategory, tuple[str, ...]] = {
     QuestionCategory.SALARY_CURRENT: ("current_ctc", "current_salary"),
     QuestionCategory.NOTICE_PERIOD: ("notice_period",),
     QuestionCategory.PHONE: ("phone",),
+    QuestionCategory.PHONE_COUNTRY_CODE: ("phone_country_code",),
     QuestionCategory.EMAIL: ("email",),
     QuestionCategory.LINKEDIN: ("linkedin",),
     QuestionCategory.GITHUB: ("github",),
@@ -48,6 +49,11 @@ _BOOL_MAP: dict[QuestionCategory, str] = {
     QuestionCategory.REMOTE: "remote",
     QuestionCategory.ONSITE: "onsite",
 }
+
+# The dialling code left in place by default. LinkedIn pre-selects the account
+# country's code, so this is only used when nothing is stored and nothing is
+# pre-selected. The workflow otherwise leaves an existing +91 selection alone.
+_DEFAULT_PHONE_COUNTRY_CODE = "+91"
 
 
 @dataclass(slots=True)
@@ -147,4 +153,12 @@ class AnswerResolver:
                 "Resolve {} -> MISSING (no answer-key mapping for this category)",
                 category.value,
             )
+        if category is QuestionCategory.PHONE_COUNTRY_CODE:
+            # Never leave the dialling code unresolved - default to +91 (India).
+            logger.debug(
+                "Resolve {} -> {!r} (built-in default)",
+                category.value,
+                _DEFAULT_PHONE_COUNTRY_CODE,
+            )
+            return AnswerResolution(True, _DEFAULT_PHONE_COUNTRY_CODE, "default", AnswerType.CHOICE)
         return AnswerResolution.missing(answer_type)

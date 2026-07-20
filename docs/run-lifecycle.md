@@ -116,7 +116,10 @@ For **every** job, in order:
     already applied? duplicate company+role? whitelist/blacklist? include/exclude
     keywords? per-company limit?).
 14. **`score = _scoring.score(title, description)`** is computed and **always
-    recorded** via `db.record_score(...)`, whether or not the job proceeds.
+    recorded** via `db.record_score(...)`, whether or not the job proceeds. The
+    score gate also emits an INFO breadcrumb — `[SCORE PASS] N/T | …` or
+    `[SCORE FAIL] N/T | …` — so the pass/fail column is greppable without
+    turning on DEBUG.
 15. **Decision:**
     - if a gate tripped → `Skip (<reason>)` and return;
     - else if `score < threshold` → `Skip (score N < T)` and return;
@@ -135,6 +138,7 @@ For **every** job, in order:
 
 ```
 INFO  orchestrator:_process_job - Job: Lead Back End Engineer @ HDFC Bank (1 day ago)
+INFO  orchestrator:_process_job - [SCORE FAIL] 16/20 | Lead Back End Engineer @ HDFC Bank (1 day ago)
 DEBUG orchestrator:_process_job - Scored 'Lead Back End Engineer': 16 vs threshold 20 -> FAIL (breakdown: {'sql': 8, 'backend': 8})
 INFO  orchestrator:_process_job - Skip (score 16 < 20) - Lead Back End Engineer @ HDFC Bank (1 day ago)
 INFO  orchestrator:_tailor_resume - Tailored resume 'Debashish_Mishra_ai.pdf' for 'Senior AI Engineer' (tailored: keyword cluster 'ai' (score 8))
@@ -164,6 +168,9 @@ gate + score logic.)
 
 23. **`_open_modal()`** finds and clicks the **Easy Apply** button. If it's
     missing (external application) or already says *Applied*, return `SKIPPED`.
+    When the modal asks for a résumé, the workflow pehle on-page resume cards
+    dekhta hai: matching filename mila toh select, missing hai toh PDF upload,
+    and only if LinkedIn exposes no file input does it ask for manual help.
 24. Then loop over steps (`for step in 1..max_steps`). Each step:
     - wait a beat, **capture a screenshot** `step-N.png`, log `--- Easy Apply step N ---`;
     - **`_fill_step()`** → **`FormFieldDetector.detect()`** finds every field in
@@ -171,10 +178,14 @@ gate + score logic.)
       parse → resolve → fill pipeline:
       1. **parser** turns the label into a `QuestionCategory` (with a confidence),
       2. **resolver** looks up the value from `answers.yaml` (or learned answers),
-      3. if it's an **unknown** question and prompting is on, **`_handle_unknown()`**
-         asks *you* (that answer is tagged `manual` and later learned),
-      4. **filler** fills the text/select/radio; logs `filled with '…'` or
-         `could not fill - left blank` (it never guesses a wrong option);
+      3. if it's an **unknown** question and prompting is on, **`_resolve_interactively()`**
+         lets you either type in the terminal *or* fill LinkedIn directly and
+         press Enter — jo value final hai, wahi DB mein save hoti hai as
+         `manual` or `portal`,
+      4. **filler** fills the text/select/radio; if the field already has the
+         same value, it logs `already filled ... leaving as is` and skips the
+         overwrite; otherwise it logs `filled with '…'` or `could not fill -
+         left blank` (it never guesses a wrong option);
     - **`_detect_action()`** looks for the step's button → `submit` / `review` /
       `next` / `none`;
     - on **`next`/`review`**: record a "signature" of the step, click the button,
@@ -217,9 +228,10 @@ INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at 
 25. **`db.update_application(...)`** writes the final status, reason, step count
     and screenshot path, and marks it finished.
 26. **`_record_answers(...)`** stores every question the run encountered:
-    `upsert_question` + `record_application_answer`, and for any **manually**
-    supplied answer, **`learn_answer(...)`** — so the **next run resolves it
-    automatically** (durable memoization / human-in-the-loop learning).
+    `upsert_question` + `record_application_answer`, and for any **manually** or
+    portal-supplied answer, **`learn_answer(...)`** — so the **next run checks
+    the learned-answer DB before pausing** (durable memoization /
+    human-in-the-loop learning; ek baar batao, baar-baar nahi).
 27. If `SUBMITTED`: bump `summary.applied`, log a success line, and
     **`_maybe_pause()`** throttles (a human-like pause every N applications). If
     `FAILED`: bump `summary.failed`. Otherwise: `note_skip(status)`.
@@ -231,9 +243,15 @@ INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at 
 28. After all searches finish (or a limit is hit), **`db.finish_run(run_id,
     "completed", scanned, applied, skipped, failed)`** closes out the `runs` row.
     If anything threw, it's logged, the run is marked `failed`, and re-raised.
+    Ctrl+C is the polite exit path now: even at a prompt it discards any open
+    modal, marks the current application `aborted`, and still heads to summary —
+    stack trace wala drama nahi.
 29. Leaving the `with BrowserManager` block calls **`stop()`** → the browser
     closes.
-30. `run()` returns the `RunSummary`; the CLI prints the summary table
+30. The final cleanup pass removes orphan step/unknown screenshots when
+    `screenshots.enabled` and `screenshots.cleanup` are both true; screenshots
+    referenced by application records stay as evidence.
+31. `run()` returns the `RunSummary`; the CLI prints the summary table
     (scanned / applied / skipped / failed + skip-reason breakdown).
 
 ---

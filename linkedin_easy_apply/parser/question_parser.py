@@ -243,6 +243,10 @@ class QuestionParser:
         # hint in the text.
         if _word(norm, "email", "e mail"):
             return QuestionCategory.EMAIL, None, 0.97
+        # Country/dialling code must be checked *before* the generic phone rule,
+        # since "phone country code" contains the word "phone".
+        if "country code" in norm or (_word(norm, "code") and _word(norm, "country")):
+            return QuestionCategory.PHONE_COUNTRY_CODE, None, 0.96
         if _word(norm, "phone", "mobile", "whatsapp") or "contact number" in norm:
             return QuestionCategory.PHONE, None, 0.97
         if not _EXPERIENCE_HINT.search(norm):

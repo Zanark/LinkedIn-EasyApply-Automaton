@@ -15,6 +15,33 @@ from linkedin_easy_apply.utils.text import normalize
 _YES = {"yes", "true", "y", "agree", "i agree", "authorized", "authorised"}
 _NO = {"no", "false", "n", "disagree", "decline"}
 _NUMBER_RE = re.compile(r"\d+(?:\.\d+)?")
+_DIAL_CODE_RE = re.compile(r"\+\s?(\d{1,4})")
+
+
+def dial_code(value: str) -> str | None:
+    """Extract a leading international dialling code (e.g. ``+91``) from *value*.
+
+    Works for both an option label like ``"India (+91)"`` and a bare ``"+91"``.
+    Returns ``None`` when no ``+<digits>`` token is present.
+    """
+    match = _DIAL_CODE_RE.search(value or "")
+    return f"+{match.group(1)}" if match else None
+
+
+def country_code_option(desired: str, options: list[str]) -> str | None:
+    """Pick the country/dialling-code option matching *desired*.
+
+    Prefers an exact dialling-code match (``+91`` -> ``"India (+91)"``) and
+    falls back to a fuzzy name match (``"India"`` -> ``"India (+91)"``).
+    """
+    if not options:
+        return None
+    code = dial_code(desired)
+    if code is not None:
+        for option in options:
+            if dial_code(option) == code:
+                return option
+    return best_option(desired, options)
 
 
 def boolean_option(flag: bool, options: list[str]) -> str | None:

@@ -55,6 +55,13 @@ Check the run summary and logs for the skip reason:
 
 Use `lea scan` to see scores without applying.
 
+## I pressed Ctrl+C mid-run
+
+That's safe. Ctrl+C exits cleanly even at an interactive prompt: the current
+Easy Apply modal is discarded, the in-flight application is marked `aborted`,
+the browser closes, orphan screenshots are cleaned up, and the normal summary
+table is printed instead of a stack trace.
+
 ## A question was answered wrong (or skipped)
 
 Diagnose a single question offline:
@@ -73,7 +80,11 @@ resolved answer. If it's wrong:
 .\.venv\Scripts\python.exe apply.py resume-test "Senior Backend Engineer" -d "Java, AWS"
 ```
 Ensure the files exist in `resume.directory`, that `resume.mapping` values are
-real filenames, and set a `resume.default` as a safety net.
+real filenames, and set a `resume.default` as a safety net. During the form run,
+the tool first checks the resume cards LinkedIn already lists in the modal,
+selects a matching filename if present, and uploads only when that card is
+missing. With `-v`, look for resume-card detection and upload/select log lines
+to see whether LinkedIn showed the expected card or exposed a file input.
 
 ## The form filled but never submitted
 
@@ -82,8 +93,10 @@ ensure `run.dry_run: false`. With `--interactive`, confirm at the prompt.
 
 ## It stops mid-application on an unknown question
 
-Expected when `run.pause_on_unknown_question: true`. Answer at the prompt (it's
-remembered for next time), or run non-interactively with `--yes` to auto-skip.
+Expected when `run.pause_on_unknown_question: true`. Either answer at the
+prompt, or fill the field on the LinkedIn page and press Enter so the tool reads
+that value back. The final answer is remembered for next time. Run
+non-interactively with `--yes` to auto-skip instead.
 
 ## Reading the logs
 
@@ -124,6 +137,8 @@ Select-String logs\easy_apply_2026-07-13.log -Pattern '\| (INFO|WARNING|ERROR)\s
 Select-String logs\easy_apply_2026-07-13.log -Pattern 'resolver:resolve'
 # the scoring math for every job
 Select-String logs\easy_apply_2026-07-13.log -Pattern 'Scored'
+# every job that passed or failed the score gate (aligned INFO column)
+Select-String logs\easy_apply_2026-07-13.log -Pattern '\[SCORE PASS\]|\[SCORE FAIL\]'
 # what got filled vs left blank
 Select-String logs\easy_apply_2026-07-13.log -Pattern 'filled with|left blank'
 ```
@@ -132,8 +147,10 @@ Select-String logs\easy_apply_2026-07-13.log -Pattern 'filled with|left blank'
 
 - Logs: `logs/` (rotation/retention configurable under `logging`).
 - Screenshots: `screenshots/` (per-step and on-error; toggle under
-  `screenshots`). These are the fastest way to see what the page looked like when
-  something failed.
+  `screenshots`). By default `screenshots.cleanup: true` deletes unreferenced
+  step/unknown screenshots at the end of a run and keeps application evidence
+  such as after-submit or aborted-state screenshots. Set it to `false` when you
+  want every capture for debugging.
 - The quickest way to see everything the tool is doing is the global `-v` /
   `--verbose` flag (before the command), e.g.
   `.\.venv\Scripts\python.exe apply.py -v apply --dry-run` — it forces `DEBUG`

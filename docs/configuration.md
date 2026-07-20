@@ -282,6 +282,12 @@ auto-submits and can only *soft-skip* a job — it cannot force an application.
 | `directory`  | `screenshots` | Output directory.                          |
 | `on_error`   | `true`        | Capture on failures.                       |
 | `each_step`  | `true`        | Capture each Easy Apply step.              |
+| `cleanup`    | `true`        | Delete unreferenced captures at run end.     |
+
+With `cleanup: true`, step/unknown screenshots that are not referenced by an
+application record are deleted at the end of the run. After-submit evidence and
+aborted-state screenshots are kept. Set `cleanup: false` when you want to keep
+every screenshot for debugging. Cleanup is gated by `enabled` too.
 
 ### `logging`
 
@@ -295,11 +301,14 @@ auto-submits and can only *soft-skip* a job — it cannot force an application.
 | `console`   | `true`     | Also log to the console.                 |
 
 > **Verbose "brain" logging.** `INFO` prints a readable per-field narrative plus
-> step and submit/discard decisions. `DEBUG` adds the internals: parse
-> confidence, which `answers.yaml` key each value came from, every detected form
-> field with its options, and why a value did or didn't fit. You don't have to
-> edit this file — pass `-v` / `--verbose` **before** any command to force
-> `DEBUG` for that run (e.g. `apply.py -v apply --dry-run`). Logs are written to
+> step and submit/discard decisions. It also emits one aligned score gate line
+> per job: `[SCORE PASS] N/T | …` or `[SCORE FAIL] N/T | …`, so PowerShell can
+> grep decisions with `Select-String logs\easy_apply_<date>.log -Pattern
+> '\[SCORE PASS\]'`. `DEBUG` adds the internals: parse confidence, which
+> `answers.yaml` key each value came from, every detected form field with its
+> options, and why a value did or didn't fit. You don't have to edit this file —
+> pass `-v` / `--verbose` **before** any command to force `DEBUG` for that run
+> (e.g. `apply.py -v apply --dry-run`). Logs are written to
 > `logs/easy_apply_<date>.log` (git-ignored).
 
 ### `run`
@@ -323,6 +332,7 @@ Holds the values used to auto-fill questions. Three kinds of data:
 ```yaml
 # 1) Flat fields — personal & preference values.
 phone: "+91-9000000000"
+phone_country_code: India (+91)
 email: jane@example.com
 years_experience: 8
 expected_ctc: 5000000
@@ -349,9 +359,12 @@ defaults:
 ```
 
 Lookups are **alias-aware and normalised**, so `"Java"`, `"Core Java"`, and
-`"Years of Java experience"` all resolve to the same skill. Questions the
-resolver can map are documented in `docs/developer_guide.md`
-(the `QuestionCategory` table).
+`"Years of Java experience"` all resolve to the same skill. Use
+`phone_country_code` for LinkedIn's separate country-code picker; match the
+visible option label (for example `India (+91)`). If it is omitted, the tool
+silently uses `+91` and only prompts when the portal is already set to a
+*different* country code. Questions the resolver can map are documented in
+`docs/developer_guide.md` (the `QuestionCategory` table).
 
 ---
 

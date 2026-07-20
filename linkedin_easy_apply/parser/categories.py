@@ -33,6 +33,7 @@ class QuestionCategory(StrEnum):
     REMOTE = "remote"
     ONSITE = "onsite"
     PHONE = "phone"
+    PHONE_COUNTRY_CODE = "phone_country_code"
     EMAIL = "email"
     LINKEDIN = "linkedin"
     GITHUB = "github"
@@ -67,6 +68,7 @@ DEFAULT_ANSWER_TYPE: dict[QuestionCategory, AnswerType] = {
     QuestionCategory.REMOTE: AnswerType.BOOLEAN,
     QuestionCategory.ONSITE: AnswerType.BOOLEAN,
     QuestionCategory.PHONE: AnswerType.PHONE,
+    QuestionCategory.PHONE_COUNTRY_CODE: AnswerType.CHOICE,
     QuestionCategory.EMAIL: AnswerType.EMAIL,
     QuestionCategory.LINKEDIN: AnswerType.URL,
     QuestionCategory.GITHUB: AnswerType.URL,

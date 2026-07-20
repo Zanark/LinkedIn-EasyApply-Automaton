@@ -233,6 +233,7 @@ class ScreenshotConfig(BaseModel):
     directory: Path = Path("screenshots")
     on_error: bool = True
     each_step: bool = True
+    cleanup: bool = True  # remove orphan (unreferenced) screenshots at end of run
 
 
 class RunConfig(BaseModel):

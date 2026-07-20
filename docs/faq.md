@@ -29,8 +29,17 @@ missing skills, a recommendation); it can never submit an application.
 ### What happens when it hits a question it doesn't recognise?
 
 By default (`run.pause_on_unknown_question: true`) it pauses and asks you for the
-answer, then **remembers it** in the database for future runs. With `--yes` /
-non-interactive mode, unknown questions are skipped and the step is recorded.
+answer, then **remembers it** in the database for future runs. Before pausing on
+a later run, it checks those learned answers and reuses the match automatically.
+With `--yes` / non-interactive mode, unknown questions are skipped and the step
+is recorded.
+
+### It paused on a question — can I just fill it on the page instead of the terminal?
+
+Yes. Either type the answer in the terminal and the tool fills LinkedIn for you,
+or fill the field directly on the LinkedIn page and press Enter in the terminal.
+It reads the final value back from the page, records whether it came from
+`manual` input or the `portal`, and saves it for future runs.
 
 ### How do I see exactly what the tool is doing (and why)?
 
@@ -51,6 +60,12 @@ parse → resolve reasoning without opening a browser.
 In order: an explicit `resume.mapping` match (role/keyword → filename), then
 filename-keyword overlap with the job text, then `resume.default`. See
 `docs/configuration.md`.
+
+When the modal asks for a resume, the tool first reads the resume cards LinkedIn
+already shows. If one matches the chosen filename, it selects that card and does
+not upload again. If it is missing, it uploads the PDF through the file input and
+then selects it. Manual upload is only requested when LinkedIn exposes no usable
+file input — the goal is zero manual clicks.
 
 If you enable `resume.builder`, a resume is **generated per job** first (see the
 next question); the static order above is the fallback.
@@ -128,6 +143,12 @@ skipped as `below_threshold`.
 `scan_only` (`scan` mode never applies). Every decision is in the log — the
 `INFO` line reads `Skip (<reason>) - <job>`, and the preceding `DEBUG` `Scored …`
 line shows the exact keyword math.
+
+### Does it overwrite fields LinkedIn already filled correctly?
+
+No. If a text, number, select, checkbox, or radio field already contains the
+same value the tool would use, it logs that the field is already filled and
+leaves it as-is instead of rewriting it.
 
 ### Where is my data stored?
 

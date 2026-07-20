@@ -38,6 +38,7 @@ A copy‑paste friendly guide to **starting the tool** and **every command / opt
 ```
 
 > 🟢 `--dry-run` = safe (never submits). 🔴 no `--dry-run` = real applications are submitted.
+> Press Ctrl+C anytime for a clean abort + summary table.
 
 ---
 
@@ -481,6 +482,8 @@ Get-Content -Wait -Tail 40 logs\easy_apply_2026-07-13.log
 - 🧍 **Don't run two browser commands at once** (e.g. `login` and `apply`) — they share the `.browser-profile` and will collide.
 - 🔐 The tool **never** stores your LinkedIn password. You log in yourself via `login`; only the browser session cookie is reused.
 - 🧾 Logs may contain your personal data (name, phone, CTC) by design — that's why `logs\` is git‑ignored. Don't paste raw logs publicly.
+- 🧹 `screenshots.cleanup` is on by default: end-of-run cleanup keeps application evidence but tidies unreferenced step/unknown screenshots.
+- ⛔ Ctrl+C is graceful at any point: it discards an open modal, marks the current application aborted, closes the browser and prints the normal summary.
 
 ---
 

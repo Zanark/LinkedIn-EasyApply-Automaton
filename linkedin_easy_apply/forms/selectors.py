@@ -74,6 +74,38 @@ POST_SUBMIT_MARKERS = [
     "h3:has-text('Your application was sent')",
 ]
 
+# --- Resume step -------------------------------------------------------------
+# The resume step shows previously uploaded resumes as selectable cards plus an
+# "Upload resume" control. Selectors below cover the current redesign and the
+# older markup; each is a list of candidates tried in order.
+RESUME_CARD = [
+    "div.jobs-document-upload-redesign-card__container",
+    "div.jobs-resume-picker__resume",
+    "div.ui-attachment--pdf",
+    "div[class*='jobs-document-upload'][class*='card']",
+]
+RESUME_CARD_NAME = [
+    "h3.jobs-document-upload-redesign-card__file-name",
+    ".jobs-document-upload-redesign-card__file-name",
+    ".jobs-resume-picker__resume-name",
+    "[class*='file-name']",
+]
+# Class fragment (not a full selector) marking a card as currently selected.
+RESUME_CARD_SELECTED_FRAGMENT = "--selected"
+# Control that selects a given resume card.
+RESUME_SELECT_BUTTON = [
+    "button[aria-label*='Select']",
+    "input[type='radio']",
+    "label",
+]
+# The <input type=file> used to upload a new resume (often visually hidden).
+RESUME_UPLOAD_INPUT = [
+    "input[type='file'][name='file']",
+    "input.js-jobs-document-upload__input",
+    "input[type='file'][id*='upload-resume']",
+    "input[type='file']",
+]
+
 # Job list / card selectors on a search results page.
 JOB_CARD = [
     "div.job-card-container",

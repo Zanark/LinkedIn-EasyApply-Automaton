@@ -98,7 +98,17 @@ def _database(config: AppConfig) -> Database:
 def _interactive_unknown(question: str, screenshot):  # noqa: ANN001
     shot = f" (screenshot: {screenshot})" if screenshot else ""
     console.print(f"[yellow]Unknown question:[/yellow] {question}{shot}")
-    answer = typer.prompt("Your answer (leave blank to skip)", default="", show_default=False)
+    console.print(
+        "[dim]Type an answer below, or fill it directly on the page and just press Enter.[/dim]"
+    )
+    try:
+        answer = typer.prompt(
+            "Your answer (Enter to read the page / skip)", default="", show_default=False
+        )
+    except (KeyboardInterrupt, EOFError, typer.Abort) as exc:
+        # Convert a Ctrl+C at the prompt into a KeyboardInterrupt so the
+        # orchestrator can shut down gracefully (discard, close, summarise).
+        raise KeyboardInterrupt from exc
     return answer or None
 
 
@@ -199,7 +209,10 @@ def _run_orchestrator(
     if interactive and prompts:
 
         def _confirm(job: Any) -> bool:
-            return typer.confirm(f"Submit application to {job.summary}?")
+            try:
+                return typer.confirm(f"Submit application to {job.summary}?")
+            except (KeyboardInterrupt, EOFError, typer.Abort) as exc:
+                raise KeyboardInterrupt from exc
 
         on_confirm = _confirm
 

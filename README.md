@@ -22,7 +22,8 @@ built in.
   selection, logging and AI are all YAML. No hardcoded values.
 - **Weighted job scoring** with whole-word matching (so `go` ≠ `google`) and
   punctuation keywords (`c++`, `.net`).
-- **Automatic resume selection** (mapping → keyword overlap → default).
+- **Smart resume attach** — picks the best resume, reuses an existing LinkedIn
+  resume card when present, or uploads the PDF automatically.
 - **Per-job dynamic résumés (opt-in)** — point `resume.builder.path` at the
   downloaded builder and the automaton renders a résumé **tailored to each job**
   right before applying (e.g. an AI-heavy posting surfaces your `Data & AI`
@@ -36,13 +37,15 @@ built in.
   publishable straight into `generated/resume/` with `--out-dir`).
 - **Safety rails**: per-run / per-company / daily caps, blacklist/whitelist,
   include/exclude keywords, URL + company-role dedupe.
-- **Dry-run & interactive** modes; per-step and on-error screenshots.
+- **Dry-run & interactive** modes; graceful Ctrl+C shutdown; per-step and
+  on-error screenshots with automatic cleanup of unreferenced captures.
 - **Verbose, decision-level logging** — a global `-v/--verbose` flag (or
   `logging.level: DEBUG`) narrates every field: what was parsed, which answer it
   resolved and *from where*, and whether it filled or skipped — so you see
   exactly what the tool is "thinking."
 - **SQLite persistence** of jobs, applications, questions/answers, scores,
-  errors — with `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard.
+  errors — with learned-answer reuse, terminal-or-page question answering,
+  `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard.
 - **Optional AI advisor** (OpenAI) that only *advises* — it can never submit.
 - Clean, typed, tested codebase (ruff + black + mypy + pytest).
 

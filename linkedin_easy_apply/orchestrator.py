@@ -153,11 +153,31 @@ class Orchestrator:
                 skipped=summary.skipped,
                 failed=summary.failed,
             )
+        except KeyboardInterrupt:
+            logger.warning(
+                "Interrupted by Ctrl+C - shutting down gracefully "
+                "(scanned={}, applied={}, skipped={}, failed={})",
+                summary.scanned,
+                summary.applied,
+                summary.skipped,
+                summary.failed,
+            )
+            self._db.finish_run(
+                run_id,
+                "aborted",
+                scanned=summary.scanned,
+                applied=summary.applied,
+                skipped=summary.skipped,
+                failed=summary.failed,
+                notes="interrupted by user (Ctrl+C)",
+            )
         except Exception as exc:
             logger.exception("Run failed: {}", exc)
             self._db.log_error(str(exc), context="run", run_id=run_id)
             self._db.finish_run(run_id, "failed", scanned=summary.scanned, applied=summary.applied)
             raise
+        finally:
+            self._cleanup_screenshots()
         return summary
 
     # -- execution ------------------------------------------------------------
@@ -210,6 +230,13 @@ class Orchestrator:
         gate = self._pre_apply_checks(job)
         score = self._scoring.score(job.title or "", job.description)
         self._db.record_score(job_id, score.score, score.threshold, score.passed, score.breakdown)
+        logger.info(
+            "[SCORE {}] {}/{} | {}",
+            "PASS" if score.passed else "FAIL",
+            score.score,
+            score.threshold,
+            job.summary,
+        )
         logger.debug(
             "Scored '{}': {} vs threshold {} -> {} (breakdown: {})",
             job.title,
@@ -337,6 +364,7 @@ class Orchestrator:
             on_confirm_submit=(
                 functools.partial(self._on_confirm, job) if self._on_confirm else None
             ),
+            answer_lookup=self._db.get_known_answer,
         )
 
         try:
@@ -344,6 +372,13 @@ class Orchestrator:
                 resume_path=str(resume.path) if resume else None,
                 cover_letter_path=cover_path,
             )
+        except KeyboardInterrupt:
+            logger.warning("Interrupted mid-application - discarding '{}'", job.summary)
+            workflow.discard_open()
+            self._db.update_application(
+                application_id, status="aborted", reason="interrupted", finished=True
+            )
+            raise
         except Exception as exc:
             logger.exception("Application error for {}: {}", job.summary, exc)
             self._db.log_error(str(exc), context="apply", run_id=summary.run_id, job_id=job_id)
@@ -385,9 +420,41 @@ class Orchestrator:
             self._db.record_application_answer(
                 application_id, answer.question, answer.value, answer.source, question_id
             )
-            # Learn manually provided answers so future runs resolve them automatically.
-            if answer.source == "manual" and answer.value:
-                self._db.learn_answer(question_id, answer.value, "manual")
+            # Learn answers the user gave us (typed or filled on the page) so
+            # future runs resolve them automatically without asking again.
+            if answer.source in {"manual", "portal"} and answer.value:
+                self._db.learn_answer(question_id, answer.value, answer.source)
+
+    def _cleanup_screenshots(self) -> None:
+        """Delete orphan screenshots (those not referenced by any application)."""
+        cfg = self._config.screenshots
+        if not (cfg.enabled and cfg.cleanup):
+            return
+        directory = Path(cfg.directory)
+        if not directory.is_dir():
+            return
+        keep = {
+            Path(row["screenshot"]).name
+            for row in self._db.query(
+                "SELECT screenshot FROM applications WHERE screenshot IS NOT NULL"
+            )
+            if row.get("screenshot")
+        }
+        removed = 0
+        for shot in directory.glob("*.png"):
+            if shot.name in keep:
+                continue
+            try:
+                shot.unlink()
+                removed += 1
+            except OSError:  # pragma: no cover - defensive
+                pass
+        if removed:
+            logger.info(
+                "Cleaned up {} orphan screenshot(s); kept {} referenced by applications",
+                removed,
+                len(keep),
+            )
 
     def _maybe_cover_letter(self, job: Job) -> str | None:
         try:

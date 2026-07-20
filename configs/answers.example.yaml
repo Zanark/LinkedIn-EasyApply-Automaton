@@ -8,6 +8,10 @@ first_name: Jane
 last_name: Doe
 email: jane.doe@example.com
 phone: "+91-9000000000"
+# Phone country code dropdown. Match the option label LinkedIn shows, e.g.
+# "India (+91)". If omitted the tool defaults to +91 and only pauses to ask
+# when the portal is pre-set to a DIFFERENT country code.
+phone_country_code: India (+91)
 city: Bengaluru
 country: India
 linkedin: https://www.linkedin.com/in/jane-doe
