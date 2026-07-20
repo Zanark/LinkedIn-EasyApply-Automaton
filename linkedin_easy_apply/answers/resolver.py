@@ -298,36 +298,39 @@ class AnswerResolver:
         return None, None
 
     def _resolve_notice_period(self, question: ParsedQuestion) -> AnswerResolution:
-        """Resolve the notice period. A question phrased *in days* gets the plain
-        numeric ``notice_period_days`` (e.g. ``45``); otherwise the free-text
-        ``notice_period`` (e.g. ``"45 days"``) is returned as-is."""
-        if "days" in question.tags:
-            num = _parse_amount(self._store.get("notice_period_days"))
-            if num is not None:
-                rendered = _format_number(num)
-                logger.debug(
-                    "Resolve NOTICE_PERIOD -> {} (numeric days from 'notice_period_days')",
-                    rendered,
-                )
-                return AnswerResolution(True, rendered, "yaml", AnswerType.NUMBER)
-            text = self._store.get("notice_period")
-            digits = _first_int(str(text)) if text is not None else None
+        """Resolve the notice period as a plain integer whenever possible
+        (e.g. ``45``) — never with a unit suffix like ``"45 days"``. Prefers the
+        numeric ``notice_period_days``; otherwise the first integer found in the
+        free-text ``notice_period`` is used. Only a genuinely non-numeric
+        ``notice_period`` (e.g. ``"Immediate"``) is returned as text, and only
+        for a question that is not explicitly asking for a number of days."""
+        days_question = "days" in question.tags
+
+        num = _parse_amount(self._store.get("notice_period_days"))
+        if num is not None:
+            rendered = _format_number(num)
+            logger.debug(
+                "Resolve NOTICE_PERIOD -> {} (numeric days from 'notice_period_days')",
+                rendered,
+            )
+            return AnswerResolution(True, rendered, "yaml", AnswerType.NUMBER)
+
+        text = self._store.get("notice_period")
+        if text is not None and str(text).strip():
+            digits = _first_int(str(text))
             if digits is not None:
                 logger.debug(
-                    "Resolve NOTICE_PERIOD -> {} (days parsed from notice_period {!r})",
+                    "Resolve NOTICE_PERIOD -> {} (integer parsed from notice_period {!r})",
                     digits,
                     text,
                 )
                 return AnswerResolution(True, str(digits), "yaml", AnswerType.NUMBER)
-            logger.debug(
-                "Resolve NOTICE_PERIOD (days) -> MISSING "
-                "(no 'notice_period_days' and no number in 'notice_period')"
-            )
-            return AnswerResolution.missing(AnswerType.NUMBER)
+            if not days_question:
+                logger.debug(
+                    "Resolve NOTICE_PERIOD -> {!r} (non-numeric text from 'notice_period')",
+                    str(text),
+                )
+                return AnswerResolution(True, str(text), "yaml", AnswerType.TEXT)
 
-        text = self._store.get("notice_period")
-        if text is not None and str(text).strip():
-            logger.debug("Resolve NOTICE_PERIOD -> {!r} (from 'notice_period')", str(text))
-            return AnswerResolution(True, str(text), "yaml", AnswerType.TEXT)
-        logger.debug("Resolve NOTICE_PERIOD -> MISSING (no 'notice_period' set)")
-        return AnswerResolution.missing(AnswerType.TEXT)
+        logger.debug("Resolve NOTICE_PERIOD -> MISSING (no numeric notice period available)")
+        return AnswerResolution.missing(AnswerType.NUMBER if days_question else AnswerType.TEXT)

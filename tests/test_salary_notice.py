@@ -130,9 +130,27 @@ def test_notice_period_in_days_is_numeric():
     assert res.answer_type is AnswerType.NUMBER
 
 
-def test_notice_period_text_is_freeform():
+def test_notice_period_text_is_numeric_too():
+    # Even a generic "notice period" question must submit a plain number, never
+    # "45 days" - the numeric notice_period_days wins.
     _parsed, res = _resolve("What is your notice period?")
-    assert res.value == "45 days"
+    assert res.value == "45"
+    assert res.answer_type is AnswerType.NUMBER
+
+
+def test_notice_period_generic_parses_int_from_text():
+    # No notice_period_days set: pull the integer out of free-text notice_period.
+    store = AnswerStore({"notice_period": "45 days"})
+    _parsed, res = _resolve("What is your notice period?", store)
+    assert res.value == "45"
+    assert res.answer_type is AnswerType.NUMBER
+
+
+def test_notice_period_non_numeric_text_stays_text():
+    # A genuinely non-numeric value is only kept for a non-"days" question.
+    store = AnswerStore({"notice_period": "Immediate"})
+    _parsed, res = _resolve("What is your notice period?", store)
+    assert res.value == "Immediate"
     assert res.answer_type is AnswerType.TEXT
 
 

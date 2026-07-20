@@ -346,8 +346,8 @@ expected_ctc: 3200000        # fallback / default tier (SDE 1)
 expected_ctc_monthly_sde1: 300000  # exact monthly per tier (overrides annual/12)
 expected_ctc_monthly_sde2: 320000
 expected_ctc_monthly_sde3: 340000
-notice_period: 45 days       # free-text form
-notice_period_days: 45       # numeric-only, for "notice period in days" questions
+notice_period: 45 days       # fallback only (non-numeric answers like "Immediate")
+notice_period_days: 45       # numeric days used for ALL notice questions (submitted as a plain number)
 authorization: true          # yes/no questions accept true/false or yes/no
 visa: false
 relocation: true
@@ -393,11 +393,13 @@ nearest **100,000** while **current** salary rounds to the nearest **10,000**
 job and never persisted; a computed current-salary value is saved so it is reused
 without recomputing.
 
-**Notice period.** `notice_period` is the free-text answer (e.g. `45 days`) used
-for most phrasings; `notice_period_days` is the numeric-only value returned when a
-question specifically asks for the notice period **in days** (e.g. `45`). If
-`notice_period_days` is absent, the tool falls back to the number inside
-`notice_period`.
+**Notice period.** Notice-period answers are **always submitted as a plain
+number** (e.g. `45`), never `45 days` — even for a generic "What is your notice
+period?" field. `notice_period_days` (e.g. `45`) is the numeric value used for
+every notice question; if it is absent, the tool pulls the first integer out of
+the free-text `notice_period`. `notice_period` is only kept as a literal answer
+when it is genuinely non-numeric (e.g. `Immediate`) and the question is not
+asking for a number of days.
 
 Questions the resolver can map are documented in `docs/developer_guide.md` (the
 `QuestionCategory` table).

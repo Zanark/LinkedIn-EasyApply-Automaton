@@ -55,9 +55,9 @@ SDE 1 band when the level is unclear. Answers are always just the number — an
 divides by 12 — expected salary rounds to the nearest **100,000** and current
 salary to the nearest **10,000** (30 LPA → `250000`/month). Expected values are
 recomputed per job; a computed current-salary value is saved so it is reused. For
-notice period, `notice_period` (e.g. `45 days`) covers most phrasings while
-`notice_period_days` (e.g. `45`) is used when a field asks for the number of days
-specifically.
+notice period, the answer is **always a plain number** (e.g. `45`, never
+`45 days`): `notice_period_days` supplies it for every notice question, falling
+back to the first integer inside the free-text `notice_period`.
 
 ### How do I see exactly what the tool is doing (and why)?
 
