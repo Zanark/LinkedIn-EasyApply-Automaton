@@ -31,6 +31,7 @@ class BrowserConfig(BaseModel):
     viewport_height: int = 900
     slow_mo_ms: int = 0
     download_dir: Path = Path("downloads")
+    accept_downloads: bool = False
     default_timeout_ms: int = 30_000
     navigation_timeout_ms: int = 45_000
     max_retries: int = 3
@@ -145,7 +146,7 @@ class ResumeBuilderConfig(BaseModel):
     enabled: bool = False
     path: Path | None = None  # folder holding the builder's render.py + master.yaml
     python: Path | None = None  # interpreter to run it (None -> this process's own)
-    design: str = "Seafoam-Light"  # builder HTML design used for tailored resumes
+    design: str = "SeafoamTide-Light"  # builder HTML design used for tailored resumes
     mode: ResumeBuilderMode = ResumeBuilderMode.KEYWORD
     ai_fallback_keyword: bool = True  # in AI mode, fall back to keyword clusters
     cache: bool = True  # render each cluster at most once per run
@@ -247,18 +248,39 @@ class RunConfig(BaseModel):
     resume_review_pause: float = 3.0
 
 
+class OutreachMode(StrEnum):
+    """How post-apply 'Meet the hiring team' outreach behaves."""
+
+    # Read each recruiter's name + LinkedIn profile URL from the page, draft a
+    # message, and collect it into an end-of-run report. Never clicks anything,
+    # so it is safe to run fully unattended (works under ``--yes``).
+    DRAFT = "draft"
+    # Draft, pause for the user's approval, then type + send the message on
+    # LinkedIn. Needs an interactive session; falls back to DRAFT when none is
+    # available (e.g. under ``--yes``).
+    SEND = "send"
+
+
 class OutreachConfig(BaseModel):
-    """Post-apply outreach to the 'Meet the hiring team' recruiters (opt-in).
+    """Post-apply outreach to the 'Meet the hiring team' recruiters.
 
-    When enabled, after a successful application the tool drafts a short,
-    personalised message to each messageable hiring-team member and pauses for
-    the user's approval before sending. It is off by default and requires an
-    interactive session (it cannot run under ``--yes``)."""
+    By default (``mode: draft``) the tool never clicks anything: after each
+    successful application it reads the recruiter's name and LinkedIn profile
+    URL straight from the page, drafts a short personalised message, and records
+    it. At the end of the run it writes a plain-text report listing every
+    contact, their profile URL, and the drafted message so you can send them by
+    hand. This is safe to run fully unattended (it works under ``--yes``).
 
-    enabled: bool = False  # opt-in
-    max_per_run: int = 5  # safety cap on messages sent per run
+    Set ``mode: send`` to restore the interactive draft-approve-and-message flow
+    that types and sends each message on LinkedIn (needs an interactive session;
+    falls back to draft when none is available)."""
+
+    enabled: bool = True  # collect + draft + report by default
+    mode: OutreachMode = OutreachMode.DRAFT
+    max_per_run: int = 5  # safety cap on contacts handled per run
     template: Path | None = None  # optional custom Jinja2 message template file
-    skip_if_messaged: bool = True  # never message the same person twice
+    skip_if_messaged: bool = True  # never contact the same person twice
+    report_dir: Path = Path("generated/outreach")  # where the report is written
 
 
 class AppConfig(BaseModel):

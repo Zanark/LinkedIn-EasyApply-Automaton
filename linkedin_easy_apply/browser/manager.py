@@ -55,7 +55,12 @@ class BrowserManager:
 
         profile = Path(self._config.profile_path or _DEFAULT_PROFILE)
         ensure_dir(profile)
-        download_dir = ensure_dir(self._config.download_dir)
+        # Downloads are declined by default: LinkedIn re-serves the resume as a
+        # PDF "attachment" when it renders the preview pane, which Chromium would
+        # otherwise save as stray GUID files. Only accept (and prepare a target
+        # directory) when the user opts in via browser.accept_downloads.
+        accept_downloads = self._config.accept_downloads
+        download_dir = ensure_dir(self._config.download_dir) if accept_downloads else None
 
         record_har_path = None
         if self._config.record_har:
@@ -80,8 +85,8 @@ class BrowserManager:
                     "width": self._config.viewport_width,
                     "height": self._config.viewport_height,
                 },
-                accept_downloads=True,
-                downloads_path=str(download_dir),
+                accept_downloads=accept_downloads,
+                downloads_path=str(download_dir) if download_dir else None,
                 record_har_path=str(record_har_path) if record_har_path else None,
             )
         except Exception as exc:  # pragma: no cover - env specific

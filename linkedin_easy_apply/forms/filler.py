@@ -14,6 +14,7 @@ from linkedin_easy_apply.parser.categories import AnswerType
 from linkedin_easy_apply.utils.text import normalize
 
 _TRUTHY_TEXT = {"true", "yes", "y", "1", "checked", "on"}
+_NEGATIVE_TEXT = {"no", "none", "n", "never", "false", "0", "nil", "na", "n/a"}
 _NUM_RE = re.compile(r"-?\d+(?:\.\d+)?")
 
 
@@ -132,9 +133,35 @@ class FormFiller:
         if resolution.value is None:
             return None
         numeric = resolution.answer_type is AnswerType.NUMBER
-        return best_option(
-            str(resolution.value), options, numeric=numeric, fuzzy_threshold=self._fuzzy_threshold
-        )
+        # Try each candidate against the options in order (a custom answer may
+        # supply ordered dropdown fallbacks, e.g. Bengaluru then Hyderabad);
+        # otherwise fall back to the single resolved value.
+        candidates = resolution.candidates or (str(resolution.value),)
+        for candidate in candidates:
+            match = best_option(
+                candidate, options, numeric=numeric, fuzzy_threshold=self._fuzzy_threshold
+            )
+            if match is not None:
+                return match
+        # LinkedIn often renders "How many years of experience do you have with
+        # X?" or "Have you completed <degree>?" as a Yes/No <select>. When the
+        # resolved answer is a number (years) or a qualitative value (a degree,
+        # a proficiency) it won't match "Yes"/"No" above. Coerce it: a positive
+        # number -> Yes, zero -> No, any other non-empty answer -> Yes.
+        # boolean_option only returns a value when the options really are Yes/No,
+        # so this is a no-op on genuine multi-option selects.
+        inferred = _infer_yes_no(resolution)
+        if inferred is not None:
+            coerced = boolean_option(inferred, options)
+            if coerced is not None:
+                logger.debug(
+                    "Coerced {!r} -> {!r} for Yes/No field '{}'",
+                    resolution.value,
+                    coerced,
+                    field.label,
+                )
+            return coerced
+        return None
 
     def _select(self, control: Any, choice: str) -> bool:
         try:
@@ -171,3 +198,28 @@ def _first_float(text: str) -> float | None:
 def _numbers_equal(left: str, right: str) -> bool:
     a, b = _first_float(left), _first_float(right)
     return a is not None and b is not None and a == b
+
+
+def _infer_yes_no(resolution: AnswerResolution) -> bool | None:
+    """Best-effort Yes/No when a boolean dropdown receives a non-boolean answer.
+
+    LinkedIn frequently renders "How many years of experience do you have with
+    X?" or "Have you completed <degree>?" as a Yes/No ``<select>``. Map a purely
+    numeric answer (years) to Yes when > 0 and No when 0; map any other non-empty,
+    non-negative answer (a degree, a proficiency level) to Yes. Returns ``None``
+    when there is nothing meaningful to coerce (the caller then leaves it blank).
+    """
+    value = resolution.value
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    num = _first_float(text)
+    if num is not None and _NUM_RE.fullmatch(text.replace(",", "").replace(" ", "")):
+        return num > 0
+    if resolution.answer_type is AnswerType.NUMBER and num is not None:
+        return num > 0
+    if normalize(text) in _NEGATIVE_TEXT:
+        return False
+    return True

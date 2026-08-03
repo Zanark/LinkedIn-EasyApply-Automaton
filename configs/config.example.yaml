@@ -13,6 +13,9 @@ browser:
   viewport_height: 900
   slow_mo_ms: 0
   download_dir: downloads
+  accept_downloads: false        # decline browser downloads (LinkedIn's resume
+                                 # preview is re-served as a PDF attachment); set
+                                 # true only if you actually need saved downloads
   default_timeout_ms: 30000
   navigation_timeout_ms: 45000
   max_retries: 3
@@ -65,7 +68,7 @@ resume:
     enabled: false
     path: C:\path\to\dynamic-resume-builder    # folder holding render.py + master.yaml
     # python: C:\path\to\python.exe            # optional; defaults to this tool's own
-    design: Seafoam-Light     # builder HTML design for tailored resumes (e.g. Seafoam-Light | Seafoam-Dark | focus)
+    design: SeafoamTide-Light # builder HTML design for tailored resumes (e.g. SeafoamTide-Light | SeafoamBubbles-Light | focus)
     mode: keyword             # keyword (offline) | ai (needs ai.enabled + OPENAI_API_KEY)
     ai_fallback_keyword: true # in ai mode, fall back to keyword clusters if the model abstains
     cache: true               # render each cluster at most once per run
@@ -153,12 +156,18 @@ run:
   # resume was picked before the application starts. Set to 0 to disable.
   resume_review_pause: 3.0
 
-# Opt-in: after a successful application, draft a short personalised message to
-# each "Meet the hiring team" recruiter and pause for your approval before
-# sending. Requires an interactive run (never sends under --yes). The
-# --message-hiring-team / --no-message-hiring-team CLI flag overrides `enabled`.
+# After a successful application, handle the "Meet the hiring team" recruiters.
+# In the default `draft` mode the tool reads each recruiter's name + LinkedIn
+# profile URL from the page, drafts a short personalised message, and writes a
+# plain-text report to `report_dir` at the end of the run for you to send by
+# hand -- it clicks nothing and runs fully unattended (even under --yes).
+# Set `mode: send` to instead pause for approval and send each message on
+# LinkedIn (needs an interactive run; falls back to `draft` under --yes).
+# The --message-hiring-team / --no-message-hiring-team CLI flag overrides `enabled`.
 outreach:
-  enabled: false          # off by default
-  max_per_run: 5          # safety cap on messages sent per run
+  enabled: true           # collect contacts + draft messages + write the report
+  mode: draft             # draft (report only, no clicking) | send (message on LinkedIn)
+  max_per_run: 5          # safety cap on contacts handled per run
   # template: path/to/message.j2   # optional custom Jinja2 message template
-  skip_if_messaged: true  # never message the same person twice
+  skip_if_messaged: true  # never contact the same person twice
+  report_dir: generated/outreach   # where the plain-text report is written

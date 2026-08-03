@@ -19,7 +19,7 @@ import yaml
 
 from linkedin_easy_apply.utils.text import normalize
 
-_RESERVED = {"skills", "aliases", "defaults"}
+_RESERVED = {"skills", "aliases", "defaults", "custom_questions"}
 
 _TRUTHY = {"yes", "true", "y", "1", "authorized", "authorised"}
 _FALSY = {"no", "false", "n", "0"}
@@ -40,6 +40,45 @@ class AnswerStore:
         }
         self._skill_years: dict[str, float] = {}
         self._load_skills(data.get("skills") or {})
+        self._custom: list[tuple[list[str], str | list[str]]] = []
+        self._load_custom_questions(data.get("custom_questions") or [])
+
+    def _load_custom_questions(self, entries: Any) -> None:
+        """Parse the optional ``custom_questions`` list.
+
+        Each entry maps one or more keyword patterns to a canned answer::
+
+            custom_questions:
+              - match: "shift timings"          # string or list of strings
+                answer: "Yes"
+              - match: "which location"
+                answer: ["Bengaluru", "Hyderabad"]   # tried in order vs options
+
+        A question is answered when any (normalised) pattern is a substring of
+        the (normalised) question text - the escape hatch for arbitrary custom
+        screening questions the category parser cannot recognise. A list *answer*
+        supplies ordered fallbacks for a dropdown (first option that exists wins).
+        """
+        if not isinstance(entries, list):
+            return
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            raw_match = entry.get("match")
+            answer = entry.get("answer")
+            if raw_match is None or answer is None:
+                continue
+            patterns = raw_match if isinstance(raw_match, list) else [raw_match]
+            norm_patterns = [normalize(str(p)) for p in patterns if str(p).strip()]
+            if not norm_patterns:
+                continue
+            if isinstance(answer, list):
+                stored: str | list[str] = [str(a) for a in answer if str(a).strip()]
+                if not stored:
+                    continue
+            else:
+                stored = str(answer)
+            self._custom.append((norm_patterns, stored))
 
     def _load_skills(self, skills: dict[str, Any]) -> None:
         for name, spec in skills.items():
@@ -106,6 +145,22 @@ class AnswerStore:
 
     def known_skills(self) -> list[str]:
         return sorted(self._skill_years)
+
+    # -- custom questions -----------------------------------------------------
+    def custom_answer(self, text: str) -> str | list[str] | None:
+        """Return a canned answer for a custom question, matched by keyword.
+
+        The first ``custom_questions`` entry whose normalised pattern appears in
+        the normalised *text* wins; ``None`` when nothing matches. The answer is
+        a string, or a list of ordered dropdown fallbacks.
+        """
+        norm = normalize(text)
+        if not norm:
+            return None
+        for patterns, answer in self._custom:
+            if any(pattern and pattern in norm for pattern in patterns):
+                return answer
+        return None
 
     def default(self, key: str, fallback: Any = None) -> Any:
         return self._defaults.get(normalize(key), fallback)

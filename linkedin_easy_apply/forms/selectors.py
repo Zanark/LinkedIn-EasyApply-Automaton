@@ -105,6 +105,15 @@ RESUME_UPLOAD_INPUT = [
     "input[type='file'][id*='upload-resume']",
     "input[type='file']",
 ]
+# The "Upload resume" button/label that opens a file chooser (used only when no
+# <input type=file> is present in the DOM to set files on directly).
+RESUME_UPLOAD_BUTTON = [
+    "label.jobs-document-upload__upload-button",
+    "button[aria-label*='Upload resume']",
+    "label[aria-label*='Upload resume']",
+    "button:has-text('Upload resume')",
+    "label:has-text('Upload resume')",
+]
 
 # Job list / card selectors on a search results page.
 JOB_CARD = [
@@ -204,4 +213,14 @@ MSG_OVERLAY_CLOSE = [
     "button[aria-label*='Close your conversation']",
     ".msg-overlay-bubble-header__control--close-btn",
     "button[aria-label='Dismiss']",
+]
+
+# LinkedIn's post-apply "next best action" upsell (e.g. "Turn your resume into a
+# profile that recruiters notice") pops over the confirmation and intercepts
+# clicks on the hiring-team Message button. Clicking "Not now" dismisses only the
+# upsell and leaves the "Meet the hiring team" cards on the page.
+POST_APPLY_UPSELL_DISMISS = [
+    "button:has-text('Not now')",
+    "div[role='dialog']:has-text('recruiters notice') button[aria-label*='Dismiss']",
+    "div[role='dialog']:has(button:has-text('Update profile')) button[aria-label*='Dismiss']",
 ]

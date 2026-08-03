@@ -48,6 +48,84 @@ def test_dedup_and_counts(db: Database):
     assert db.count_applications_for_company("Globex") == 1
 
 
+def test_application_answers_records_and_reads_in_order(db: Database):
+    run_id = db.start_run("apply")
+    job_id = db.upsert_job({"url": "https://www.linkedin.com/jobs/view/7/", "title": "BE"}, run_id)
+    app_id = db.create_application(job_id, run_id, None, "submitted")
+    db.record_application_answer(app_id, "Years of Python experience?", "5", "yaml")
+    db.record_application_answer(app_id, "Are you authorised to work?", "Yes", "manual")
+
+    rows = db.application_answers(app_id)
+    assert [r["question_text"] for r in rows] == [
+        "Years of Python experience?",
+        "Are you authorised to work?",
+    ]
+    assert rows[0]["value"] == "5"
+    assert rows[0]["source"] == "yaml"
+    assert rows[1]["value"] == "Yes"
+    # A different application shares nothing.
+    assert db.application_answers(app_id + 999) == []
+
+
+def test_unanswered_questions_reports_only_true_gaps(db: Database):
+    run_id = db.start_run("apply")
+    job_id = db.upsert_job({"url": "https://www.linkedin.com/jobs/view/50/", "title": "BE"}, run_id)
+    # App 1 (failed): one genuinely-unanswered question + one answered.
+    app1 = db.create_application(job_id, run_id, None, "failed")
+    db.update_application(app1, status="failed", reason="No progress between steps", steps=2)
+    pf_qid = db.upsert_question("Do you have a PF account?", "do you have a pf account", "unknown")
+    db.record_application_answer(app1, "Do you have a PF account?", None, "unanswered", pf_qid)
+    db.record_application_answer(app1, "Years of Java?", "6", "yaml")
+
+    # A question blank in one app but ANSWERED in another must NOT be a gap.
+    run2 = db.start_run("apply")
+    app2 = db.create_application(job_id, run2, None, "submitted")
+    notice_qid = db.upsert_question("Notice period?", "notice period", "notice_period")
+    db.record_application_answer(app2, "Notice period?", None, "unanswered", notice_qid)
+    run3 = db.start_run("apply")
+    app3 = db.create_application(job_id, run3, None, "submitted")
+    db.record_application_answer(app3, "Notice period?", "30 days", "yaml", notice_qid)
+
+    gaps = db.unanswered_questions()
+    questions = {g["question"] for g in gaps}
+    assert "Do you have a PF account?" in questions  # never answered -> gap
+    assert "Years of Java?" not in questions  # had a value -> not a gap
+    assert "Notice period?" not in questions  # answered in app3 -> not a gap
+
+    pf = next(g for g in gaps if g["question"] == "Do you have a PF account?")
+    assert pf["blank_in_apps"] == 1
+    assert pf["blocked_apps"] == 1  # app1 was 'failed'
+    assert pf["category"] == "unknown"
+
+
+def test_blocked_applications_trims_reason_and_counts_unanswered(db: Database):
+    run_id = db.start_run("apply")
+    job_id = db.upsert_job(
+        {"url": "https://www.linkedin.com/jobs/view/51/", "title": "SRE", "company": "Globex"},
+        run_id,
+    )
+    app = db.create_application(job_id, run_id, None, "failed")
+    huge_reason = "Locator.click: Timeout 30000ms exceeded.\n" + "x" * 5000
+    db.update_application(app, status="failed", reason=huge_reason, steps=3)
+    db.record_application_answer(app, "Comfortable with night shift?", None, "unanswered")
+    db.record_application_answer(app, "Email address", "a@b.com", "prefilled")
+
+    # A submitted application must never appear here.
+    run2 = db.start_run("apply")
+    ok_app = db.create_application(job_id, run2, None, "submitted")
+    db.update_application(ok_app, status="submitted", steps=4)
+
+    blocked = db.blocked_applications()
+    assert len(blocked) == 1
+    row = blocked[0]
+    assert row["company"] == "Globex"
+    assert row["status"] == "failed"
+    # The 5 KB Playwright log is trimmed to its first line.
+    assert row["reason_short"] == "Locator.click: Timeout 30000ms exceeded."
+    assert len(row["reason_short"]) <= 201
+    assert row["unanswered_count"] == 1  # only the blank question, not the prefilled one
+
+
 def test_scores_and_ai_results(db: Database):
     run_id = db.start_run("scan")
     job_id = db.upsert_job({"url": "https://www.linkedin.com/jobs/view/3/", "title": "X"}, run_id)

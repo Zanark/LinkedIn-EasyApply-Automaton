@@ -46,7 +46,8 @@ rejected so typos surface immediately.
 | `headless`              | `false`            | Run without a visible window.                           |
 | `viewport_width/height` | `1440` / `900`     | Browser viewport size.                                  |
 | `slow_mo_ms`            | `0`                | Delay between actions (helps you watch / debug).        |
-| `download_dir`          | `downloads`        | Where downloads land.                                   |
+| `download_dir`          | `downloads`        | Where downloads land (only used when `accept_downloads` is true). |
+| `accept_downloads`      | `false`            | Accept browser downloads. Off by default so LinkedIn's resume-preview PDF (re-served as an attachment) isn't saved as stray GUID files; turn on only if you actually need saved downloads. |
 | `default_timeout_ms`    | `30000`            | Default action timeout.                                 |
 | `navigation_timeout_ms` | `45000`            | Navigation timeout.                                     |
 | `max_retries`           | `3`                | Retry budget for flaky steps.                           |
@@ -144,7 +145,7 @@ resume:
 | `enabled`             | `false`   | Master switch for dynamic generation.                                       |
 | `path`                | `null`    | Folder holding the builder's `render.py` + `master.yaml`.                   |
 | `python`              | `null`    | Interpreter to run it; defaults to the automaton's own (has the deps).      |
-| `design`              | `Seafoam-Light` | Builder HTML design used for tailored resumes (e.g. `Seafoam-Light`, `Seafoam-Dark`, `focus`). |
+| `design`              | `SeafoamTide-Light` | Builder HTML design used for tailored resumes (e.g. `SeafoamTide-Light`, `SeafoamBubbles-Light`, `focus`). |
 | `mode`                | `keyword` | `keyword` (deterministic, offline) or `ai` (asks `ai.*` provider).          |
 | `ai_fallback_keyword` | `true`    | In `ai` mode, fall back to keyword clusters if the model abstains.          |
 | `cache`               | `true`    | Render each cluster at most once per run.                                   |
@@ -328,43 +329,56 @@ command) forces `DEBUG` logging for that run.
 
 ### `outreach`
 
-Opt-in post-apply messaging to the **"Meet the hiring team"** recruiters shown on
-a job page. After an application is submitted, the tool finds each recruiter card
-that exposes a free **Message** button, drafts a short personalised note, and
-**pauses for your approval** before sending it (never sends silently). Disabled by
-default.
+Post-apply handling of the **"Meet the hiring team"** recruiters shown on a job
+page. Enabled by default in the **`draft`** mode: after an application is
+submitted, the tool reads each recruiter's name and LinkedIn **profile URL**
+straight from the page, drafts a short personalised note, and records it. At the
+end of the run it writes a **plain-text report** (`report_dir`) listing every
+contact, their profile URL, the résumé submitted for that job (to attach), and
+the drafted message so you can send them by hand.
+It clicks nothing, so it runs fully unattended (even under `--yes`).
 
-| Key                | Default | Description                                                        |
-| ------------------ | ------- | ------------------------------------------------------------------ |
-| `enabled`          | `false` | Master switch. Overridden per-run by `--message-hiring-team` / `--no-message-hiring-team`. |
-| `max_per_run`      | `5`     | Safety cap on the number of messages sent in a single run.         |
-| `template`         | *(none)* | Optional path to a custom Jinja2 message template. Falls back to the built-in template. |
-| `skip_if_messaged` | `true`  | Never message the same person twice (deduped by profile URL, else name). |
+Set `mode: send` to instead restore the interactive flow that pauses for your
+approval and types + sends each message on LinkedIn.
+
+| Key                | Default              | Description                                                        |
+| ------------------ | -------------------- | ------------------------------------------------------------------ |
+| `enabled`          | `true`               | Master switch. Overridden per-run by `--message-hiring-team` / `--no-message-hiring-team`. |
+| `mode`             | `draft`              | `draft` = collect contacts + draft messages + write the report (no clicking). `send` = draft, approve, and message on LinkedIn (needs an interactive run; falls back to `draft` under `--yes`). |
+| `max_per_run`      | `5`                  | Safety cap on the number of contacts handled in a single run.      |
+| `template`         | *(none)*             | Optional path to a custom Jinja2 message template. Falls back to the built-in template. |
+| `skip_if_messaged` | `true`               | Never contact the same person twice (deduped by profile URL, else name). |
+| `report_dir`       | `generated/outreach` | Where the plain-text `draft`-mode report is written.               |
 
 ```yaml
 outreach:
-  enabled: false          # opt-in
+  enabled: true
+  mode: draft             # draft (report only) | send (message on LinkedIn)
   max_per_run: 5
   # template: configs/hiring_message.j2
   skip_if_messaged: true
+  report_dir: generated/outreach
 ```
 
-Requirements & behaviour:
+Behaviour:
 
-- **Draft-and-approve only.** A message is always shown for your approval (Enter
-  sends, `n` skips) — so outreach needs an **interactive** run. It does nothing
-  under `-y`/`--yes` (all prompts off) and nothing during `--dry-run` (no submit
-  → no outreach).
-- **InMail-only cards are skipped** — only recruiters with a free Message button
-  are contacted.
-- Every drafted message (sent, declined, or failed) is recorded in the
+- **`draft` (default) never clicks anything.** It only reads the recruiter's name
+  and profile URL, so it works under `-y`/`--yes`. Nothing is collected during
+  `--dry-run` (no submit → the hiring-team cards never appear). The report lands
+  at `generated/outreach/outreach_run<id>_<timestamp>.txt` and its path is printed
+  in the run summary. Because you send by hand, **InMail-only cards are included**
+  too (you contact them from their profile).
+- **`send` is draft-and-approve.** A message is shown for your approval (Enter
+  sends, `n` skips), so it needs an **interactive** run and only contacts
+  recruiters with a free Message button. Under `--yes` it degrades to `draft`.
+- Every record (drafted, sent, declined, or failed) is written to the
   `outreach_messages` table for auditing and dedupe.
 - The message context includes the role, company, your name, years of experience
   and the job's matched skills; the recruiter's first name personalises the
   greeting.
 
-> ⚠️ Sending unsolicited messages at volume can look like spam and put your
-> account at risk. Keep `max_per_run` small and review every draft.
+> ⚠️ Reaching out at volume can look like spam and put your account at risk. Keep
+> `max_per_run` small and review every draft before you send.
 
 ---
 
@@ -440,6 +454,38 @@ every notice question; if it is absent, the tool pulls the first integer out of
 the free-text `notice_period`. `notice_period` is only kept as a literal answer
 when it is genuinely non-numeric (e.g. `Immediate`) and the question is not
 asking for a number of days.
+
+**Custom screening questions.** Some postings ask bespoke questions the category
+parser cannot recognise (shift timings, a location picker, a project-specific
+consent). Left unanswered these get skipped, and under `-y` an unanswered
+required question aborts the application. A `custom_questions` list is the escape
+hatch — it maps keyword patterns to a canned answer:
+
+```yaml
+custom_questions:
+  - match: ["shift timing", "night shift", "rotational shift"]
+    answer: "Yes"                       # Yes/No fills selects, radios & checkboxes
+  - match: ["which location are you applying", "preferred location"]
+    answer: ["Bengaluru", "Hyderabad"]  # ordered dropdown fallbacks
+  - match: "notice period negotiable"
+    answer: "Yes"
+```
+
+An entry matches when **any** of its `match` keywords (normalised — case- and
+space-insensitive) appears anywhere in the question text; the first matching
+entry wins. The `answer` may be:
+
+- **`"Yes"`/`"No"`** — filled as a boolean, so it satisfies Yes/No selects,
+  radio groups and checkboxes.
+- **a plain string** — typed into a text field or matched against a dropdown.
+- **a list** — ordered dropdown fallbacks: the tool tries each value against the
+  actual options and picks the **first one that exists** (so `["Bengaluru",
+  "Hyderabad"]` prefers Bengaluru but takes Hyderabad when Bengaluru isn't
+  offered).
+
+Custom answers are consulted **only as a fallback** — built-in category handling
+(salary tiers, notice period, work-authorization booleans, contact fields…)
+always takes priority and is never shadowed by a `custom_questions` entry.
 
 Questions the resolver can map are documented in `docs/developer_guide.md` (the
 `QuestionCategory` table).

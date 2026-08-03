@@ -302,6 +302,107 @@ class Database:
                 (application_id, question_id, question_text, value, source, _now()),
             )
 
+    def application_answers(self, application_id: int) -> list[dict[str, Any]]:
+        """Return every field asked & answered for one application, in order.
+
+        Powers the dashboard drill-down: each row is the exact question text, the
+        value that was submitted, and where it came from (yaml/manual/ai/...).
+        """
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT question_text, value, source, created_at"
+                " FROM application_answers WHERE application_id=? ORDER BY id",
+                (application_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def unanswered_questions(self, limit: int = 200) -> list[dict[str, Any]]:
+        """Aggregate questions the tool has *never* been able to answer.
+
+        Powers the dashboard's "needs attention" view. A question qualifies only
+        when it was left blank in an application AND never received a value in
+        *any* application — a genuine gap, not merely a field LinkedIn had
+        already prefilled (e.g. email / phone country code, which show up blank
+        on one detection pass but carry a value on another and are therefore
+        excluded). For each gap we report how many applications it was blank in,
+        how many of those ended blocked (``failed``/``aborted`` — typically
+        "No progress between steps"), the known category/answer type, and when
+        it was last seen. Ordered by blocking impact so the costliest gaps to
+        fix appear first.
+        """
+        sql = """
+            WITH per_app AS (
+                SELECT aa.application_id AS app_id,
+                       lower(trim(aa.question_text)) AS qkey,
+                       MAX(aa.question_text) AS question,
+                       MAX(aa.question_id)   AS question_id,
+                       MAX(CASE WHEN aa.value IS NOT NULL AND trim(aa.value) <> ''
+                                THEN 1 ELSE 0 END) AS has_value,
+                       MAX(aa.created_at) AS last_seen
+                FROM application_answers aa
+                WHERE aa.question_text IS NOT NULL AND trim(aa.question_text) <> ''
+                GROUP BY aa.application_id, lower(trim(aa.question_text))
+            )
+            SELECT p.question AS question,
+                   SUM(CASE WHEN p.has_value = 0 THEN 1 ELSE 0 END) AS blank_in_apps,
+                   COUNT(CASE WHEN p.has_value = 0
+                              AND a.status IN ('failed', 'aborted')
+                              THEN 1 END) AS blocked_apps,
+                   MAX(q.category)    AS category,
+                   MAX(q.answer_type) AS answer_type,
+                   MAX(p.last_seen)   AS last_seen
+            FROM per_app p
+            JOIN applications a ON p.app_id = a.id
+            LEFT JOIN questions q ON p.question_id = q.id
+            GROUP BY p.qkey
+            HAVING SUM(p.has_value) = 0
+            ORDER BY blocked_apps DESC, blank_in_apps DESC, last_seen DESC
+            LIMIT ?
+        """
+        with self.connect() as conn:
+            rows = conn.execute(sql, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def blocked_applications(self, limit: int = 100) -> list[dict[str, Any]]:
+        """Return applications that ended blocked (``failed``/``aborted``).
+
+        For the dashboard's "needs attention" view: each row is a job whose Easy
+        Apply run did not complete, with a *short* reason (LinkedIn/Playwright
+        failure text can be thousands of characters, so it is trimmed to its
+        first line via ``reason_short``), the step it stopped on, and how many
+        distinct questions were left unanswered in that attempt — the usual
+        culprit behind "No progress between steps".
+        """
+        sql = """
+            SELECT a.id, a.started_at, a.status, a.reason, a.steps,
+                   j.title, j.company, j.url,
+                   (SELECT COUNT(*) FROM (
+                        SELECT 1
+                        FROM application_answers aa
+                        WHERE aa.application_id = a.id
+                          AND aa.question_text IS NOT NULL
+                          AND trim(aa.question_text) <> ''
+                        GROUP BY lower(trim(aa.question_text))
+                        HAVING MAX(CASE WHEN aa.value IS NOT NULL AND trim(aa.value) <> ''
+                                        THEN 1 ELSE 0 END) = 0
+                   )) AS unanswered_count
+            FROM applications a
+            JOIN jobs j ON a.job_id = j.id
+            WHERE a.status IN ('failed', 'aborted')
+            ORDER BY a.started_at DESC
+            LIMIT ?
+        """
+        with self.connect() as conn:
+            rows = conn.execute(sql, (limit,)).fetchall()
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            record = dict(row)
+            reason = record.get("reason") or ""
+            first_line = reason.splitlines()[0].strip() if reason else ""
+            record["reason_short"] = first_line[:197] + "…" if len(first_line) > 200 else first_line
+            result.append(record)
+        return result
+
     # -- AI results -----------------------------------------------------------
     def record_ai_result(self, job_id: int, result: dict[str, Any]) -> int:
         with self.connect() as conn:
@@ -353,6 +454,45 @@ class Database:
                 (person_key,),
             ).fetchone()
             return row is not None
+
+    def outreach_drafts(self, run_id: int | None = None) -> list[dict[str, Any]]:
+        """Return drafted (not-yet-sent) outreach records for the end-of-run report.
+
+        Each row carries the recruiter's name, profile URL and drafted message,
+        the job title/company (joined from ``jobs``) for context, and the résumé
+        that was submitted for that job (joined via the matching application, so
+        the user knows which file to attach). When *run_id* is given, only that
+        run's drafts are returned; otherwise every draft on record is returned
+        (newest last), ordered by insertion.
+        """
+        sql = (
+            "SELECT o.person_name, o.profile_url, o.message, o.created_at,"
+            " j.title AS job_title, j.company AS job_company,"
+            " r.name AS resume_name, r.path AS resume_path"
+            " FROM outreach_messages o"
+            " LEFT JOIN jobs j ON o.job_id = j.id"
+            " LEFT JOIN applications a ON a.job_id = o.job_id AND a.run_id IS o.run_id"
+            " LEFT JOIN resumes r ON a.resume_id = r.id"
+            " WHERE o.status = 'drafted'"
+        )
+        params: list[Any] = []
+        if run_id is not None:
+            sql += " AND o.run_id = ?"
+            params.append(run_id)
+        sql += " ORDER BY o.id"
+        keys = (
+            "person_name",
+            "profile_url",
+            "message",
+            "created_at",
+            "job_title",
+            "job_company",
+            "resume_name",
+            "resume_path",
+        )
+        with self.connect() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        return [dict(zip(keys, row, strict=True)) for row in rows]
 
     def record_outreach(
         self,

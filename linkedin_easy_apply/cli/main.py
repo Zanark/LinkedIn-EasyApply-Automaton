@@ -130,6 +130,7 @@ def init(
         "configs",
         "generated/resume",
         "generated/coverletter",
+        "generated/outreach",
         "logs",
         "screenshots",
         "database",
@@ -171,9 +172,10 @@ def apply(
     message_hiring_team: bool | None = typer.Option(
         None,
         "--message-hiring-team/--no-message-hiring-team",
-        help="After a successful apply, draft a message to each 'Meet the hiring team' "
-        "recruiter and pause for your approval before sending. Needs an interactive "
-        "session. Defaults to the outreach.enabled config value.",
+        help="After each successful apply, read the 'Meet the hiring team' recruiters "
+        "(name + LinkedIn profile URL), draft a personalised message for each, and "
+        "write a plain-text report at the end of the run for you to send by hand. "
+        "Never clicks anything. Defaults to the outreach.enabled config value.",
     ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Never prompt; auto-answer/submit."),
 ) -> None:
@@ -246,11 +248,14 @@ def _run_orchestrator(
 
         on_confirm = _confirm
 
-    # Hiring-team outreach is opt-in and always draft-and-approve, so it needs an
-    # interactive session (never runs under --yes).
+    # Post-apply hiring-team outreach. By default (outreach.mode: draft) this
+    # DRAFTS a message per recruiter and writes an end-of-run report - it clicks
+    # nothing and runs fully unattended (even under --yes). Only the optional
+    # 'send' mode types + sends messages, and that needs interactive approval.
     do_outreach = cfg.outreach.enabled if message_hiring_team is None else message_hiring_team
+    send_mode = str(cfg.outreach.mode) == "send"
     on_approve_message: Callable[[str, str], str | None] | None = None
-    if do_outreach and prompts:
+    if do_outreach and send_mode and prompts:
 
         def _approve(person: str, message: str) -> str | None:
             console.print(
@@ -265,10 +270,10 @@ def _run_orchestrator(
             return None
 
         on_approve_message = _approve
-    elif do_outreach and not prompts:
+    elif do_outreach and send_mode and not prompts:
         console.print(
-            "[yellow]Hiring-team messaging needs interactive approval; "
-            "skipped because --yes was set.[/yellow]"
+            "[yellow]Outreach 'send' mode needs interactive approval; drafting "
+            "messages for the end-of-run report instead (--yes was set).[/yellow]"
         )
 
     orchestrator = Orchestrator(
@@ -278,6 +283,7 @@ def _run_orchestrator(
         on_unknown=on_unknown,
         on_confirm_submit=on_confirm,
         on_approve_message=on_approve_message,
+        message_hiring_team=do_outreach,
     )
     try:
         summary = orchestrator.run(
@@ -299,6 +305,11 @@ def _run_orchestrator(
         console.print(
             "[dim]Skip reasons:[/dim] "
             + ", ".join(f"{k}={v}" for k, v in summary.skip_reasons.items())
+        )
+    if summary.outreach_report:
+        console.print(
+            f"[cyan]Hiring-team outreach:[/cyan] messages to send are drafted in "
+            f"[bold]{summary.outreach_report}[/bold]"
         )
 
 

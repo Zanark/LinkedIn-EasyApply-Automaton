@@ -16,6 +16,7 @@ from loguru import logger
 from linkedin_easy_apply.answers.store import AnswerStore
 from linkedin_easy_apply.parser.categories import AnswerType, QuestionCategory
 from linkedin_easy_apply.parser.question_parser import ParsedQuestion
+from linkedin_easy_apply.utils.text import normalize
 
 # Category -> ordered list of answer-store keys to try.
 _FIELD_MAP: dict[QuestionCategory, tuple[str, ...]] = {
@@ -67,6 +68,10 @@ _CURRENT_MONTHLY_STEP = 10_000
 
 _SALARY_CATEGORIES = {QuestionCategory.SALARY_EXPECTED, QuestionCategory.SALARY_CURRENT}
 
+# Affirmative / negative tokens for a custom Yes/No answer.
+_CUSTOM_YES = {"yes", "y", "true", "1", "comfortable", "agree", "ok", "okay"}
+_CUSTOM_NO = {"no", "n", "false", "0", "not comfortable", "disagree"}
+
 
 @dataclass(slots=True)
 class AnswerResolution:
@@ -77,6 +82,7 @@ class AnswerResolution:
     source: str = "none"
     answer_type: AnswerType = AnswerType.TEXT
     bool_value: bool | None = None
+    candidates: tuple[str, ...] = ()
 
     @classmethod
     def missing(cls, answer_type: AnswerType = AnswerType.TEXT) -> AnswerResolution:
@@ -134,6 +140,47 @@ class AnswerResolver:
         self._expected_ctc_monthly_override = monthly
 
     def resolve(self, question: ParsedQuestion) -> AnswerResolution:
+        """Resolve *question*, falling back to a user-defined custom answer.
+
+        Category-based resolution runs first; only when it comes up empty do we
+        consult the ``custom_questions`` keyword map, so built-in smart handling
+        (salary tiers, notice-period, booleans...) is never shadowed.
+        """
+        resolution = self._resolve_core(question)
+        if resolution.found:
+            return resolution
+        custom = self._store.custom_answer(question.normalized)
+        if custom is not None:
+            resolved = self._custom_resolution(custom, question.answer_type)
+            logger.debug(
+                "Resolve CUSTOM[{!r}] -> {!r} (matched custom_questions)",
+                question.text,
+                resolved.value,
+            )
+            return resolved
+        return resolution
+
+    def _custom_resolution(
+        self, answer: str | list[str], answer_type: AnswerType
+    ) -> AnswerResolution:
+        """Build a resolution from a canned custom answer.
+
+        A Yes/No answer is returned as a boolean so it fills Yes/No selects and
+        radios; a list supplies ordered dropdown fallbacks (first existing option
+        wins); anything else is returned verbatim with the question's own type.
+        """
+        if isinstance(answer, list):
+            candidates = tuple(str(a) for a in answer if str(a).strip())
+            first = candidates[0] if candidates else ""
+            return AnswerResolution(True, first, "custom", AnswerType.CHOICE, candidates=candidates)
+        token = normalize(answer)
+        if token in _CUSTOM_YES:
+            return AnswerResolution(True, "Yes", "custom", AnswerType.BOOLEAN, bool_value=True)
+        if token in _CUSTOM_NO:
+            return AnswerResolution(True, "No", "custom", AnswerType.BOOLEAN, bool_value=False)
+        return AnswerResolution(True, answer, "custom", answer_type)
+
+    def _resolve_core(self, question: ParsedQuestion) -> AnswerResolution:
         category = question.category
         answer_type = question.answer_type
 

@@ -17,7 +17,8 @@ confirmation, dedupe and daily limits built in.
   no credentials, no automated login.
 - **Dynamic question recognition** — a hybrid keyword + fuzzy parser maps
   free-form Easy Apply questions to your answers; unknown questions pause for
-  input and are **remembered** for next time.
+  input and are **remembered** for next time, and a `custom_questions` keyword
+  map pre-answers bespoke screening questions for unattended runs.
 - **Config-driven everything** — searches, scoring, filters, limits, resume
   selection, logging and AI are all YAML. No hardcoded values.
 - **Weighted job scoring** with whole-word matching (so `go` ≠ `google`) and
@@ -39,18 +40,22 @@ confirmation, dedupe and daily limits built in.
   include/exclude keywords, URL + company-role dedupe.
 - **Dry-run & interactive** modes; graceful Ctrl+C shutdown; per-step and
   on-error screenshots with automatic cleanup of unreferenced captures.
-- **Meet-the-hiring-team outreach (opt-in)** — after a successful application,
-  optionally draft a short, personalised message to each recruiter card that
-  exposes a free **Message** button and **pause for your approval** before
-  sending; dedupes people already messaged and caps messages per run. Enable
-  with `--message-hiring-team` or `outreach.enabled`.
+- **Meet-the-hiring-team outreach** — after a successful application, read each
+  recruiter's name and LinkedIn **profile URL** from the page, draft a short
+  personalised message, and write a plain-text **report** at the end of the run
+  for you to send by hand (never clicks anything; runs even under `--yes`). Opt
+  into `mode: send` to have it approve-and-send on LinkedIn instead. Toggle with
+  `--message-hiring-team` / `outreach.enabled`.
 - **Verbose, decision-level logging** — a global `-v/--verbose` flag (or
   `logging.level: DEBUG`) narrates every field: what was parsed, which answer it
   resolved and *from where*, and whether it filled or skipped — so you see
   exactly what the tool is "thinking."
 - **SQLite persistence** of jobs, applications, questions/answers, scores,
   errors — with learned-answer reuse, terminal-or-page question answering,
-  `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard.
+  `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard that drills
+  into any application (every field asked + value submitted + résumé used),
+  flags the questions it had no answer for and the applications they blocked,
+  and shows drafted hiring-team outreach as clickable LinkedIn profile links.
 - **Optional AI advisor** (OpenAI) that only *advises* — it can never submit.
 - Clean, typed, tested codebase (ruff + black + mypy + pytest).
 

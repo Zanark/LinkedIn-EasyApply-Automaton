@@ -107,13 +107,14 @@ flowchart TD
 | **option matchers** | `forms/matching.py` | `best_option` / `boolean_option` for select/radio. | pure |
 | **CoverLetterGenerator** | `answers/cover_letter.py` | Render a templated cover letter (Jinja2) to text, a `.pdf` (for uploads), and a `.txt`. | pure-ish |
 | **HiringTeamMessenger** | `answers/hiring_message.py` | Render a short personalised outreach message (Jinja2) for a hiring-team recruiter. | pure |
+| **render_outreach_report** | `answers/hiring_report.py` | Render the drafted-contacts run into a plain-text outreach report. | pure |
 | **BrowserManager** | `browser/manager.py` | Own the Playwright lifecycle; reuse your logged-in profile. | I/O |
 | **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator). | I/O |
 | **JobExtractor** | `jobs/extractor.py` | Read the detail pane → a `Job` value object. | I/O |
 | **EasyApplyWorkflow** | `forms/easy_apply.py` | Multi-step form state machine: detect→fill→next→submit/discard. | I/O |
 | **FormFieldDetector** | `forms/detector.py` | Discover fields + their options in the current step. | I/O |
 | **FormFiller** | `forms/filler.py` | Type/select/check a field using the pure matchers. | I/O |
-| **HiringTeamOutreach** | `forms/outreach.py` | Opt-in post-apply: detect "Meet the hiring team" cards, draft + (approved) send a message, dedupe + cap. | I/O |
+| **HiringTeamOutreach** | `forms/outreach.py` | Post-apply: detect "Meet the hiring team" cards; default `draft` mode reads name + profile URL and records a draft (no clicking), `send` mode drafts + (approved) messages on LinkedIn; dedupe + cap. | I/O |
 | **Database** | `database/db.py` | Repository over SQLite; intention-revealing methods. | I/O |
 | **AIProvider / Factory** | `ai/*` | Optional advisor. Strategy chosen by a Factory; never submits. | I/O |
 

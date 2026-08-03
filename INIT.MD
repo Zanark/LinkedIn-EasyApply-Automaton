@@ -267,7 +267,7 @@ Run the actual Easy Apply automation. **This is the main command** — see §7 f
 | `-n, --limit INT` | Max applications (submissions) this run. | config `jobs.max_per_run` |
 | `--url TEXT` | Ignore configured searches; use this one search URL. | — |
 | `-y, --yes` | Never prompt — auto‑answer unknown questions and auto‑submit. | prompts on |
-| `--message-hiring-team` / `--no-message-hiring-team` | After each successful apply, draft a message to every "Meet the hiring team" recruiter and pause for your approval before sending. Overrides `outreach.enabled`. Needs an interactive run (ignored under `-y`). | config `outreach.enabled` (off) |
+| `--message-hiring-team` / `--no-message-hiring-team` | After each successful apply, read every "Meet the hiring team" recruiter (name + LinkedIn profile URL), draft a message, and write a plain-text report at the end of the run for you to send by hand. Never clicks anything; runs even under `-y`. Overrides `outreach.enabled`. (Set `outreach.mode: send` to message on LinkedIn instead.) | config `outreach.enabled` (on) |
 
 ```powershell
 # 🟢 Safest test: fill everything, submit nothing, no prompts, full logs
@@ -447,15 +447,16 @@ These stack onto any combination:
 # --no-confirm-submit : be explicit that submission should be automatic
 .\.venv\Scripts\python.exe apply.py apply --no-confirm-submit
 
-# --message-hiring-team : after each successful apply, draft + approve a message
-#   to the "Meet the hiring team" recruiters (interactive; ignored with -y)
+# --message-hiring-team : after each successful apply, read the "Meet the hiring
+#   team" recruiters (name + profile URL), draft a message, and write a report
+#   at the end of the run for you to send by hand (no clicking; works under -y)
 .\.venv\Scripts\python.exe apply.py apply --message-hiring-team
 
 # Everything at once: verbose dry‑run, single URL, capped, alternate config
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y -n 10 -c configs\config.yaml --url "https://www.linkedin.com/jobs/search/?keywords=python&location=India&f_AL=true"
 ```
 
-> 🤝 **Message the hiring team (opt‑in):** with `--message-hiring-team` (or `outreach.enabled: true`), after a job is submitted the tool finds each *Meet the hiring team* recruiter that exposes a free **Message** button, drafts a short personalised note, and **shows it to you for approval** — press Enter to send, `n` to skip. It never messages the same person twice and stops after `outreach.max_per_run`. It needs an interactive run, so it does nothing under `-y` and nothing during `--dry-run` (no submit → no outreach).
+> 🤝 **Message the hiring team:** by default (`outreach.enabled: true`, `mode: draft`), after a job is submitted the tool reads each *Meet the hiring team* recruiter's name and LinkedIn **profile URL** from the page, drafts a short personalised note, and — at the end of the run — writes a plain-text **report** to `generated/outreach/` listing every contact, their profile URL, and the message, so you can open each profile and send by hand. It clicks nothing, so it runs even under `-y`; nothing is collected during `--dry-run` (no submit → the cards never appear). Prefer it to send for you? Set `outreach.mode: send` for the interactive draft-**approve**-and-send flow (Enter sends, `n` skips; needs an interactive run, degrades to `draft` under `-y`). Either mode never contacts the same person twice and stops after `outreach.max_per_run`. Toggle the whole feature with `--message-hiring-team` / `--no-message-hiring-team`.
 
 > 📝 Note on `--limit` during `--dry-run`: the limit counts **submissions**, and a dry‑run never submits, so `-n` will **not** cut a dry‑run short — it still walks through a batch of jobs (roughly 30 per search). `-n` is meant to cap **real** runs.
 

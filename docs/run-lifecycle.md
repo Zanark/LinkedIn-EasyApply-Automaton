@@ -258,39 +258,49 @@ INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at 
 
 ---
 
-## Phase 7.5 — Meet-the-hiring-team outreach (opt-in) — *only after a real submit*
+## Phase 7.5 — Meet-the-hiring-team outreach — *only after a real submit*
 
-Runs **only** when outreach is wired: `outreach.enabled` (or
-`--message-hiring-team`) **and** an interactive session (an approval callback
-exists — never under `-y`), and **only** when Phase 6 actually submitted
-(`ApplyStatus.SUBMITTED`). Crucially, Phase 6 now leaves the post-submit
-**"application sent" modal open** (it no longer dismisses it itself), because
-that modal is what carries the recruiter cards. Back in `_attempt_application`,
-**before** `_persist_result` and its throttle pause, the orchestrator calls
-**`_reach_out_to_hiring_team(...)`** →
-**`HiringTeamOutreach.reach_out(page, base_context, ...)`**:
+Runs when outreach is enabled (`outreach.enabled` or `--message-hiring-team`) and
+Phase 6 actually submitted (`ApplyStatus.SUBMITTED`). Crucially, Phase 6 leaves
+the post-submit **"application sent" modal open** (it no longer dismisses it
+itself), because that modal is what carries the recruiter cards. Back in
+`_attempt_application`, **before** `_persist_result` and its throttle pause, the
+orchestrator calls **`_reach_out_to_hiring_team(...)`** →
+**`HiringTeamOutreach.reach_out(page, base_context, ...)`**. Two modes:
+
+**`draft` (default) — collect, never click.** Safe under `-y`:
 
 27a. Find the **"Meet the hiring team"** section and its recruiter cards. No
      section (or no cards) → returns 0, logged at INFO so a `-v`-less run still
      shows outreach ran.
-27b. For each card: read the name, profile URL and **Message** button. Cards with
-     no free Message button (InMail only) are skipped, logged at INFO.
-27c. Skip anyone already messaged (`db.has_messaged_person(key)`, deduped by
-     profile URL else name) when `skip_if_messaged`.
-27d. Draft a personalised message (`HiringTeamMessenger.render`) and call the
-     **approval callback** — the draft is printed and `typer.confirm(default=True)`
-     waits: Enter sends, `n` skips.
-27e. On approval, `_send` clicks **Message**, fills the compose box (a
-     contenteditable — filled without emitting Enter so it can't send early),
-     clicks **Send**, and closes the overlay. Declines and sends alike are written
-     to `outreach_messages` (`declined` / `sent` / `failed`), and a per-run cap
-     (`max_per_run`) stops further messages.
+27b. For each card: read the name and LinkedIn **profile URL** from the card
+     anchor (no Message button required — you send by hand, so InMail-only cards
+     are collected too).
+27c. Skip anyone already messaged (`db.has_messaged_person`) and de-dupe within
+     the run.
+27d. Draft a personalised message (`HiringTeamMessenger.render`) and record it to
+     `outreach_messages` with status `drafted`. **Nothing is clicked.**
+
+**`send` (opt-in) — draft, approve, message.** Needs an interactive session
+(degrades to `draft` under `-y`): after dismissing the post-apply upsell modal it
+prints each draft, waits on the approval callback (`typer.confirm(default=True)` —
+Enter sends, `n` skips), and on approval `_send` clicks **Message**, fills the
+compose box (a contenteditable — filled without emitting Enter so it can't send
+early), clicks **Send**, and closes the overlay. Records land as
+`sent` / `declined` / `failed`. A per-run cap (`max_per_run`) bounds both modes.
 
 Afterwards the orchestrator calls **`workflow.dismiss_confirmation()`** to close
 the "application sent" modal (always, whether or not outreach ran), then
 `_persist_result` finishes. Any error inside outreach is swallowed with a warning
 (outreach must never fail an otherwise-successful application);
 `KeyboardInterrupt` is re-raised so Ctrl+C still exits cleanly.
+
+At the very end of the run (Phase 8), `_emit_outreach_report(run_id)` queries the
+run's `drafted` rows (each joined to the résumé submitted for that job) and writes
+the plain-text report to `generated/outreach/outreach_run<id>_<timestamp>.txt`,
+naming each contact's profile URL, résumé to attach, and drafted message, and
+printing its path in the run summary. The same drafts also surface on the
+`lea dashboard` as clickable LinkedIn profile links.
 
 ---
 

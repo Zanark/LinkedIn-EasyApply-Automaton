@@ -102,6 +102,7 @@ class EasyApplyWorkflow:
         self._on_unknown = on_unknown
         self._on_confirm = on_confirm_submit
         self._answer_lookup = answer_lookup
+        self._resume_selected_done = False
 
     def apply(
         self,
@@ -112,6 +113,7 @@ class EasyApplyWorkflow:
     ) -> ApplyResult:
         """Run the Easy Apply flow on the currently open job page."""
         answers: list[AnsweredQuestion] = []
+        self._resume_selected_done = False
         logger.info(
             "Starting Easy Apply flow (dry_run={}, interactive={}, pause_on_unknown={})",
             self._settings.dry_run,
@@ -449,6 +451,12 @@ class EasyApplyWorkflow:
         """
         if not resume_path:
             return False
+        # The resume is chosen once, on the resume step. Later steps (notably the
+        # read-only review step) re-render the resume as a summary card with no
+        # upload control; re-running here would mis-detect it and spuriously try
+        # to "upload" again. Once handled, skip on every subsequent step.
+        if self._resume_selected_done:
+            return True
         try:
             cards = self._resume_cards(modal)
             target = Path(resume_path).name
@@ -466,6 +474,7 @@ class EasyApplyWorkflow:
                             "Resume '{}' already in your LinkedIn list - selected it (no upload)",
                             name,
                         )
+                    self._resume_selected_done = True
                     return True
             if cards:
                 logger.info(
@@ -474,20 +483,52 @@ class EasyApplyWorkflow:
                     len(cards),
                     [n for n, _ in cards],
                 )
-            upload = first(modal, selectors.RESUME_UPLOAD_INPUT)
-            if upload is None and cards:
-                upload = first(modal, ["input[type='file']"])
+            # The hidden <input type=file> is frequently rendered outside the
+            # modal locator (or in a portal), so search modal- then page-wide.
+            upload = first(modal, selectors.RESUME_UPLOAD_INPUT) or first(
+                self._page, selectors.RESUME_UPLOAD_INPUT
+            )
             if upload is not None:
                 upload.set_input_files(resume_path)
                 self._page.wait_for_timeout(2000)
                 logger.info("Uploaded resume '{}' to LinkedIn", target)
+                self._resume_selected_done = True
+                return True
+            # No file input in the DOM yet: click the "Upload resume" control and
+            # feed our file to the chooser LinkedIn opens.
+            if self._upload_via_file_chooser(modal, resume_path):
+                logger.info("Uploaded resume '{}' to LinkedIn (file chooser)", target)
+                self._resume_selected_done = True
                 return True
             if cards:
                 self._ask_manual_upload(target)
+                self._resume_selected_done = True
                 return True
             return False
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Resume select/upload issue ({}); using the file-input fallback", exc)
+            return False
+
+    def _upload_via_file_chooser(self, modal: Any, resume_path: str) -> bool:
+        """Upload by clicking the "Upload resume" button and catching its chooser.
+
+        Used only when no ``<input type=file>`` exists in the DOM to set files on
+        directly (LinkedIn injects it on demand). Playwright intercepts the native
+        file dialog, so this never blocks on an OS picker.
+        """
+        button = first(modal, selectors.RESUME_UPLOAD_BUTTON) or first(
+            self._page, selectors.RESUME_UPLOAD_BUTTON
+        )
+        if button is None:
+            return False
+        try:
+            with self._page.expect_file_chooser(timeout=5000) as chooser_info:
+                button.click(force=True, timeout=2000)
+            chooser_info.value.set_files(resume_path)
+            self._page.wait_for_timeout(2000)
+            return True
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("File-chooser resume upload failed: {}", exc)
             return False
 
     def _resume_cards(self, modal: Any) -> list[tuple[str, Any]]:

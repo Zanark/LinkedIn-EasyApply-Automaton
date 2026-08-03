@@ -40,12 +40,16 @@ database/*.sqlite3
 generated/*
 !generated/resume/
 !generated/coverletter/
+!generated/outreach/
 generated/resume/*
 generated/coverletter/*
+generated/outreach/*
 !generated/resume/.gitkeep
 !generated/resume/README.md
 !generated/coverletter/.gitkeep
 !generated/coverletter/README.md
+!generated/outreach/.gitkeep
+!generated/outreach/README.md
 
 # Exported application data (may contain personal data)
 applications.csv

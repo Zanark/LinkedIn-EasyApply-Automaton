@@ -15,6 +15,7 @@ import functools
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,7 @@ from linkedin_easy_apply.ai import AIProvider, build_provider
 from linkedin_easy_apply.answers.cover_letter import CoverLetterGenerator, RenderedCoverLetter
 from linkedin_easy_apply.answers.dynamic_resume import DynamicResumeBuilder
 from linkedin_easy_apply.answers.hiring_message import HiringTeamMessenger
+from linkedin_easy_apply.answers.hiring_report import render_outreach_report
 from linkedin_easy_apply.answers.resolver import AnswerResolver, _parse_amount
 from linkedin_easy_apply.answers.resume_selector import ResumeChoice, ResumeSelector
 from linkedin_easy_apply.answers.store import AnswerStore
@@ -62,6 +64,7 @@ class RunSummary:
     skipped: int = 0
     failed: int = 0
     skip_reasons: dict[str, int] = field(default_factory=dict)
+    outreach_report: Path | None = None
 
     def note_skip(self, reason: str) -> None:
         self.skipped += 1
@@ -80,6 +83,7 @@ class Orchestrator:
         on_unknown: UnknownHandler | None = None,
         on_confirm_submit: ConfirmHandler | None = None,
         on_approve_message: ApproveHandler | None = None,
+        message_hiring_team: bool | None = None,
         ai_provider: AIProvider | None = None,
     ) -> None:
         self._config = config
@@ -100,21 +104,33 @@ class Orchestrator:
         self._screenshots = ScreenshotManager(
             config.screenshots.directory, config.screenshots.enabled
         )
-        self._outreach = self._make_outreach(on_approve_message)
+        self._outreach = self._make_outreach(on_approve_message, message_hiring_team)
 
-    def _make_outreach(self, on_approve: ApproveHandler | None) -> HiringTeamOutreach | None:
-        """Build the opt-in hiring-team messenger, or ``None`` if it can't run.
+    def _make_outreach(
+        self, on_approve: ApproveHandler | None, message_flag: bool | None
+    ) -> HiringTeamOutreach | None:
+        """Build the post-apply hiring-team messenger, or ``None`` if disabled.
 
-        Draft-and-approve is mandatory, so the messenger only exists when an
-        approval handler is supplied. The caller (CLI) owns the enable/flag
-        decision and only wires a handler when outreach should run (respecting
-        both ``outreach.enabled`` and the ``--message-hiring-team`` override), so
-        we deliberately do **not** re-check ``cfg.enabled`` here."""
-        if on_approve is None:
-            return None
+        Outreach runs whenever it is enabled -- via ``outreach.enabled`` or the
+        ``--message-hiring-team`` override (``message_flag``); the flag wins when
+        set. The default ``draft`` mode needs no approval handler and simply
+        collects contacts for the end-of-run report, so it runs even under
+        ``--yes``. Only ``mode: send`` needs a handler; without one it degrades
+        to ``draft`` so the report is still produced."""
         cfg = self._config.outreach
+        enabled = cfg.enabled if message_flag is None else message_flag
+        if not enabled:
+            return None
+        mode = str(cfg.mode)
+        if mode == "send" and on_approve is None:
+            logger.info(
+                "Outreach: 'send' mode needs interactive approval; collecting drafts "
+                "for the end-of-run report instead"
+            )
+            mode = "draft"
         return HiringTeamOutreach(
             HiringTeamMessenger(cfg.template),
+            mode=mode,
             on_approve=on_approve,
             has_messaged=self._db.has_messaged_person,
             record=self._db.record_outreach,
@@ -203,6 +219,7 @@ class Orchestrator:
             self._db.finish_run(run_id, "failed", scanned=summary.scanned, applied=summary.applied)
             raise
         finally:
+            self._emit_outreach_report(run_id, summary)
             self._cleanup_screenshots()
         return summary
 
@@ -502,6 +519,38 @@ class Orchestrator:
             raise
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Hiring-team outreach skipped for '{}': {}", job.summary, exc)
+
+    def _emit_outreach_report(self, run_id: int | None, summary: RunSummary) -> None:
+        """Write the end-of-run plain-text report of drafted hiring-team messages.
+
+        In ``draft`` mode every contact is recorded but nothing is sent, so this
+        turns the run's drafts into a report the user works through by hand. A
+        no-op when outreach is disabled or nothing was drafted."""
+        if self._outreach is None:
+            return
+        try:
+            drafts = self._db.outreach_drafts(run_id)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("Outreach report: could not query drafts: {}", exc)
+            return
+        if not drafts:
+            logger.info("Outreach: no hiring-team contacts to report this run")
+            return
+        report = render_outreach_report(drafts, run_id=run_id)
+        report_dir = Path(self._config.outreach.report_dir)
+        ensure_dir(report_dir)
+        path = report_dir / f"outreach_run{run_id}_{datetime.now():%Y%m%d_%H%M%S}.txt"
+        try:
+            path.write_text(report, encoding="utf-8")
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Outreach: could not write report to {}: {}", path, exc)
+            return
+        summary.outreach_report = path
+        logger.success(
+            "Outreach: {} hiring-team message(s) drafted - report written to {}",
+            len(drafts),
+            path,
+        )
 
     def _persist_result(
         self, application_id: int, result: ApplyResult, summary: RunSummary, job: Job

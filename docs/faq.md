@@ -43,6 +43,27 @@ or fill the field directly on the LinkedIn page and press Enter in the terminal.
 It reads the final value back from the page, records whether it came from
 `manual` input or the `portal`, and saves it for future runs.
 
+### Can I pre-answer bespoke questions so an unattended run never gets stuck?
+
+Yes — add a `custom_questions` list to `answers.yaml`. Each entry maps keyword
+patterns to a canned answer, so a recurring custom question (shift timings, a
+location picker, a project-specific consent) is filled automatically instead of
+being skipped or aborting a `-y` run:
+
+```yaml
+custom_questions:
+  - match: ["shift timing", "night shift"]
+    answer: "Yes"                       # Yes/No -> fills selects, radios, checkboxes
+  - match: ["which location are you applying", "preferred location"]
+    answer: ["Bengaluru", "Hyderabad"]  # ordered dropdown fallbacks (first that exists wins)
+```
+
+The first entry whose keyword appears in the question wins. Answers can be
+`Yes`/`No` (filled as a boolean), a plain string, or a list of ordered dropdown
+fallbacks. Custom answers are a **fallback only** — built-in handling for salary,
+notice period, contact fields and yes/no questions always takes priority. See
+[`configuration.md`](configuration.md#answersyaml) for the full reference.
+
 ### How does it answer salary and notice-period questions?
 
 Store `current_ctc` as an **annual** plain integer (e.g. `3000000` for 30 LPA).
@@ -170,17 +191,25 @@ leaves it as-is instead of rewriting it.
 
 ### Can it message the "Meet the hiring team" recruiters after applying?
 
-Yes — it's an **opt-in, draft-and-approve** feature. Enable it with
-`--message-hiring-team` (or set `outreach.enabled: true`). After a job is
-submitted, the tool looks for the *Meet the hiring team* recruiter cards, and for
-each one that shows a free **Message** button it drafts a short, personalised note
-(role, company, your background) and **shows it to you for approval** — press
-Enter to send, `n` to skip. It never sends without your OK, never messages the
-same person twice, skips InMail-only cards, and stops after `outreach.max_per_run`
-messages. Because it always asks for approval it needs an interactive run: it does
-nothing under `-y` and nothing during `--dry-run` (no submit means no outreach).
-See [configuration → `outreach`](configuration.md#outreach). Sending lots of
-unsolicited messages can look like spam, so keep the cap small and review each
+By default it **drafts** them for you rather than messaging directly. After a job
+is submitted, the tool reads the *Meet the hiring team* recruiter cards, grabs
+each person's name and LinkedIn **profile URL** straight from the page, and drafts
+a short personalised note (role, company, your background). At the end of the run
+it writes a plain-text **report** to `generated/outreach/` listing every contact,
+their profile URL, the résumé that was submitted for that job (so you know which
+file to attach), and the drafted message — you open each profile and send by
+hand. It clicks nothing, so it runs fully unattended (even under `-y`). Nothing is
+collected during `--dry-run` (no submit means the cards never appear). The same
+contacts also appear on the `lea dashboard` as clickable profile links.
+
+Prefer the tool to send for you? Set `outreach.mode: send` for the old
+draft-**approve**-and-send flow: it shows each message for your OK (Enter sends,
+`n` skips) and only contacts recruiters with a free **Message** button, so it
+needs an interactive run (it degrades back to `draft` under `-y`). Either mode
+never contacts the same person twice and stops after `outreach.max_per_run`.
+Toggle the whole feature per-run with `--message-hiring-team` /
+`--no-message-hiring-team`. See [configuration → `outreach`](configuration.md#outreach).
+Reaching out at volume can look like spam, so keep the cap small and review each
 draft.
 
 ### Where is my data stored?
@@ -206,6 +235,12 @@ matching browser must be installed; for `chromium`, run
 `lea stats` prints a summary table. `lea export --format csv` (or `xlsx`, which
 needs the `.[export]` extra) writes applications joined with jobs to
 `applications.csv` (git-ignored, so your exported data isn't committed). `lea
-dashboard` launches an optional Streamlit UI (needs the `.[dashboard]` extra).
+dashboard` launches an optional Streamlit UI (needs the `.[dashboard]` extra)
+that, beyond the headline metrics, lets you drill into any application to see
+exactly which questions were asked and the value submitted for each (plus the
+résumé used), surfaces a **Needs attention** view of the questions it had no
+answer for (and the applications they blocked, so you know what to add to
+`answers.yaml`), and shows drafted hiring-team outreach as a table of clickable
+LinkedIn profile links with the résumé to attach and a copy-ready message.
 
 See [`troubleshooting.md`](troubleshooting.md) if something isn't working.

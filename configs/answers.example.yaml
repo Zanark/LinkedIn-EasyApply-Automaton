@@ -97,3 +97,22 @@ defaults:
   authorization: true
   relocation: true
   remote: true
+
+# --- Custom screening questions ---------------------------------------------
+# Escape hatch for bespoke per-posting questions the category parser cannot
+# recognise (they otherwise get left blank and can abort the application when
+# you run with -y). Each entry matches when any 'match' keyword (case- and
+# space-insensitive) appears in the question text. 'answer' may be:
+#   * "Yes"/"No"      -> fills Yes/No selects, radios and checkboxes
+#   * a plain string  -> typed into a text field / matched against a dropdown
+#   * a list          -> ordered dropdown fallbacks (first option that exists wins)
+# Category-based answers (salary, notice, booleans...) always take priority;
+# these only fill genuine gaps.
+# custom_questions:
+#   - match: ["shift timing", "night shift", "rotational shift"]
+#     answer: "Yes"                       # comfortable with night/evening shifts
+#   - match: ["which location are you applying", "preferred location"]
+#     answer: ["Bengaluru", "Hyderabad"]  # ordered dropdown fallbacks
+#   - match: "notice period negotiable"
+#     answer: "Yes"
+

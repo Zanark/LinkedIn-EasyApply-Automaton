@@ -606,6 +606,8 @@ relocation:
 
 remote:
 
+custom_questions:   # keyword -> canned answer for bespoke screening questions
+
 skills:
 
     Java:
@@ -664,6 +666,13 @@ Store the final answer with source `manual` or `portal`.
 
 Learn for future runs.
 
+For questions that recur across postings but the parser cannot categorise (shift
+timings, a location picker, a project-specific consent), a `custom_questions`
+keyword map in `answers.yaml` pre-answers them so unattended (`-y`) runs never
+stall. Custom answers are consulted only as a fallback, after built-in category
+resolution, so smart handling (salary tiers, notice period, booleans) is never
+shadowed.
+
 ---
 
 # AI Integration (Optional but Recommended)
@@ -719,27 +728,37 @@ to keep rendering crash-free.
 
 ---
 
-# Meet-the-Hiring-Team Outreach (opt-in)
+# Meet-the-Hiring-Team Outreach
 
 After a successful application the job page often shows a **"Meet the hiring
-team"** section with recruiter cards that expose a free **Message** button. When
-enabled (`outreach.enabled` or `--message-hiring-team`), the orchestrator runs a
-post-submit outreach pass that is deliberately conservative and **human-approved**:
+team"** section with recruiter cards. When enabled (`outreach.enabled` or
+`--message-hiring-team`, on by default), the orchestrator runs a post-submit
+outreach pass with two modes:
 
-- `answers/hiring_message.py` — `HiringTeamMessenger` renders a short personalised
-  message from a Jinja2 template (built-in default, or a user `template` path),
-  mirroring the cover-letter generator.
-- `forms/outreach.py` — `HiringTeamOutreach` detects the section and cards, reads
-  each recruiter's name / profile URL / Message button, drafts a message, calls an
-  **approval callback**, and only then types (into the contenteditable compose box,
-  without emitting Enter) and sends. It de-duplicates against people already
-  messaged (`database.has_messaged_person`), skips InMail-only cards, honours a
-  per-run cap, and records every draft (`sent` / `declined` / `failed`) in the
-  `outreach_messages` table via `database.record_outreach`.
+- **`draft` (default)** — read each recruiter's name and LinkedIn **profile URL**
+  straight from the card, draft a personalised message, and record it with status
+  `drafted`. It clicks nothing (so it runs even under `--yes`) and does not need a
+  free Message button. At the end of the run `orchestrator._emit_outreach_report`
+  turns the run's drafts into a plain-text report under `generated/outreach/`.
+- **`send` (opt-in)** — draft, call an **approval callback**, and only then dismiss
+  the post-apply upsell modal, click **Message**, type into the contenteditable
+  compose box (without emitting Enter), and click **Send**. Needs an interactive
+  session; degrades to `draft` when none is available.
 
-It only ever acts when an approval handler is wired (so it never sends under
-`--yes`), and only after an actual submit (never during `--dry-run`). Errors are
-swallowed with a warning so outreach can never fail an otherwise-successful apply.
+Pieces:
+
+- `answers/hiring_message.py` — `HiringTeamMessenger` renders the message from a
+  Jinja2 template (built-in default, or a user `template` path), mirroring the
+  cover-letter generator.
+- `answers/hiring_report.py` — `render_outreach_report` turns drafted DB rows into
+  the plain-text report (a pure function).
+- `forms/outreach.py` — `HiringTeamOutreach` detects the section + cards and drives
+  the mode. Both modes de-dupe against people already messaged
+  (`database.has_messaged_person`), honour a per-run cap, and record every row
+  (`drafted` / `sent` / `declined` / `failed`) via `database.record_outreach`.
+
+Errors are swallowed with a warning so outreach can never fail an
+otherwise-successful apply; nothing runs during `--dry-run` (no submit → no cards).
 
 ---
 
@@ -848,6 +867,28 @@ Resume usage
 Score distribution
 
 Manual interventions
+
+**Application details (drill-down):** pick any application and see exactly which
+questions were asked and the value submitted for each (from
+`application_answers`), plus the résumé that was submitted and a link to the job.
+
+**Needs attention (unanswered questions & blocked applications):** an aggregate
+view of the questions the automation had *no answer* for — surfaced only when a
+question was left blank *and* was never given a value in any application (so
+already-prefilled fields such as email or phone country code are excluded, not
+mistaken for gaps). Each row shows how many applications it was blank in and how
+many of those ended blocked (`failed`/`aborted`, usually "No progress between
+steps"), so the highest-impact gaps to add to `answers.yaml` / `custom_questions`
+sort to the top. A companion expander lists the blocked/aborted applications
+themselves with a trimmed reason and the count of unanswered questions per
+attempt. Backed by `database.unanswered_questions` and
+`database.blocked_applications`.
+
+**Hiring-team outreach (web view):** the drafted "messages to send" as a table
+with clickable LinkedIn profile links (so you open each profile in one click) and
+the résumé to attach, plus a per-contact expander with the copy-ready message.
+Backed by `database.outreach_drafts`, which joins each draft to the résumé
+submitted for that job.
 
 ---
 

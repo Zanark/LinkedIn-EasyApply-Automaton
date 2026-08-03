@@ -62,6 +62,9 @@ class FormFieldDetector:
         if self._count(container, "input[type='radio']") > 0:
             radios = container.locator("input[type='radio']")
             options, controls = self._radio_options(container, radios)
+            # Re-derive the label excluding the option texts so the question is
+            # never mistaken for an option (e.g. "Yes"/"No").
+            label = self._label_of(container, exclude=set(options))
             return FormField(label, FieldKind.RADIO, radios, container, options, controls)
 
         if self._count(container, "input[type='checkbox']") > 0:
@@ -93,8 +96,17 @@ class FormFieldDetector:
         logger.debug("Unclassified field container with label '{}'", label)
         return FormField(label, FieldKind.UNKNOWN, None, container, required=self._required(label))
 
-    def _label_of(self, container: Any) -> str:
-        for selector in ("label", "legend", "[aria-label]"):
+    def _label_of(self, container: Any, *, exclude: set[str] | None = None) -> str:
+        """Return the field's question text.
+
+        ``exclude`` holds texts that must never be used as the label (the option
+        labels of a radio group). LinkedIn wraps radio groups in a
+        ``<fieldset>`` whose ``<legend>`` carries the real question while each
+        option has its own ``<label>`` (Yes/No), so ``<legend>`` is tried before
+        ``<label>`` and any candidate matching an option is skipped.
+        """
+        excluded = {e.strip().lower() for e in (exclude or set()) if e.strip()}
+        for selector in ("legend", "label", "[aria-label]"):
             node = first(container, [selector])
             if node is None:
                 continue
@@ -104,9 +116,11 @@ class FormFieldDetector:
                     text = (node.get_attribute("aria-label") or "").strip()
                 except Exception:  # pragma: no cover - defensive
                     text = ""
-            if text:
-                return self._clean_label(text)
-        return self._clean_label(safe_text(container))
+            cleaned = self._clean_label(text)
+            if cleaned and cleaned.lower() not in excluded:
+                return cleaned
+        fallback = self._clean_label(safe_text(container))
+        return "" if fallback.lower() in excluded else fallback
 
     @staticmethod
     def _clean_label(text: str) -> str:

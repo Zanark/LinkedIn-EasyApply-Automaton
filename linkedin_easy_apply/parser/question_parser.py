@@ -157,6 +157,32 @@ _PHRASES: dict[QuestionCategory, tuple[str, ...]] = {
 _EXPERIENCE_HINT = re.compile(r"\b(years?|experience|expertise|worked with|hands[- ]?on)\b")
 _YEARS_HINT = re.compile(r"\byears?\b")
 
+# Whole-word tokens that anchor a salary/compensation question. Used by the
+# high-precision rule AND to gate the fuzzy fallback, so a "current location" /
+# "current designation" / "current company" question never fuzzy-matches
+# "current salary" on the shared "what is your current" tokens and gets filled
+# with a number.
+_SALARY_WORDS = (
+    "salary",
+    "salaries",
+    "compensation",
+    "ctc",
+    "remuneration",
+    "pay",
+    "package",
+    "lpa",
+    "stipend",
+    "wage",
+    "wages",
+)
+_SALARY_PHRASES = ("take home", "in hand", "cost to company")
+_SALARY_CATEGORIES = frozenset({QuestionCategory.SALARY_EXPECTED, QuestionCategory.SALARY_CURRENT})
+
+
+def _has_salary_anchor(norm: str) -> bool:
+    """True when the text actually names pay (a token or a phrase like 'in hand')."""
+    return _word(norm, *_SALARY_WORDS) or any(p in norm for p in _SALARY_PHRASES)
+
 
 def _word(norm: str, *words: str) -> bool:
     """Whole-word membership test (so ``city`` does not match ``velocity``)."""
@@ -284,11 +310,13 @@ class QuestionParser:
         if skill and _EXPERIENCE_HINT.search(norm):
             return QuestionCategory.EXPERIENCE_SKILL, skill, 0.95
 
-        # Salary.
-        if _word(norm, "salary", "compensation", "ctc", "remuneration", "pay"):
-            if _word(norm, "expected", "desired", "require") or "expectation" in norm:
+        # Salary. Requires an explicit compensation token so non-salary
+        # "current <X>" questions (location, designation, company) are never
+        # treated as pay.
+        if _has_salary_anchor(norm):
+            if _word(norm, "expected", "desired", "require", "seeking") or "expectation" in norm:
                 return QuestionCategory.SALARY_EXPECTED, None, 0.92
-            if _word(norm, "current"):
+            if _word(norm, "current", "present", "existing", "last", "latest", "drawn"):
                 return QuestionCategory.SALARY_CURRENT, None, 0.92
             return QuestionCategory.SALARY_EXPECTED, None, 0.75
 
@@ -326,6 +354,14 @@ class QuestionParser:
             return QuestionCategory.FULL_NAME, None, 0.85
         if _word(norm, "city"):
             return QuestionCategory.LOCATION_CITY, None, 0.85
+        # The candidate's OWN location resolves to their city. Exclude a "which
+        # location are you applying for?" preference so it falls through to a
+        # custom answer instead of being answered with the home city.
+        if "where are you based" in norm or (
+            _word(norm, "location", "located", "reside", "residing", "domicile", "hometown")
+            and not _word(norm, "applying", "apply", "preferred", "prefer", "interested")
+        ):
+            return QuestionCategory.LOCATION_CITY, None, 0.85
         if _word(norm, "country"):
             return QuestionCategory.LOCATION_COUNTRY, None, 0.85
 
@@ -346,10 +382,16 @@ class QuestionParser:
         return None
 
     def _fuzzy(self, norm: str) -> tuple[QuestionCategory, float, str] | None:
+        # A salary phrase must be backed by a real compensation token; without
+        # one, "what is your current <location/designation/company>" fuzzy-matches
+        # "what is your current salary" on the shared tokens and gets a number.
+        allow_salary = _has_salary_anchor(norm)
         best_category: QuestionCategory | None = None
         best_score = 0.0
         best_phrase = ""
         for category, phrases in _PHRASES.items():
+            if category in _SALARY_CATEGORIES and not allow_salary:
+                continue
             for phrase in phrases:
                 score = fuzz.token_set_ratio(norm, phrase)
                 if score > best_score:
