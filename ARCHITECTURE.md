@@ -638,6 +638,14 @@ Years of Java Experience
 
 Should all resolve to the same answer.
 
+**Resolution order (first match wins).** For each field the fill workflow tries,
+in order: (1) an **approved override** for the question (`answer_overrides`,
+written by the Resume-match tab / `sync-answers`) — a user-vetted correction that
+outranks everything; (2) the configured answers (`answers.yaml` via the
+resolver); (3) a previously **learned** answer from SQLite (reuse a match
+automatically before ever prompting); (4) prompt the user. A Yes/No override is
+mapped to a boolean resolution, mirroring a custom Yes/No answer.
+
 Before prompting for an unconfigured answer, query previously learned question
 answers in SQLite and reuse a match automatically.
 
@@ -736,10 +744,11 @@ team"** section with recruiter cards. When enabled (`outreach.enabled` or
 outreach pass with two modes:
 
 - **`draft` (default)** — read each recruiter's name and LinkedIn **profile URL**
-  straight from the card, draft a personalised message, and record it with status
-  `drafted`. It clicks nothing (so it runs even under `--yes`) and does not need a
-  free Message button. At the end of the run `orchestrator._emit_outreach_report`
-  turns the run's drafts into a plain-text report under `generated/outreach/`.
+  straight from the card, draft a personalised message **and** a short connection
+  note, and record both with status `drafted`. It clicks nothing (so it runs even
+  under `--yes`) and does not need a free Message button. At the end of the run
+  `orchestrator._emit_outreach_report` turns the run's drafts into a plain-text
+  report under `generated/outreach/`.
 - **`send` (opt-in)** — draft, call an **approval callback**, and only then dismiss
   the post-apply upsell modal, click **Message**, type into the contenteditable
   compose box (without emitting Enter), and click **Send**. Needs an interactive
@@ -747,15 +756,21 @@ outreach pass with two modes:
 
 Pieces:
 
-- `answers/hiring_message.py` — `HiringTeamMessenger` renders the message from a
-  Jinja2 template (built-in default, or a user `template` path), mirroring the
-  cover-letter generator.
+- `answers/hiring_message.py` — `HiringTeamMessenger` renders both variants from
+  Jinja2 templates (built-in defaults, or user `template` / `note_template`
+  paths), mirroring the cover-letter generator. `render` produces the full
+  message; `render_note` produces the **connection note** and *guarantees* it is
+  ≤300 characters (LinkedIn's invitation-note cap) by degrading gracefully —
+  trimming the tech-stack list keyword by keyword, then dropping the portfolio
+  link, then a final word-boundary truncation.
 - `answers/hiring_report.py` — `render_outreach_report` turns drafted DB rows into
-  the plain-text report (a pure function).
+  the plain-text report (a pure function) with a **MESSAGE** block and a
+  **CONNECTION NOTE** block (the latter shows its `n/300` character count).
 - `forms/outreach.py` — `HiringTeamOutreach` detects the section + cards and drives
   the mode. Both modes de-dupe against people already messaged
   (`database.has_messaged_person`), honour a per-run cap, and record every row
-  (`drafted` / `sent` / `declined` / `failed`) via `database.record_outreach`.
+  (`drafted` / `sent` / `declined` / `failed`), including the `message` and `note`,
+  via `database.record_outreach`.
 
 Errors are swallowed with a warning so outreach can never fail an
 otherwise-successful apply; nothing runs during `--dry-run` (no submit → no cards).
@@ -834,6 +849,8 @@ Answers
 
 Runs
 
+Skips
+
 Errors
 
 Resumes
@@ -848,7 +865,39 @@ AI Results
 
 Build optional Streamlit dashboard.
 
-Display:
+**Layout — Excel-style tabs.** A persistent header shows the headline KPIs
+(applications today, total submitted, failed, **skipped**, jobs discovered) and a
+success-rate bar; the detail views are split across seven `st.tabs` so nothing is
+one long scroll: **📊 Overview**, **✅ Submitted**, **🔎 Application details**,
+**⚠️ Needs attention**, **⏭️ Skipped**, **🎯 Resume match**, and **🤝 Outreach**
+(each rendered by `_overview_section` / `_submitted_section` /
+`_application_detail_section` / `_needs_attention_section` / `_skipped_section` /
+`_resume_match_section` / `_outreach_section`).
+
+**Submitted tab (browse-all Q&A).** `_submitted_section` lists every successful
+(`status='submitted'`) application as a collapsible **company — role** expander,
+newest first; expanding one shows the résumé submitted, step count, a job link
+and a table of exactly what was asked and the answer submitted. Backed by
+`database.submitted_applications` (the list) + `database.answers_for_applications`
+(a single bulk query that groups every application's answers by id, avoiding the
+N+1 that a per-expander `application_answers` call would cause). This complements
+the single-select `_application_detail_section`, which drills into one application
+of *any* status.
+
+**Clickable KPI cards → focus drill-down.** Each headline KPI is a bordered card
+with a **View details →** button. Clicking one stashes its category in
+`st.session_state["focus_category"]`; `_focus_panel` then renders an inline
+drill-down (`🔎 <title>` + **✕ Close**) directly under the cards with
+category-specific charts (submitted/failed/skipped/discovered per day as line
+charts, top companies / résumé usage / workplace-type / experience-level / Easy
+Apply-vs-external as bar charts) and a filtered record table whose `url` column is
+a clickable **Open ↗** link. All the query/aggregation is pure (Streamlit-free) in
+`dashboard/focus.py` — `build_focus_view(db, category) -> FocusView | None`
+returning `FocusChart` value objects — so it is unit-tested (`tests/test_focus.py`)
+without a browser; `st.tabs` cannot be switched programmatically, so the panel is
+rendered in-place rather than by auto-selecting a tab.
+
+Display (📊 Overview tab):
 
 Applications today
 
@@ -881,14 +930,57 @@ many of those ended blocked (`failed`/`aborted`, usually "No progress between
 steps"), so the highest-impact gaps to add to `answers.yaml` / `custom_questions`
 sort to the top. A companion expander lists the blocked/aborted applications
 themselves with a trimmed reason and the count of unanswered questions per
-attempt. Backed by `database.unanswered_questions` and
-`database.blocked_applications`.
+attempt. A **🔁 Reapply all** control below the expander retries every
+failed/aborted job that was never later submitted (backed by
+`database.reapply_targets`): because Easy Apply needs a live browser + your
+logged-in session it can't run inside Streamlit, so the button launches the
+`reapply` CLI in a **new console window** (the exact command is shown as a
+copy-paste fallback). Backed by `database.unanswered_questions`,
+`database.blocked_applications`, and `database.reapply_targets`.
 
-**Hiring-team outreach (web view):** the drafted "messages to send" as a table
-with clickable LinkedIn profile links (so you open each profile in one click) and
-the résumé to attach, plus a per-contact expander with the copy-ready message.
-Backed by `database.outreach_drafts`, which joins each draft to the résumé
-submitted for that job.
+**Skipped (why jobs were not applied to):** the pipeline records a row in the
+`skips` table for every job it chooses *not* to apply to (via
+`Orchestrator._note_skip` → `database.record_skip`), tagged with the reason —
+a pre-apply gate (`not_easy_apply`, `already_applied`, `duplicate_company_role`,
+`blacklisted`, `excluded_keyword`, `company_limit`, …), `below_threshold`,
+`ai_advised_against`, `scan_only`, `reapply_open_failed`, or a form-level
+`skipped`/`dry_run`/`aborted`. The tab (backed by `database.skip_events`, which
+LEFT JOINs each skip to its job) shows skip-count metrics, a **reason breakdown**
+bar chart, **skips over time**, and breakdowns **by company / workplace type /
+experience level**, plus a full detail table (with a job link) and a plain-English
+legend for every reason code. The `skips` table is deliberately separate from
+`applications`, so it never perturbs submit / reapply / stats logic; the Overview
+**Skipped** KPI is the historical `SUM(runs.jobs_skipped)` (populated even for
+runs that predate this table).
+
+**Resume match (answers vs. your résumé):** grades every answer the automation
+has submitted against the master résumé (`master.yaml`, parsed by
+`answers/resume_expectations.py` into a `ResumeProfile`). Only fields the résumé
+can actually adjudicate are graded — total years of experience, per-skill
+experience for skills the résumé lists, and identity (name/email/phone/city/
+country); everything else (salary, notice, relocation, sponsorship, custom
+screening…) is a personal preference and is reported *not derivable*, never a
+deviation. The tab shows match/mismatch/not-derivable metrics, a **deviation-over-
+time line chart** (share of gradable answers per day that disagreed with the
+résumé — a downward trend as corrections land), a differences-by-category bar,
+and an editable **sync table**: tick *Approve* (edit the recommended value if
+needed) and press *Sync approved* to store each value as an approved override.
+Backed by `database.answer_comparison` / `answered_history` /
+`answer_overrides`, graded by `resume_expectations.grade_comparison` /
+`deviation_by_day`. Approved overrides are written to the `answer_overrides`
+table and read **first** at fill time (see *Answer resolution*), so the next
+application uses the corrected value; the same set is also drivable from the
+`sync-answers` CLI.
+
+**Hiring-team outreach (web view):** the drafted "messages to send" as an
+editable table with clickable LinkedIn profile links (so you open each profile in
+one click), the résumé to attach, and a **Done** checkbox — tick the ones you've
+finished and press **Remove completed** to delete them (message, note and all)
+via `database.delete_outreach`. Each contact also has an expander with the
+copy-ready full message **and** the ≤300-char connection note (shown with its
+live character count) plus its own **Mark completed & remove** button. Backed by
+`database.outreach_drafts`, which joins each draft to the résumé submitted for
+that job and exposes its row `id` so the UI can target it for deletion.
 
 ---
 
@@ -898,6 +990,8 @@ Commands:
 
 ```
 apply
+
+reapply
 
 scan
 
@@ -912,6 +1006,8 @@ test-browser
 stats
 
 export
+
+sync-answers
 
 ```
 

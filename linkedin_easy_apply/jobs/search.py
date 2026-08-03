@@ -45,6 +45,24 @@ class JobSearch:
             self._page.wait_for_timeout(1200)
             yield self._extractor.extract(self._page, search_name=search_name)
 
+    def open_job(self, url: str, search_name: str = "reapply") -> Job | None:
+        """Navigate straight to a single job page and extract it.
+
+        Used by the *reapply* flow, which retries specific previously-failed
+        jobs by their stored ``/jobs/view/<id>/`` URL rather than crawling a
+        search. Any leftover modal is cleared first, and navigation failures
+        return ``None`` so the caller can skip that job.
+        """
+        self._clear_blocking_modal()
+        try:
+            self._page.goto(url, wait_until="domcontentloaded")
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Could not open job {}: {}", url, exc)
+            return None
+        self._page.wait_for_timeout(1800)
+        self._clear_blocking_modal()
+        return self._extractor.extract(self._page, search_name=search_name)
+
     # -- internals ------------------------------------------------------------
     def _collect_ids(self, max_jobs: int, max_scrolls: int = 15) -> list[str]:
         ordered: list[str] = []

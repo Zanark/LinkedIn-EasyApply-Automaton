@@ -101,6 +101,7 @@ flowchart TD
 | **QuestionParser** | `parser/question_parser.py` | Turn free-text question → `(category, skill, answer_type, confidence)`. | pure |
 | **AnswerStore** | `answers/store.py` | In-memory, alias-aware view of *your* data. | pure |
 | **AnswerResolver** | `answers/resolver.py` | Map a parsed question → a concrete value from the store. | pure |
+| **ResumeProfile / expectations** | `answers/resume_expectations.py` | Parse `master.yaml` and *grade* recorded answers against the résumé (derivable-only); powers the dashboard Resume-match tab + `sync-answers`. | pure |
 | **ScoringEngine** | `scoring/engine.py` | Weighted-keyword score + pass/fail vs threshold. | pure |
 | **ResumeSelector** | `answers/resume_selector.py` | Pick the best resume (mapping → overlap → default). | pure |
 | **DynamicResumeBuilder** | `answers/dynamic_resume.py` | Optional: detect a job's cluster (keyword/AI) and shell out to the external builder to render a résumé tailored per job; caches per run; falls back on error. | I/O |
@@ -109,7 +110,7 @@ flowchart TD
 | **HiringTeamMessenger** | `answers/hiring_message.py` | Render a short personalised outreach message (Jinja2) for a hiring-team recruiter. | pure |
 | **render_outreach_report** | `answers/hiring_report.py` | Render the drafted-contacts run into a plain-text outreach report. | pure |
 | **BrowserManager** | `browser/manager.py` | Own the Playwright lifecycle; reuse your logged-in profile. | I/O |
-| **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator). | I/O |
+| **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator); also `open_job(url)` to navigate to one job directly (used by *reapply*). | I/O |
 | **JobExtractor** | `jobs/extractor.py` | Read the detail pane → a `Job` value object. | I/O |
 | **EasyApplyWorkflow** | `forms/easy_apply.py` | Multi-step form state machine: detect→fill→next→submit/discard. | I/O |
 | **FormFieldDetector** | `forms/detector.py` | Discover fields + their options in the current step. | I/O |
@@ -148,7 +149,7 @@ sequenceDiagram
             O->>DB: upsert_job()
             O->>O: score + pre-apply gates
             alt gated or below threshold
-                O->>DB: record_score(); note_skip
+                O->>DB: record_score(); record_skip(reason)
             else eligible
                 O->>O: select resume, (AI advise)
                 O->>W: apply(resume, cover)

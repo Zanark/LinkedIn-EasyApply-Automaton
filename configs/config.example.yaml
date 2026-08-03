@@ -56,6 +56,12 @@ resume:
     site reliability engineer: SRE.pdf
     azure: Azure.pdf
 
+  # Optional. Path to your master.yaml (résumé source of truth) used by the
+  # "Resume match" dashboard tab and `lea sync-answers` to grade submitted
+  # answers against your real experience. If unset, it is auto-located at
+  # <builder.path>/master.yaml (below), then configs/master.yaml.
+  # master_path: C:\path\to\dynamic-resume-builder\master.yaml
+
   # --- Optional: per-job dynamic resume generation --------------------------
   # OFF by default. When enabled, the automaton asks the *separate*
   # dynamic-resume-builder tool (github.com/Zanark/dynamic-resume-builder) to
@@ -158,9 +164,10 @@ run:
 
 # After a successful application, handle the "Meet the hiring team" recruiters.
 # In the default `draft` mode the tool reads each recruiter's name + LinkedIn
-# profile URL from the page, drafts a short personalised message, and writes a
-# plain-text report to `report_dir` at the end of the run for you to send by
-# hand -- it clicks nothing and runs fully unattended (even under --yes).
+# profile URL from the page, drafts a full message AND a short <=300-char
+# connection note (for the free invitation), and writes a plain-text report to
+# `report_dir` at the end of the run for you to send by hand -- it clicks nothing
+# and runs fully unattended (even under --yes).
 # Set `mode: send` to instead pause for approval and send each message on
 # LinkedIn (needs an interactive run; falls back to `draft` under --yes).
 # The --message-hiring-team / --no-message-hiring-team CLI flag overrides `enabled`.
@@ -168,6 +175,7 @@ outreach:
   enabled: true           # collect contacts + draft messages + write the report
   mode: draft             # draft (report only, no clicking) | send (message on LinkedIn)
   max_per_run: 5          # safety cap on contacts handled per run
-  # template: path/to/message.j2   # optional custom Jinja2 message template
+  # template: path/to/message.j2   # optional custom Jinja2 full-message template
+  # note_template: path/to/note.j2 # optional custom Jinja2 note template (<=300 chars)
   skip_if_messaged: true  # never contact the same person twice
   report_dir: generated/outreach   # where the plain-text report is written

@@ -25,7 +25,7 @@ from linkedin_easy_apply.forms.field import FieldKind, FormField
 from linkedin_easy_apply.forms.filler import FormFiller
 from linkedin_easy_apply.forms.matching import country_code_option, dial_code
 from linkedin_easy_apply.forms.values import current_value_of
-from linkedin_easy_apply.parser.categories import QuestionCategory
+from linkedin_easy_apply.parser.categories import AnswerType, QuestionCategory
 from linkedin_easy_apply.parser.question_parser import QuestionParser
 from linkedin_easy_apply.utils.screenshots import ScreenshotManager
 
@@ -33,6 +33,10 @@ from linkedin_easy_apply.utils.screenshots import ScreenshotManager
 UnknownHandler = Callable[[str, "Path | None"], "str | None"]
 ConfirmHandler = Callable[[], bool]
 AnswerLookup = Callable[[str], "str | None"]
+
+# Yes/No tokens for mapping an approved override to a boolean resolution.
+_OVERRIDE_YES = {"yes", "y", "true", "1"}
+_OVERRIDE_NO = {"no", "n", "false", "0"}
 
 
 class ApplyStatus(StrEnum):
@@ -91,6 +95,7 @@ class EasyApplyWorkflow:
         on_unknown: UnknownHandler | None = None,
         on_confirm_submit: ConfirmHandler | None = None,
         answer_lookup: AnswerLookup | None = None,
+        override_lookup: AnswerLookup | None = None,
     ) -> None:
         self._page = page
         self._parser = parser
@@ -102,6 +107,7 @@ class EasyApplyWorkflow:
         self._on_unknown = on_unknown
         self._on_confirm = on_confirm_submit
         self._answer_lookup = answer_lookup
+        self._override_lookup = override_lookup
         self._resume_selected_done = False
 
     def apply(
@@ -257,7 +263,11 @@ class EasyApplyWorkflow:
             self._fill_cover_textarea(field_, parsed, understood, cover_letter_text, answers)
             return
 
-        resolution = self._resolver.resolve(parsed)
+        resolution = self._override_resolution(parsed)
+        if resolution is not None:
+            logger.debug("Using an approved override for '{}' (résumé-sync)", field_.label)
+        else:
+            resolution = self._resolver.resolve(parsed)
 
         # Fall back to the learned-answer bank before bothering the user.
         if not resolution.found and self._answer_lookup is not None:
@@ -313,6 +323,26 @@ class EasyApplyWorkflow:
                 reason,
             )
         self._record(answers, field_, parsed, value, source, value is not None)
+
+    def _override_resolution(self, parsed: Any) -> AnswerResolution | None:
+        """Return an approved-override answer for *parsed*, or ``None``.
+
+        Approved corrections (from the dashboard's résumé-sync or the
+        ``sync-answers`` CLI) take priority over answers.yaml and the learned
+        bank, so this is checked first. A Yes/No override is mapped to a boolean
+        resolution just like a custom Yes/No answer.
+        """
+        if self._override_lookup is None:
+            return None
+        value = self._override_lookup(parsed.normalized)
+        if not value:
+            return None
+        token = value.strip().lower()
+        if token in _OVERRIDE_YES:
+            return AnswerResolution(True, "Yes", "approved", AnswerType.BOOLEAN, bool_value=True)
+        if token in _OVERRIDE_NO:
+            return AnswerResolution(True, "No", "approved", AnswerType.BOOLEAN, bool_value=False)
+        return AnswerResolution(True, value, "approved", parsed.answer_type)
 
     def _handle_country_code(
         self,

@@ -103,6 +103,7 @@ point to `linkedin.com`. Disabled entries are skipped. You can keep a library in
 | `directory` | `generated/resume` | Folder holding your resume files.           |
 | `default`   | `null`    | Fallback resume filename.                           |
 | `mapping`   | `{}`      | `role/keyword -> filename`; best match wins.        |
+| `master_path` | `null`  | Path to your `master.yaml` (résumé source of truth) used by the **Resume match** tab and `sync-answers`. Auto-located at `<builder.path>/master.yaml` then `configs/master.yaml` when unset. |
 
 Selection order: **mapping match** (score ≥ 60) → **filename-keyword overlap**
 with the job text → **default**.
@@ -172,6 +173,36 @@ match at word boundaries (so `ai` matches `ai/ml` but not `email`).
 > **AI mode** reuses the `ai:` provider (see below). The model may only reorder
 > the categories you already have and pick a headline — it is constrained to the
 > real `master.yaml` categories and cannot fabricate content.
+
+#### Resume match & `sync-answers` (correcting submitted answers)
+
+Independent of dynamic generation, the tool can grade every answer it has already
+submitted against your `master.yaml` and let you approve corrections. It reads the
+résumé from `resume.master_path` (or auto-locates `<builder.path>/master.yaml`,
+then `configs/master.yaml`). Only fields the résumé can judge are graded — total &
+per-skill years of experience and identity (name/email/phone/city/country);
+salary, notice period, relocation and other **preferences** are reported *not
+derivable* and never counted as a deviation.
+
+Two front-ends, one effect:
+
+- the dashboard's **🎯 Resume match** tab (metrics, a deviation-over-time chart, a
+  differences-by-category bar, and an editable *approve → Sync* table); and
+- the **`lea sync-answers`** CLI (`--apply` to store, `--list` to review, `-y` to
+  skip the prompt).
+
+Approved values are stored as **overrides** in the `answer_overrides` table and
+take top priority in the answer-resolution order at fill time:
+
+1. **approved override** (this feature) →
+2. `answers.yaml` (the resolver) →
+3. learned answer (SQLite) →
+4. prompt the user.
+
+So a synced correction is used the next time that question is asked — ahead of
+`answers.yaml` and the learned bank. Use `answers.yaml` for values you set once;
+use sync to fix what the bot already submitted (e.g. a stale total-experience of
+`3` when your résumé shows `6`).
 
 ### `scoring`
 
@@ -332,10 +363,12 @@ command) forces `DEBUG` logging for that run.
 Post-apply handling of the **"Meet the hiring team"** recruiters shown on a job
 page. Enabled by default in the **`draft`** mode: after an application is
 submitted, the tool reads each recruiter's name and LinkedIn **profile URL**
-straight from the page, drafts a short personalised note, and records it. At the
-end of the run it writes a **plain-text report** (`report_dir`) listing every
-contact, their profile URL, the résumé submitted for that job (to attach), and
-the drafted message so you can send them by hand.
+straight from the page, drafts **two** variants — the full message plus a short
+**connection note** (≤300 characters, for the free invitation note) — and
+records both. At the end of the run it writes a **plain-text report**
+(`report_dir`) listing every contact, their profile URL, the résumé submitted
+for that job (to attach), the full message, and the connection note so you can
+send them by hand.
 It clicks nothing, so it runs fully unattended (even under `--yes`).
 
 Set `mode: send` to instead restore the interactive flow that pauses for your
@@ -346,7 +379,8 @@ approval and types + sends each message on LinkedIn.
 | `enabled`          | `true`               | Master switch. Overridden per-run by `--message-hiring-team` / `--no-message-hiring-team`. |
 | `mode`             | `draft`              | `draft` = collect contacts + draft messages + write the report (no clicking). `send` = draft, approve, and message on LinkedIn (needs an interactive run; falls back to `draft` under `--yes`). |
 | `max_per_run`      | `5`                  | Safety cap on the number of contacts handled in a single run.      |
-| `template`         | *(none)*             | Optional path to a custom Jinja2 message template. Falls back to the built-in template. |
+| `template`         | *(none)*             | Optional path to a custom Jinja2 **message** template. Falls back to the built-in template. |
+| `note_template`    | *(none)*             | Optional path to a custom Jinja2 **connection-note** template. The rendered note is always trimmed to ≤300 characters. Falls back to the built-in note template. |
 | `skip_if_messaged` | `true`               | Never contact the same person twice (deduped by profile URL, else name). |
 | `report_dir`       | `generated/outreach` | Where the plain-text `draft`-mode report is written.               |
 
@@ -355,7 +389,8 @@ outreach:
   enabled: true
   mode: draft             # draft (report only) | send (message on LinkedIn)
   max_per_run: 5
-  # template: configs/hiring_message.j2
+  # template: configs/hiring_message.j2       # optional custom full-message template
+  # note_template: configs/hiring_note.j2     # optional custom ≤300-char note template
   skip_if_messaged: true
   report_dir: generated/outreach
 ```
@@ -375,7 +410,11 @@ Behaviour:
   `outreach_messages` table for auditing and dedupe.
 - The message context includes the role, company, your name, years of experience
   and the job's matched skills; the recruiter's first name personalises the
-  greeting.
+  greeting. The **connection note** uses the same context plus your
+  `portfolio` (falling back to `website`) from `answers.yaml`, and is
+  automatically trimmed to stay within LinkedIn's **300-character** invitation
+  limit — the tech-stack list is shortened first, then the portfolio link, so the
+  introduction and reason for reaching out always survive.
 
 > ⚠️ Reaching out at volume can look like spam and put your account at risk. Keep
 > `max_per_run` small and review every draft before you send.

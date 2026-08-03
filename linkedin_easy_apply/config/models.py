@@ -161,6 +161,10 @@ class ResumeConfig(BaseModel):
 
     directory: Path = Path("generated/resume")
     default: str | None = None
+    # Master résumé YAML (single source of truth for the "Resume match"
+    # dashboard tab). When unset it is resolved to <builder.path>/master.yaml,
+    # then configs/master.yaml.
+    master_path: Path | None = None
     # role/keyword -> resume filename
     mapping: dict[str, str] = Field(default_factory=dict)
     # optional per-job dynamic generation (see ResumeBuilderConfig)
@@ -279,6 +283,7 @@ class OutreachConfig(BaseModel):
     mode: OutreachMode = OutreachMode.DRAFT
     max_per_run: int = 5  # safety cap on contacts handled per run
     template: Path | None = None  # optional custom Jinja2 message template file
+    note_template: Path | None = None  # optional custom Jinja2 note template (<=300 chars)
     skip_if_messaged: bool = True  # never contact the same person twice
     report_dir: Path = Path("generated/outreach")  # where the report is written
 

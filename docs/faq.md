@@ -194,13 +194,29 @@ leaves it as-is instead of rewriting it.
 By default it **drafts** them for you rather than messaging directly. After a job
 is submitted, the tool reads the *Meet the hiring team* recruiter cards, grabs
 each person's name and LinkedIn **profile URL** straight from the page, and drafts
-a short personalised note (role, company, your background). At the end of the run
+**two** variants: a full personalised **message** (role, company, your
+background) to send once they connect, and a short **connection note** (≤300
+characters — LinkedIn's cap for the free invitation note) that introduces you,
+your background and why you're reaching out. At the end of the run
 it writes a plain-text **report** to `generated/outreach/` listing every contact,
 their profile URL, the résumé that was submitted for that job (so you know which
-file to attach), and the drafted message — you open each profile and send by
-hand. It clicks nothing, so it runs fully unattended (even under `-y`). Nothing is
+file to attach), the drafted message, and the connection note (with its
+character count) — you open each profile, attach the note to your connection
+invite, and send the full message once they accept. It clicks nothing, so it runs
+fully unattended (even under `-y`). Nothing is
 collected during `--dry-run` (no submit means the cards never appear). The same
-contacts also appear on the `lea dashboard` as clickable profile links.
+contacts also appear on the `lea dashboard` as clickable profile links. Once
+you've actually sent one, tick its **Done** box (or press **Mark completed &
+remove** in its expander) and it's deleted from the database — message, note and
+all — so your outreach list only ever shows what's still outstanding.
+
+The connection note is kept within the 300-character limit automatically: if it
+would overflow it trims the tech-stack list first, then drops the portfolio link,
+and finally truncates at a word boundary — so the introduction and reason for
+reaching out always survive. Fill `portfolio` (or `website`) in `answers.yaml` to
+include a portfolio link in the note. Customise either variant with a Jinja2
+template via `outreach.template` (full message) or `outreach.note_template`
+(note).
 
 Prefer the tool to send for you? Set `outreach.mode: send` for the old
 draft-**approve**-and-send flow: it shows each message for your OK (Enter sends,
@@ -236,11 +252,86 @@ matching browser must be installed; for `chromium`, run
 needs the `.[export]` extra) writes applications joined with jobs to
 `applications.csv` (git-ignored, so your exported data isn't committed). `lea
 dashboard` launches an optional Streamlit UI (needs the `.[dashboard]` extra)
-that, beyond the headline metrics, lets you drill into any application to see
-exactly which questions were asked and the value submitted for each (plus the
-résumé used), surfaces a **Needs attention** view of the questions it had no
-answer for (and the applications they blocked, so you know what to add to
-`answers.yaml`), and shows drafted hiring-team outreach as a table of clickable
-LinkedIn profile links with the résumé to attach and a copy-ready message.
+that, beyond the headline metrics, is organised into Excel-style tabs
+(**Overview**, **Submitted**, **Application details**, **Needs attention**,
+**Skipped**, **Resume match**, **Outreach**) so nothing is one long scroll. It
+lists **every successful application as a collapsible card** (expand to replay the
+exact questions asked and answers submitted, start to finish), lets you drill into
+any
+application to see exactly which questions were asked and the value submitted for
+each (plus the résumé used), surfaces a **Needs attention** view of the questions
+it had no answer for (and the applications they blocked, so you know what to add to
+`answers.yaml`, plus a one-click **Reapply all** to retry the failed jobs), breaks
+down **why every skipped job was skipped** in **Skipped** (reason breakdown plus
+trends by day / company / workplace / level), grades your submitted answers against
+your résumé in **Resume match** (with a deviation-over-time chart and one-click
+*sync* of approved corrections), and shows drafted hiring-team outreach as a table
+of clickable LinkedIn profile links with the résumé to attach, a copy-ready full
+message, and a short **≤300-char connection note** for the invitation — with a
+**Done** checkbox / **Mark completed & remove** button to delete outreach you've
+finished from the database.
+
+### Can I click a KPI to see just that category?
+
+Yes. The five headline numbers (applications today, total submitted, failed,
+skipped, jobs discovered) are **clickable cards**. Press a card's **View details →**
+button and an inline drill-down opens under the header showing *only* that
+category: a per-day trend line, bar charts (top companies, résumé usage, workplace
+type, experience level, Easy Apply vs external — whichever apply), and a filtered
+record table whose job column is a clickable **Open ↗** link. Press **✕ Close** to
+return to the normal view. (The panel is rendered in place because Streamlit tabs
+cannot be switched programmatically; the logic lives in `dashboard/focus.py`.)
+
+### Why did the bot skip so many jobs? Where can I see why?
+
+Open the **⏭️ Skipped** tab. Every job the pipeline decides *not* to apply to is
+recorded with a reason, so you can see the breakdown at a glance — e.g.
+`below_threshold` (score under your threshold), `already_applied`,
+`duplicate_company_role`, `blacklisted` / `excluded_keyword` / `not_whitelisted`
+(your filters), `company_limit` (per-company cap), `ai_advised_against`,
+`scan_only` (scan mode never applies), or a form-level `skipped` / `dry_run` /
+`aborted`. The tab shows a reason bar chart, skips over time, and breakdowns by
+company / workplace type / experience level, plus a full table (with a job link)
+and a legend explaining every reason. The headline **Skipped** metric on the
+Overview header is the all-time total across runs. (Per-reason detail is recorded
+going forward; older runs kept only the aggregate count.)
+
+### The bot answered a question wrong — how do I correct it everywhere?
+
+Use **Resume match**. The tool grades every answer it has submitted against your
+master résumé (`master.yaml`) and flags the ones that disagree — most commonly a
+stale **total years of experience** (e.g. it answered *3* when your résumé shows
+*6*). Only fields the résumé can judge are graded (total & per-skill experience,
+name/email/phone/location); salary, notice period and other personal preferences
+are shown as *not derivable* and never counted as a mistake.
+
+To fix them, either:
+
+- **Dashboard:** open the **🎯 Resume match** tab, tick *Approve* on the rows whose
+  recommended value is right (edit the value first if needed), and press *Sync
+  approved*; or
+- **CLI:** run `lea sync-answers` to preview the differences, then `lea
+  sync-answers --apply` to store them.
+
+Approved values become **overrides** saved in the database and used **first** —
+ahead of `answers.yaml` and the learned bank — the next time each question is
+asked. (Prefer editing `answers.yaml` for values you set once and rarely change;
+use sync for correcting what the bot already submitted.) `lea sync-answers
+--list` shows the overrides currently in effect.
+
+### Some applications failed / aborted — how do I retry them?
+
+Use **Reapply**. The **⚠️ Needs attention** tab lists every job whose Easy Apply
+run stalled (and that was never later submitted), and a **🔁 Reapply all** button
+retries them all in one click. Because Easy Apply needs a live browser and your
+logged-in session, the button opens a **new console window** that runs the retry
+(the exact command is shown too, as a copy-paste fallback). From the terminal the
+same thing is `lea reapply` (add `--list` to preview, `--dry-run` to fill without
+submitting, `-n N` to cap the count).
+
+Most failures are a required question the bot had no answer for, so the retry
+only helps if you supply that answer first: fix it in **🎯 Resume match** /
+`answers.yaml`, then reapply. Jobs that eventually succeeded are never retried,
+and a job that has failed several times is listed once with an attempt count.
 
 See [`troubleshooting.md`](troubleshooting.md) if something isn't working.

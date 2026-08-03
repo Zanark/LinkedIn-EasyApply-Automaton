@@ -29,8 +29,8 @@ def render_outreach_report(
     """Render *drafts* into a plain-text outreach report.
 
     Each draft is a mapping with (any missing key is tolerated): ``person_name``,
-    ``profile_url``, ``message``, ``job_title``, ``job_company``, ``resume_name``
-    and ``resume_path``.
+    ``profile_url``, ``message``, ``note``, ``job_title``, ``job_company``,
+    ``resume_name`` and ``resume_path``.
     """
     when = (generated_at or datetime.now()).strftime("%Y-%m-%d %H:%M:%S")
     run = f"Run #{run_id}  |  " if run_id is not None else ""
@@ -47,7 +47,8 @@ def render_outreach_report(
 
     lines += [
         "",
-        "Open each profile URL below and send the drafted message by hand.",
+        "For each contact: send the short CONNECTION NOTE with your invite, then",
+        "the full MESSAGE once they accept (open the profile URL to do both).",
     ]
     for index, draft in enumerate(drafts, start=1):
         name = (draft.get("person_name") or "Unknown").strip()
@@ -55,6 +56,7 @@ def render_outreach_report(
         company = (draft.get("job_company") or "").strip()
         title = (draft.get("job_title") or "").strip()
         message = (draft.get("message") or "").strip()
+        note = (draft.get("note") or "").strip()
         resume = (draft.get("resume_name") or "").strip()
         resume_path = (draft.get("resume_path") or "").strip()
 
@@ -66,9 +68,16 @@ def render_outreach_report(
         if resume:
             attach = f"{resume}  ({resume_path})" if resume_path else resume
             lines.append(f"    Resume     : {attach}")
+        # 1) The full message — send it once they accept your invite / reply.
         lines.append(f"    {_SUB}")
+        lines.append("    MESSAGE (send once connected):")
         lines += [f"    {ln}" if ln else "" for ln in (message.splitlines() or [""])]
         lines.append(f"    {_SUB}")
+        # 2) The short note — attach it to the free connection invitation (<=300).
+        if note:
+            lines.append(f"    CONNECTION NOTE ({len(note)}/300 chars, attach to invite):")
+            lines += [f"    {ln}" if ln else "" for ln in note.splitlines()]
+            lines.append(f"    {_SUB}")
 
     lines.append("")
     return "\n".join(lines)

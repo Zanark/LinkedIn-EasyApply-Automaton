@@ -129,7 +129,7 @@ class Orchestrator:
             )
             mode = "draft"
         return HiringTeamOutreach(
-            HiringTeamMessenger(cfg.template),
+            HiringTeamMessenger(cfg.template, note_template_path=cfg.note_template),
             mode=mode,
             on_approve=on_approve,
             has_messaged=self._db.has_messaged_person,
@@ -164,29 +164,56 @@ class Orchestrator:
     ) -> RunSummary:
         dry_run = self._config.run.dry_run if dry_run is None else dry_run
         interactive = self._config.run.interactive if interactive is None else interactive
-        max_per_run = limit or self._config.jobs.max_per_run
 
-        searches = self._config.search.enabled_searches
-        if not searches:
-            raise ValueError("No enabled searches configured. Add entries under 'search.searches'.")
+        reapply = mode == "reapply"
+        targets: list[dict[str, Any]] = []
+        searches: list[Any] = []
+        if reapply:
+            targets = self._db.reapply_targets()
+            max_per_run = limit or len(targets) or 1
+            search_names = ["reapply"]
+            run_mode = "dry_run" if dry_run else "reapply"
+        else:
+            max_per_run = limit or self._config.jobs.max_per_run
+            searches = self._config.search.enabled_searches
+            if not searches:
+                raise ValueError(
+                    "No enabled searches configured. Add entries under 'search.searches'."
+                )
+            search_names = [s.name for s in searches]
+            run_mode = "scan" if mode == "scan" else ("dry_run" if dry_run else "apply")
 
-        run_mode = "scan" if mode == "scan" else ("dry_run" if dry_run else "apply")
-        run_id = self._db.start_run(run_mode, [s.name for s in searches])
+        run_id = self._db.start_run(run_mode, search_names)
         summary = RunSummary(run_id=run_id, mode=run_mode)
-        logger.info(
-            "Run starting: mode={} dry_run={} interactive={} max_per_run={} | "
-            "{} enabled search(es): {}",
-            run_mode,
-            dry_run,
-            interactive,
-            max_per_run,
-            len(searches),
-            [s.name for s in searches],
-        )
+        if reapply:
+            logger.info(
+                "Reapply starting: dry_run={} interactive={} | {} failed/aborted job(s) to retry",
+                dry_run,
+                interactive,
+                len(targets),
+            )
+        else:
+            logger.info(
+                "Run starting: mode={} dry_run={} interactive={} max_per_run={} | "
+                "{} enabled search(es): {}",
+                run_mode,
+                dry_run,
+                interactive,
+                max_per_run,
+                len(searches),
+                search_names,
+            )
 
         try:
             with BrowserManager(self._config.browser) as browser:
-                self._execute(browser, searches, summary, mode, dry_run, interactive, max_per_run)
+                if reapply:
+                    self._execute_reapply(
+                        browser, targets, summary, dry_run, interactive, max_per_run
+                    )
+                else:
+                    self._execute(
+                        browser, searches, summary, mode, dry_run, interactive, max_per_run
+                    )
             self._db.finish_run(
                 run_id,
                 "completed",
@@ -258,6 +285,59 @@ class Orchestrator:
                     logger.info("Reached daily application limit ({})", self._config.jobs.max_daily)
                     return
 
+    def _execute_reapply(
+        self,
+        browser: BrowserManager,
+        targets: list[dict[str, Any]],
+        summary: RunSummary,
+        dry_run: bool,
+        interactive: bool,
+        max_per_run: int,
+    ) -> None:
+        """Retry a fixed set of previously failed/aborted jobs.
+
+        Unlike :meth:`_execute`, this does not crawl a search: it opens each
+        target job by its stored URL and runs the very same per-job pipeline
+        (gates → score → resume → Easy Apply). Failed/aborted attempts never set
+        the ``submitted`` status, so the ``already_applied`` gate does not fire
+        and the job is genuinely retried.
+        """
+        if not targets:
+            logger.info("No failed or aborted applications to reapply to.")
+            return
+        search_driver = JobSearch(browser.page, JobExtractor())
+        settings = WorkflowSettings(
+            dry_run=dry_run,
+            interactive=interactive,
+            pause_on_unknown=self._config.run.pause_on_unknown_question,
+        )
+        for target in targets:
+            if summary.applied >= max_per_run:
+                logger.info("Reached reapply limit ({})", max_per_run)
+                return
+            url = str(target.get("url") or "")
+            label = target.get("title") or url
+            if not url:
+                continue
+            logger.info("=== Reapply: {} ===", label)
+            job = search_driver.open_job(url)
+            if job is None:
+                self._note_skip(summary, "reapply_open_failed", target.get("job_id"))
+                logger.warning("Skip (could not open) - {}", label)
+                continue
+            summary.scanned += 1
+            self._process_job(browser, job, summary, "apply", settings, max_per_run)
+            if self._config.jobs.max_daily and (
+                self._db.count_applications_today() >= self._config.jobs.max_daily
+            ):
+                logger.info("Reached daily application limit ({})", self._config.jobs.max_daily)
+                return
+
+    def _note_skip(self, summary: RunSummary, reason: str, job_id: int | None = None) -> None:
+        """Count a skip on the summary *and* persist its per-job reason."""
+        summary.note_skip(reason)
+        self._db.record_skip(summary.run_id, job_id, reason)
+
     def _process_job(
         self,
         browser: BrowserManager,
@@ -290,11 +370,11 @@ class Orchestrator:
         )
 
         if gate is not None:
-            summary.note_skip(gate)
+            self._note_skip(summary, gate, job_id)
             logger.info("Skip ({}) - {}", gate, job.summary)
             return
         if not score.passed:
-            summary.note_skip("below_threshold")
+            self._note_skip(summary, "below_threshold", job_id)
             logger.info("Skip (score {} < {}) - {}", score.score, score.threshold, job.summary)
             return
 
@@ -314,11 +394,11 @@ class Orchestrator:
             )
         ai_advice = self._advise(job, job_id)
         if ai_advice is False:
-            summary.note_skip("ai_advised_against")
+            self._note_skip(summary, "ai_advised_against", job_id)
             return
 
         if mode == "scan":
-            summary.note_skip("scan_only")
+            self._note_skip(summary, "scan_only", job_id)
             return
 
         tailored = self._tailor_resume(job)
@@ -465,6 +545,7 @@ class Orchestrator:
                 functools.partial(self._on_confirm, job) if self._on_confirm else None
             ),
             answer_lookup=self._db.get_known_answer,
+            override_lookup=self._db.get_answer_override,
         )
 
         try:
@@ -496,7 +577,7 @@ class Orchestrator:
             if self._outreach is not None:
                 self._reach_out_to_hiring_team(browser, job, job_id, summary.run_id)
             workflow.dismiss_confirmation()
-        self._persist_result(application_id, result, summary, job)
+        self._persist_result(application_id, result, summary, job, job_id)
 
     def _reach_out_to_hiring_team(
         self, browser: BrowserManager, job: Job, job_id: int, run_id: int | None
@@ -510,6 +591,9 @@ class Orchestrator:
                 "company": job.company or "your company",
                 "candidate_name": self._answers.get_str("full_name", ""),
                 "years_experience": self._answers.get("years_experience"),
+                "portfolio_url": (
+                    self._answers.get_str("portfolio", "") or self._answers.get_str("website", "")
+                ),
                 "tech_stack": self._scoring.score(
                     job.title or "", job.description
                 ).matched_keywords,
@@ -553,7 +637,7 @@ class Orchestrator:
         )
 
     def _persist_result(
-        self, application_id: int, result: ApplyResult, summary: RunSummary, job: Job
+        self, application_id: int, result: ApplyResult, summary: RunSummary, job: Job, job_id: int
     ) -> None:
         self._db.update_application(
             application_id,
@@ -572,7 +656,7 @@ class Orchestrator:
         elif result.status is ApplyStatus.FAILED:
             summary.failed += 1
         else:
-            summary.note_skip(result.status.value)
+            self._note_skip(summary, result.status.value, job_id)
 
     def _record_answers(self, application_id: int, answers: list[AnsweredQuestion]) -> None:
         for answer in answers:

@@ -186,6 +186,13 @@ class HiringTeamOutreach:
                 "recruiter_first_name": recruiter.first_name,
             }
         )
+        note = self._messenger.render_note(
+            {
+                **base_context,
+                "recruiter_name": recruiter.name,
+                "recruiter_first_name": recruiter.first_name,
+            }
+        )
         self._collected_keys.add(recruiter.key)
         self._acted_this_run += 1
         self._record_safe(
@@ -193,14 +200,16 @@ class HiringTeamOutreach:
             person_name=recruiter.name,
             profile_url=recruiter.profile_url,
             message=message,
+            note=note,
             status="drafted",
             run_id=run_id,
             job_id=job_id,
         )
         logger.success(
-            "Outreach: drafted message for {} ({} chars) -> {}",
+            "Outreach: drafted message for {} ({} chars, note {} chars) -> {}",
             recruiter.name,
             len(message),
+            len(note),
             recruiter.profile_url or "(no profile URL)",
         )
         return True
@@ -224,13 +233,13 @@ class HiringTeamOutreach:
             logger.info("Outreach: already messaged {} - skipping", recruiter.name)
             return False
 
-        message = self._messenger.render(
-            {
-                **base_context,
-                "recruiter_name": recruiter.name,
-                "recruiter_first_name": recruiter.first_name,
-            }
-        )
+        context = {
+            **base_context,
+            "recruiter_name": recruiter.name,
+            "recruiter_first_name": recruiter.first_name,
+        }
+        message = self._messenger.render(context)
+        note = self._messenger.render_note(context)
         logger.info("Outreach: drafted message for {} ({} chars)", recruiter.name, len(message))
 
         assert self._on_approve is not None  # send mode always has a handler
@@ -242,6 +251,7 @@ class HiringTeamOutreach:
                 person_name=recruiter.name,
                 profile_url=recruiter.profile_url,
                 message=message,
+                note=note,
                 status="declined",
                 run_id=run_id,
                 job_id=job_id,
@@ -256,6 +266,7 @@ class HiringTeamOutreach:
                 person_name=recruiter.name,
                 profile_url=recruiter.profile_url,
                 message=message,
+                note=note,
                 status="dry_run",
                 run_id=run_id,
                 job_id=job_id,
@@ -268,6 +279,7 @@ class HiringTeamOutreach:
             person_name=recruiter.name,
             profile_url=recruiter.profile_url,
             message=message,
+            note=note,
             status="sent" if ok else "failed",
             run_id=run_id,
             job_id=job_id,

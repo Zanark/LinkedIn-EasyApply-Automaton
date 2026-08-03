@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -59,7 +59,24 @@ class Database:
         schema = _SCHEMA_PATH.read_text(encoding="utf-8")
         with self.connect() as conn:
             conn.executescript(schema)
+            self._ensure_columns(conn)
         logger.debug("Database initialised at {}", self.path)
+
+    def _ensure_columns(self, conn: sqlite3.Connection) -> None:
+        """Idempotently add columns introduced after a database was first created.
+
+        ``CREATE TABLE IF NOT EXISTS`` never alters an existing table, so columns
+        added to the schema later are backfilled here with ``ALTER TABLE ... ADD
+        COLUMN`` (a no-op once present).
+        """
+        wanted: dict[tuple[str, str], str] = {
+            ("outreach_messages", "note"): "TEXT",
+        }
+        for (table, column), coltype in wanted.items():
+            existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+            if column not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+                logger.debug("Migrated {}: added column {}", table, column)
 
     # -- runs -----------------------------------------------------------------
     def start_run(self, mode: str, searches: list[str] | None = None) -> int:
@@ -89,6 +106,32 @@ class Database:
                    WHERE id=?""",
                 (status, scanned, applied, skipped, failed, notes, _now(), run_id),
             )
+
+    # -- skips ----------------------------------------------------------------
+    def record_skip(self, run_id: int | None, job_id: int | None, reason: str) -> int:
+        """Record one skip event (a job the pipeline chose not to apply to).
+
+        Mirrors ``RunSummary.note_skip`` so the per-job *reason* survives the run
+        (runs.jobs_skipped only keeps the aggregate). Never touches applications,
+        so submit/reapply/stats logic is unaffected.
+        """
+        with self.connect() as conn:
+            cur = conn.execute(
+                "INSERT INTO skips (run_id, job_id, reason, created_at) VALUES (?, ?, ?, ?)",
+                (run_id, job_id, reason, _now()),
+            )
+            return _last_id(cur)
+
+    def skip_events(self, limit: int = 5000) -> list[dict[str, Any]]:
+        """Skip events joined to their job, newest first, for the dashboard."""
+        return self.query(
+            """SELECT s.reason, s.created_at, s.run_id,
+                      j.title, j.company, j.url, j.workplace_type,
+                      j.experience_level, j.employment_type
+               FROM skips s LEFT JOIN jobs j ON s.job_id = j.id
+               ORDER BY s.created_at DESC, s.id DESC LIMIT ?""",
+            (limit,),
+        )
 
     # -- jobs -----------------------------------------------------------------
     def upsert_job(self, job: dict[str, Any], run_id: int | None = None) -> int:
@@ -316,6 +359,57 @@ class Database:
             ).fetchall()
             return [dict(r) for r in rows]
 
+    def submitted_applications(self, limit: int = 200) -> list[dict[str, Any]]:
+        """Return successful (``status='submitted'``) applications, newest first.
+
+        Backs the dashboard's "Submitted" tab — a scrollable, collapsible list of
+        every successful application with the job title/company, the résumé that
+        was submitted, and the step count. Pair with
+        :meth:`answers_for_applications` to show what was asked & answered under
+        each without issuing one query per application.
+        """
+        with self.connect() as conn:
+            rows = conn.execute(
+                """SELECT a.id, a.started_at, a.steps, a.status,
+                          j.title, j.company, j.url, r.name AS resume
+                   FROM applications a
+                   JOIN jobs j ON a.job_id = j.id
+                   LEFT JOIN resumes r ON a.resume_id = r.id
+                   WHERE a.status = 'submitted'
+                   ORDER BY a.started_at DESC, a.id DESC
+                   LIMIT ?""",
+                (limit,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def answers_for_applications(
+        self, application_ids: Sequence[int]
+    ) -> dict[int, list[dict[str, Any]]]:
+        """Bulk per-application answers keyed by ``application_id`` (one query).
+
+        Returns ``{app_id: [{question_text, value, source, created_at}, ...]}``
+        preserving insertion order within each application. Avoids the N+1 that a
+        per-application :meth:`application_answers` call would cause when
+        rendering a whole list of applications at once. An empty *application_ids*
+        yields an empty dict; ids with no recorded answers map to an empty list.
+        """
+        ids = [int(i) for i in application_ids]
+        if not ids:
+            return {}
+        placeholders = ",".join("?" for _ in ids)
+        grouped: dict[int, list[dict[str, Any]]] = {i: [] for i in ids}
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT application_id, question_text, value, source, created_at"
+                f" FROM application_answers WHERE application_id IN ({placeholders})"
+                " ORDER BY application_id, id",
+                ids,
+            ).fetchall()
+        for row in rows:
+            record = dict(row)
+            grouped[record["application_id"]].append(record)
+        return grouped
+
     def unanswered_questions(self, limit: int = 200) -> list[dict[str, Any]]:
         """Aggregate questions the tool has *never* been able to answer.
 
@@ -403,6 +497,146 @@ class Database:
             result.append(record)
         return result
 
+    def reapply_targets(self, limit: int = 200) -> list[dict[str, Any]]:
+        """Return distinct jobs worth retrying: every job whose Easy Apply run
+        ended ``failed``/``aborted`` and that was **never** later submitted.
+
+        This backs the dashboard's "Reapply all" button and the ``reapply`` CLI
+        command. A job is returned once (deduplicated by ``jobs.url``) even if it
+        failed on several attempts; ``attempts`` counts those failures and
+        ``last_status`` / ``last_attempt`` describe the most recent one. Jobs
+        that eventually succeeded (a ``submitted`` application exists) are
+        excluded so we never re-apply to something already done.
+        """
+        sql = """
+            SELECT j.id AS job_id, j.url, j.title, j.company,
+                   COUNT(*) AS attempts,
+                   MAX(a.started_at) AS last_attempt,
+                   (SELECT a2.status FROM applications a2
+                    WHERE a2.job_id = j.id AND a2.status IN ('failed', 'aborted')
+                    ORDER BY a2.started_at DESC LIMIT 1) AS last_status
+            FROM applications a
+            JOIN jobs j ON a.job_id = j.id
+            WHERE a.status IN ('failed', 'aborted')
+              AND NOT EXISTS (
+                  SELECT 1 FROM applications s
+                  WHERE s.job_id = j.id AND s.status = 'submitted'
+              )
+              AND j.url IS NOT NULL AND trim(j.url) <> ''
+            GROUP BY j.id, j.url, j.title, j.company
+            ORDER BY last_attempt DESC
+            LIMIT ?
+        """
+        with self.connect() as conn:
+            rows = conn.execute(sql, (limit,)).fetchall()
+        return [dict(row) for row in rows]
+
+    # -- Approved answer overrides & resume comparison ------------------------
+    def get_answer_override(self, normalized: str) -> str | None:
+        """Return the user-approved answer for a question (by normalized text).
+
+        Consulted first at fill time so an approved correction wins over
+        answers.yaml and the learned bank. ``None`` when nothing is approved.
+        """
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT value FROM answer_overrides WHERE normalized=?", (normalized,)
+            ).fetchone()
+            return row["value"] if row else None
+
+    def set_answer_override(
+        self,
+        normalized: str,
+        value: str,
+        question_id: int | None = None,
+        note: str | None = None,
+    ) -> None:
+        """Approve *value* as the answer for the question with *normalized* text.
+
+        Upserts on the normalized text, so re-approving simply updates the value.
+        Persisting here is what the dashboard "Sync approved" button and the
+        ``sync-answers`` CLI write to; the fill workflow reads it back via
+        :meth:`get_answer_override`.
+        """
+        with self.connect() as conn:
+            conn.execute(
+                "INSERT INTO answer_overrides (normalized, question_id, value, note,"
+                " created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+                " ON CONFLICT(normalized) DO UPDATE SET value=excluded.value,"
+                " question_id=COALESCE(excluded.question_id, answer_overrides.question_id),"
+                " note=excluded.note, updated_at=excluded.updated_at",
+                (normalized, question_id, value, note, _now(), _now()),
+            )
+
+    def delete_answer_override(self, normalized: str) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM answer_overrides WHERE normalized=?", (normalized,))
+
+    def answer_overrides(self) -> list[dict[str, Any]]:
+        """List every approved override (newest first) for the dashboard."""
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT ov.normalized, ov.value, ov.note, ov.updated_at,"
+                " q.text AS question, q.category, q.skill"
+                " FROM answer_overrides ov LEFT JOIN questions q ON q.id = ov.question_id"
+                " ORDER BY ov.updated_at DESC"
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def answer_comparison(self, limit: int = 500) -> list[dict[str, Any]]:
+        """Every distinct question ever asked, with its latest recorded answer.
+
+        Powers the "Resume match" tab: one row per question with the value the
+        automation last submitted, how widely it was asked, how many of those
+        applications ended blocked, and any approved override already in place.
+        The resume-expected value and match verdict are computed on top of this
+        by :mod:`linkedin_easy_apply.answers.resume_expectations`.
+        """
+        sql = """
+            SELECT q.id AS question_id, q.text AS question, q.normalized AS normalized,
+                   q.category AS category, q.skill AS skill, q.answer_type AS answer_type,
+                   q.seen_count AS seen_count, q.last_seen AS last_seen,
+                   (SELECT aa.value FROM application_answers aa
+                      WHERE aa.question_id = q.id
+                      ORDER BY aa.created_at DESC, aa.id DESC LIMIT 1) AS latest_value,
+                   (SELECT COUNT(DISTINCT aa.application_id) FROM application_answers aa
+                      WHERE aa.question_id = q.id) AS apps,
+                   (SELECT COUNT(DISTINCT aa.application_id) FROM application_answers aa
+                      JOIN applications a2 ON a2.id = aa.application_id
+                      WHERE aa.question_id = q.id
+                        AND a2.status IN ('failed', 'aborted')) AS blocked_apps,
+                   ov.value AS override_value
+            FROM questions q
+            LEFT JOIN answer_overrides ov ON ov.normalized = q.normalized
+            WHERE EXISTS (SELECT 1 FROM application_answers aa WHERE aa.question_id = q.id)
+            ORDER BY q.seen_count DESC, q.last_seen DESC
+            LIMIT ?
+        """
+        with self.connect() as conn:
+            rows = conn.execute(sql, (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def answered_history(self) -> list[dict[str, Any]]:
+        """Every non-blank answer with its application date and question metadata.
+
+        Powers the deviation-over-time line graph: the dashboard groups these by
+        day and computes, among questions the resume can adjudicate, the share
+        whose submitted value disagreed with the resume.
+        """
+        sql = """
+            SELECT date(a.started_at) AS day, a.started_at AS started_at,
+                   q.category AS category, q.skill AS skill, q.answer_type AS answer_type,
+                   q.normalized AS normalized, aa.value AS value
+            FROM application_answers aa
+            JOIN applications a ON a.id = aa.application_id
+            JOIN questions q ON q.id = aa.question_id
+            WHERE aa.value IS NOT NULL AND trim(aa.value) <> ''
+            ORDER BY a.started_at
+        """
+        with self.connect() as conn:
+            rows = conn.execute(sql).fetchall()
+        return [dict(r) for r in rows]
+
     # -- AI results -----------------------------------------------------------
     def record_ai_result(self, job_id: int, result: dict[str, Any]) -> int:
         with self.connect() as conn:
@@ -466,7 +700,7 @@ class Database:
         (newest last), ordered by insertion.
         """
         sql = (
-            "SELECT o.person_name, o.profile_url, o.message, o.created_at,"
+            "SELECT o.id, o.person_name, o.profile_url, o.message, o.note, o.created_at,"
             " j.title AS job_title, j.company AS job_company,"
             " r.name AS resume_name, r.path AS resume_path"
             " FROM outreach_messages o"
@@ -481,9 +715,11 @@ class Database:
             params.append(run_id)
         sql += " ORDER BY o.id"
         keys = (
+            "id",
             "person_name",
             "profile_url",
             "message",
+            "note",
             "created_at",
             "job_title",
             "job_company",
@@ -501,6 +737,7 @@ class Database:
         person_name: str | None = None,
         profile_url: str | None = None,
         message: str | None = None,
+        note: str | None = None,
         status: str = "sent",
         run_id: int | None = None,
         job_id: int | None = None,
@@ -508,10 +745,39 @@ class Database:
         with self.connect() as conn:
             cur = conn.execute(
                 "INSERT INTO outreach_messages (run_id, job_id, person_name, person_key,"
-                " profile_url, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (run_id, job_id, person_name, person_key, profile_url, message, status, _now()),
+                " profile_url, message, note, status, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    run_id,
+                    job_id,
+                    person_name,
+                    person_key,
+                    profile_url,
+                    message,
+                    note,
+                    status,
+                    _now(),
+                ),
             )
             return _last_id(cur)
+
+    def delete_outreach(self, ids: Sequence[int]) -> int:
+        """Delete outreach records by id — the *mark completed → remove* action.
+
+        Removes the whole row (recruiter, message, connection note and status) so
+        nothing related to that outreach remains on record. Returns the number of
+        rows actually deleted; a no-op (returns ``0``) when *ids* is empty.
+        """
+        wanted = [int(i) for i in ids]
+        if not wanted:
+            return 0
+        placeholders = ",".join("?" for _ in wanted)
+        with self.connect() as conn:
+            cur = conn.execute(
+                f"DELETE FROM outreach_messages WHERE id IN ({placeholders})",
+                wanted,
+            )
+            return int(cur.rowcount)
 
     # -- stats ----------------------------------------------------------------
     def stats(self) -> dict[str, Any]:
@@ -535,6 +801,7 @@ class Database:
                 "applications_failed": scalar(
                     "SELECT COUNT(*) FROM applications WHERE status='failed'"
                 ),
+                "jobs_skipped_total": scalar("SELECT COALESCE(SUM(jobs_skipped), 0) FROM runs"),
                 "runs": scalar("SELECT COUNT(*) FROM runs"),
                 "errors": scalar("SELECT COUNT(*) FROM errors"),
                 "distinct_questions": scalar("SELECT COUNT(*) FROM questions"),

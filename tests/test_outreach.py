@@ -187,6 +187,62 @@ def test_message_render_defaults_recruiter():
     assert "SRE" in msg
 
 
+# -- connection note (<=300-char invite variant) ------------------------------
+
+
+_NOTE_CTX = {**_CTX, "portfolio_url": "https://jane.dev"}
+
+
+def test_note_render_within_limit_and_personalises():
+    note = HiringTeamMessenger().render_note({**_NOTE_CTX, "recruiter_first_name": "Ria"})
+    assert len(note) <= 300
+    assert note.startswith("Hi Ria,")
+    assert "Jane Doe" in note
+    assert "Backend Engineer" in note
+    assert "Acme" in note
+    assert "https://jane.dev" in note  # portfolio included when it fits
+
+
+def test_note_omits_portfolio_when_absent():
+    note = HiringTeamMessenger().render_note({**_CTX, "recruiter_first_name": "Ria"})
+    assert "Portfolio:" not in note
+    assert len(note) <= 300
+
+
+def test_note_trims_tech_stack_to_stay_within_limit():
+    # A huge matched-keyword list would blow past 300; the note must still fit
+    # while keeping the intro and reason for reaching out intact.
+    ctx = {
+        **_NOTE_CTX,
+        "recruiter_first_name": "Ria",
+        "tech_stack": [f"skill-number-{i}" for i in range(60)],
+    }
+    note = HiringTeamMessenger().render_note(ctx)
+    assert len(note) <= 300
+    assert note.startswith("Hi Ria,")
+    assert "would love to connect" in note
+
+
+def test_note_hard_truncates_when_even_intro_is_too_long():
+    # Pathological: role/company alone exceed 300 -> guarantee still holds.
+    ctx = {
+        "recruiter_first_name": "Ria",
+        "candidate_name": "Jane Doe",
+        "role": "Principal " + "Very " * 80 + "Senior Engineer",
+        "company": "A" * 200,
+    }
+    note = HiringTeamMessenger().render_note(ctx)
+    assert len(note) <= 300
+    assert note.endswith("…")
+
+
+def test_note_respects_custom_limit():
+    note = HiringTeamMessenger().render_note(
+        {**_NOTE_CTX, "recruiter_first_name": "Ria"}, limit=120
+    )
+    assert len(note) <= 120
+
+
 # -- DB dedup / audit / draft query -------------------------------------------
 
 
@@ -253,6 +309,87 @@ def test_outreach_drafts_includes_submitted_resume(tmp_path):
     assert draft["resume_path"].endswith("FullStack.pdf")
 
 
+def test_db_outreach_records_and_returns_note(tmp_path):
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    db.record_outreach(
+        person_key="in/a",
+        person_name="Ada",
+        message="Full message",
+        note="Short connection note",
+        status="drafted",
+        run_id=run,
+    )
+    [draft] = db.outreach_drafts(run)
+    assert draft["message"] == "Full message"
+    assert draft["note"] == "Short connection note"
+
+
+def test_outreach_drafts_expose_id(tmp_path):
+    """Each draft carries its row id so the dashboard can target it for removal."""
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    db.record_outreach(person_key="in/a", person_name="Ada", status="drafted", run_id=run)
+    [draft] = db.outreach_drafts(run)
+    assert isinstance(draft["id"], int)
+    assert draft["id"] > 0
+
+
+def test_delete_outreach_removes_row_and_all_related(tmp_path):
+    """Marking an outreach completed deletes the whole row — message, note and all."""
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    db.record_outreach(
+        person_key="in/a",
+        person_name="Ada",
+        message="Full message",
+        note="Short note",
+        status="drafted",
+        run_id=run,
+    )
+    db.record_outreach(person_key="in/b", person_name="Bob", status="drafted", run_id=run)
+    drafts = db.outreach_drafts(run)
+    ada = next(d for d in drafts if d["person_name"] == "Ada")
+
+    removed = db.delete_outreach([ada["id"]])
+    assert removed == 1
+    remaining = db.outreach_drafts(run)
+    assert [d["person_name"] for d in remaining] == ["Bob"]
+    # Nothing related to Ada survives (message + note gone with the row).
+    with db.connect() as conn:
+        assert conn.execute("SELECT COUNT(*) FROM outreach_messages").fetchone()[0] == 1
+        assert (
+            conn.execute(
+                "SELECT COUNT(*) FROM outreach_messages WHERE message='Full message'"
+            ).fetchone()[0]
+            == 0
+        )
+
+
+def test_delete_outreach_empty_is_noop(tmp_path):
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    db.record_outreach(person_key="in/a", person_name="Ada", status="drafted", run_id=run)
+    assert db.delete_outreach([]) == 0
+    assert len(db.outreach_drafts(run)) == 1
+
+
+def test_delete_outreach_multiple_ids(tmp_path):
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    for key in ("in/a", "in/b", "in/c"):
+        db.record_outreach(person_key=key, person_name=key, status="drafted", run_id=run)
+    ids = [d["id"] for d in db.outreach_drafts(run)]
+    removed = db.delete_outreach(ids[:2])
+    assert removed == 2
+    assert [d["person_name"] for d in db.outreach_drafts(run)] == ["in/c"]
+
+
 # -- draft mode (default) -----------------------------------------------------
 
 
@@ -273,6 +410,18 @@ def test_outreach_draft_collects_without_clicking():
     assert page.compose is not None and page.compose.filled is None
     assert page.send is not None and page.send.clicks == 0
     assert page.upsell is not None and page.upsell.clicks == 0
+
+
+def test_outreach_draft_records_connection_note():
+    records: list[dict] = []
+    flow = _outreach(records=records)
+    page = _page([_card("Mrunal B.")])
+
+    assert flow.reach_out(page, {**_CTX, "portfolio_url": "https://jane.dev"}) == 1
+    rec = records[-1]
+    assert rec["note"] and len(rec["note"]) <= 300
+    assert rec["note"].startswith("Hi Mrunal,")
+    assert rec["note"] != rec["message"]  # the note is the shorter invite variant
 
 
 def test_outreach_draft_collects_inmail_only_card():
@@ -467,6 +616,25 @@ def test_render_outreach_report_empty():
     text = render_outreach_report([])
     assert "No hiring-team recruiters" in text
     assert "0 contact(s)" in text
+
+
+def test_render_outreach_report_includes_connection_note():
+    note = "Hi Ada, I'm Jane. I just applied for Backend Engineer at Acme—would love to connect."
+    drafts = [
+        {
+            "person_name": "Ada Lovelace",
+            "profile_url": "https://www.linkedin.com/in/ada",
+            "message": "Hi Ada,\nGreat to connect.",
+            "note": note,
+            "job_title": "Backend Engineer",
+            "job_company": "Acme",
+        }
+    ]
+    text = render_outreach_report(drafts)
+    assert "CONNECTION NOTE" in text
+    assert "MESSAGE (send once connected):" in text
+    assert note in text
+    assert f"{len(note)}/300" in text  # char count surfaced so the 300 cap is visible
 
 
 # -- orchestrator gating ------------------------------------------------------

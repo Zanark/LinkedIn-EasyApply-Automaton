@@ -67,6 +67,71 @@ def test_application_answers_records_and_reads_in_order(db: Database):
     assert db.application_answers(app_id + 999) == []
 
 
+def test_submitted_applications_lists_only_submitted_newest_first(db: Database):
+    run = db.start_run("apply")
+    job1 = db.upsert_job(
+        {"url": "https://www.linkedin.com/jobs/view/11/", "title": "BE", "company": "Acme"}, run
+    )
+    job2 = db.upsert_job(
+        {"url": "https://www.linkedin.com/jobs/view/12/", "title": "FE", "company": "Globex"}, run
+    )
+    job3 = db.upsert_job(
+        {"url": "https://www.linkedin.com/jobs/view/13/", "title": "SRE", "company": "Initech"}, run
+    )
+    resume = db.register_resume("FullStack", "generated/resume/FullStack.pdf")
+    a1 = db.create_application(job1, run, resume, "submitted")
+    db.create_application(job2, run, None, "failed")  # excluded — not submitted
+    a3 = db.create_application(job3, run, resume, "submitted")
+
+    apps = db.submitted_applications()
+    # Newest-created first (started_at DESC with an id DESC tiebreak).
+    assert [a["id"] for a in apps] == [a3, a1]
+    assert all(a["status"] == "submitted" for a in apps)
+    assert {a["company"] for a in apps} == {"Acme", "Initech"}
+    assert apps[0]["title"] == "SRE"
+    assert apps[0]["resume"] == "FullStack"
+    assert apps[0]["url"].endswith("/13/")
+
+
+def test_submitted_applications_respects_limit(db: Database):
+    run = db.start_run("apply")
+    for n in range(3):
+        job = db.upsert_job(
+            {"url": f"https://www.linkedin.com/jobs/view/2{n}/", "title": f"R{n}"}, run
+        )
+        db.create_application(job, run, None, "submitted")
+    assert len(db.submitted_applications(limit=2)) == 2
+
+
+def test_answers_for_applications_bulk_groups_by_app(db: Database):
+    run = db.start_run("apply")
+    job_a = db.upsert_job({"url": "https://www.linkedin.com/jobs/view/31/", "title": "BE"}, run)
+    job_b = db.upsert_job({"url": "https://www.linkedin.com/jobs/view/32/", "title": "FE"}, run)
+    job_c = db.upsert_job({"url": "https://www.linkedin.com/jobs/view/33/", "title": "SRE"}, run)
+    a1 = db.create_application(job_a, run, None, "submitted")
+    a2 = db.create_application(job_b, run, None, "submitted")
+    a3 = db.create_application(job_c, run, None, "submitted")  # no answers recorded
+    db.record_application_answer(a1, "Years of Python?", "5", "yaml")
+    db.record_application_answer(a1, "Authorised to work?", "Yes", "manual")
+    db.record_application_answer(a2, "Notice period?", "30 days", "yaml")
+
+    grouped = db.answers_for_applications([a1, a2, a3])
+    assert set(grouped) == {a1, a2, a3}
+    # Insertion order preserved within each application.
+    assert [r["question_text"] for r in grouped[a1]] == [
+        "Years of Python?",
+        "Authorised to work?",
+    ]
+    assert grouped[a1][0]["value"] == "5"
+    assert grouped[a1][0]["source"] == "yaml"
+    assert [r["question_text"] for r in grouped[a2]] == ["Notice period?"]
+    assert grouped[a3] == []  # an id with no answers maps to an empty list
+
+
+def test_answers_for_applications_empty_input(db: Database):
+    assert db.answers_for_applications([]) == {}
+
+
 def test_unanswered_questions_reports_only_true_gaps(db: Database):
     run_id = db.start_run("apply")
     job_id = db.upsert_job({"url": "https://www.linkedin.com/jobs/view/50/", "title": "BE"}, run_id)
@@ -182,3 +247,31 @@ def test_stats(db: Database):
     assert stats["applications_submitted"] == 1
     assert stats["errors"] == 1
     assert any(c["company"] == "Acme" for c in stats["top_companies"])
+
+
+def test_initialize_migrates_missing_note_column(tmp_path):
+    """A DB created before the ``note`` column existed gains it on initialize()."""
+    import sqlite3
+
+    path = tmp_path / "legacy.db"
+    conn = sqlite3.connect(path)
+    conn.execute(
+        "CREATE TABLE outreach_messages ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT, run_id INTEGER, job_id INTEGER,"
+        " person_name TEXT, person_key TEXT NOT NULL, profile_url TEXT, message TEXT,"
+        " status TEXT NOT NULL DEFAULT 'sent',"
+        " created_at TEXT NOT NULL DEFAULT (datetime('now')))"
+    )
+    conn.commit()
+    conn.close()
+
+    db = Database(path)
+    db.initialize()  # must ALTER TABLE ADD COLUMN note
+    columns = {row["name"] for row in db.query("PRAGMA table_info(outreach_messages)")}
+    assert "note" in columns
+
+    # The migration is idempotent and the new column round-trips.
+    db.initialize()
+    db.record_outreach(person_key="in/x", message="full", note="short note", status="drafted")
+    [draft] = db.outreach_drafts()
+    assert draft["note"] == "short note"

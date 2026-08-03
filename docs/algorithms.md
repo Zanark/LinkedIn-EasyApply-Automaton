@@ -19,7 +19,8 @@
 11. [Guard-clause validation chain](#11-guard-clause-validation-chain)
 12. [Form state machine](#12-form-state-machine)
 13. [Idempotent upsert + durable memoization](#13-idempotent-upsert--durable-memoization)
-14. [Cheat-sheet](#14-cheat-sheet)
+14. [Résumé-grounded answer grading](#14-résumé-grounded-answer-grading)
+15. [Cheat-sheet](#15-cheat-sheet)
 
 ---
 
@@ -356,7 +357,43 @@ support-macro suggestion systems.
 
 ---
 
-## 14. Cheat-sheet
+## 14. Résumé-grounded answer grading
+
+**Where:** `answers/resume_expectations.py` · `ResumeProfile.expected()` with
+`_expected_total` / `_expected_skill` / `_expected_identity`, fed by
+`parse_master_yaml`; aggregated by `grade_comparison` / `deviation_by_day`.
+
+**What it does:** decides whether an answer the bot already submitted agrees with
+the user's résumé, and if not, recommends the résumé-grounded value. It is a
+**decision list over the question's category** (like §2) layered on **normalized
+set-membership** (like §1) — deliberately *honest and low-noise*:
+
+- **Derivable only.** Just `EXPERIENCE_TOTAL`, `EXPERIENCE_SKILL` (for skills the
+  résumé lists), and identity are graded. Everything else (salary, notice,
+  relocation, EEO…) is a *preference* → `NOT_DERIVABLE`, never a deviation. The
+  default branch returns not-derivable rather than guessing — the classifier
+  **abstains** instead of emitting false positives.
+- **Skill presence = set intersection.** A skill string is exploded into
+  normalized *forms* (`_skill_forms`: whole, `/,&()|`-split parts, word tokens)
+  and a question's skill matches iff its keys intersect the résumé's form set —
+  so "AKS" hits "Azure Kubernetes (AKS)". Understating years is tolerated; only
+  blank-for-a-listed-skill or `> total career` is flagged (asymmetric thresholds
+  chosen to avoid nagging).
+- **Identity compare** is normalized equality, except **phone** compares the last
+  10 digits (`_digits(...)[-10:]`) so formatting/country-code noise is ignored.
+
+**Complexity:** O(1) per answer after an O(résumé) one-time parse; O(n) to grade
+n recorded answers.
+
+**Real world:** this is **reconciliation / assertion checking** — the same shape
+as data-quality rules (Great Expectations), resume-vs-profile consistency checks
+in ATS, and lint rules that only fire on high confidence. The design lesson is
+**precision over recall for a human-in-the-loop reviewer**: an abstaining grader
+that never cries wolf gets trusted; one that flags every preference gets ignored.
+
+---
+
+## 15. Cheat-sheet
 
 | Algorithm | Repo location | Complexity | Learn-it-because |
 | --- | --- | --- | --- |
@@ -373,5 +410,6 @@ support-macro suggestion systems.
 | Guard clauses | `_pre_apply_checks` | O(checks) | validation middleware |
 | State machine | `forms.easy_apply` | — | checkout funnels |
 | Upsert / memoize | `database.db` | O(log n) | ETL, human-in-the-loop |
+| Résumé grading | `resume_expectations.expected` | O(1)/answer | reconciliation, data-quality rules |
 
 See also: [`data-structures.md`](data-structures.md) · [`architecture.md`](architecture.md).

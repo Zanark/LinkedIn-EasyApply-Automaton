@@ -160,6 +160,7 @@ attribute access (no per-instance `__dict__`).
 | `AnswerResolution` | `answers/resolver.py` | Resolver output |
 | `ScoreResult` | `scoring/engine.py` | Scorer output |
 | `ResumeChoice` | `answers/resume_selector.py` | Selector output |
+| `Expectation` / `GradedAnswer` | `answers/resume_expectations.py` | Résumé-grading verdict + a graded answer row |
 | `FormField` | `forms/field.py` | One detected field |
 | `RunSummary` | `orchestrator.py` | Aggregate run outcome |
 
@@ -253,13 +254,16 @@ iteration. Streaming vs. materializing is a constant scalability decision.
 erDiagram
     runs ||--o{ jobs : discovers
     runs ||--o{ applications : contains
+    runs ||--o{ skips : records
     jobs ||--o{ scores : scored_by
     jobs ||--o{ applications : applied_via
+    jobs ||--o{ skips : not_applied_to
     jobs ||--o{ ai_results : advised_on
     resumes ||--o{ applications : used_in
     applications ||--o{ application_answers : records
     questions ||--o| answers : learned
     questions ||--o{ application_answers : asked_as
+    questions ||--o| answer_overrides : approved_as
 ```
 
 Structures at play inside the DB:
@@ -279,10 +283,29 @@ Structures at play inside the DB:
   cache: a manually answered question is stored and reused in O(1)-ish lookups on
   future runs (`get_known_answer` keyed by `normalized`). This is **memoization
   made durable** / a human-in-the-loop feedback store.
+- **An approved-override layer** — `answer_overrides` is a second key-value store
+  keyed by `questions.normalized UNIQUE`, holding user-vetted corrections. It is
+  read **first** at fill time (`get_answer_override`, ahead of `answers.yaml` and
+  the learned `answers` table), so approving a fix in the *Resume match* tab /
+  `sync-answers` durably overrides what the bot will submit next — a priority
+  cache in front of the defaults.
+
+- **An append-only skip log** — `skips` records one row per job the pipeline
+  chose *not* to apply to, tagged with a `reason` and LEFT-JOINed to its `job`
+  for the dashboard's **Skipped** analytics (`record_skip` / `skip_events`). It's
+  deliberately kept out of `applications` so it never perturbs submit / reapply /
+  stats logic; the aggregate also lives in `runs.jobs_skipped` for history.
 
 **Upsert as a structure operation:** `INSERT ... ON CONFLICT(...) DO UPDATE`
 (`upsert_job`, `create_application`, `learn_answer`) is the SQL "put into a map"
 — insert-or-replace keyed by a unique column. (SQL Server calls it `MERGE`.)
+
+**Anti-join as set difference:** `reapply_targets` (which backs the *Reapply
+all* button) is the set of jobs with a `failed`/`aborted` application **minus**
+the set that was ever `submitted`. That "A but not B" is expressed with `WHERE
+NOT EXISTS (SELECT 1 FROM applications s WHERE s.job_id = j.id AND s.status =
+'submitted')` — a correlated **anti-join**, the relational spelling of set
+difference (`GROUP BY` then de-dupes the survivors to one row per job).
 
 **Industry parallels:** this is standard OLTP schema design — normalized tables,
 B-tree indexes, referential integrity, and a JSON escape hatch for flexible

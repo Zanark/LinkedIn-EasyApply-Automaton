@@ -15,7 +15,7 @@ A copy‑paste friendly guide to **starting the tool** and **every command / opt
 4. [The global `-v` / `--verbose` flag](#4-the-global--v--verbose-flag)
 5. [First‑time walkthrough (in order)](#5-first-time-walkthrough-in-order)
 6. [Command reference (every command, every option)](#6-command-reference-every-command-every-option)
-   - [`version`](#version) · [`init`](#init) · [`login`](#login) · [`test-browser`](#test-browser) · [`scan`](#scan) · [`apply`](#apply) · [`test-form`](#test-form) · [`resume-test`](#resume-test) · [`stats`](#stats) · [`export`](#export) · [`dashboard`](#dashboard)
+   - [`version`](#version) · [`init`](#init) · [`login`](#login) · [`test-browser`](#test-browser) · [`scan`](#scan) · [`apply`](#apply) · [`reapply`](#reapply) · [`sync-answers`](#sync-answers) · [`test-form`](#test-form) · [`resume-test`](#resume-test) · [`stats`](#stats) · [`export`](#export) · [`dashboard`](#dashboard)
 7. [`apply` — every option combination explained](#7-apply--every-option-combination-explained)
 8. [Where everything lives (logs, DB, screenshots)](#8-where-everything-lives)
 9. [Safety notes](#9-safety-notes)
@@ -281,6 +281,32 @@ Run the actual Easy Apply automation. **This is the main command** — see §7 f
 
 ---
 
+### `reapply`
+
+Retry **every failed or aborted application** in one go — no search crawl. It reads the jobs whose Easy Apply run stalled (and that were never later submitted) straight from the database and re-runs the exact same pipeline against each, opening the job by its stored URL. Jobs that eventually succeeded are never retried.
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `-c, --config PATH` | Config file. | `configs\config.yaml` |
+| `--list` | Print the failed/aborted jobs that *would* be retried, then exit (no browser). | off |
+| `--dry-run` | Fill every form but **never submit**. | off (live!) |
+| `--confirm-submit` / `--no-confirm-submit` | Confirm before each submit / submit automatically. | auto‑submit |
+| `-n, --limit INT` | Cap how many failed jobs to retry. | all of them |
+| `-y, --yes` | Never prompt — auto‑answer unknown questions and auto‑submit. | prompts on |
+| `--message-hiring-team` / `--no-message-hiring-team` | Draft hiring-team outreach after each success (see `apply`). | config `outreach.enabled` |
+
+```powershell
+# See which jobs would be retried (writes nothing, no browser)
+.\.venv\Scripts\python.exe apply.py reapply --list
+
+# Retry them all, confirming each submission yourself
+.\.venv\Scripts\python.exe apply.py reapply --confirm-submit
+```
+
+> 💡 Run `sync-answers --apply` (or edit `answers.yaml`) **first** — many jobs failed on a question the bot couldn't answer, so fixing the answer is what lets the retry succeed. You can also trigger this from the dashboard's **⚠️ Needs attention** tab via the **🔁 Reapply all** button.
+
+---
+
 ### `test-form`
 
 Offline (no browser). Give it a question in quotes; it shows how the tool categorises the question and what answer it resolves from your `answers.yaml`. Perfect with `-v` to see the "brain."
@@ -360,9 +386,67 @@ Export your applications (joined with job details) to CSV or XLSX.
 
 ---
 
+### `sync-answers`
+
+Compare every answer the automation has recorded against your **master résumé**
+(`master.yaml`) and, optionally, approve the fixes. Approved values are stored as
+**overrides** that the fill workflow uses *first* — ahead of `answers.yaml` and the
+learned bank — so the next application uses the corrected value. Only fields the
+résumé can judge are graded (total & per-skill experience, identity); salary,
+notice and other preferences are never flagged.
+
+| Option | Meaning | Default |
+| --- | --- | --- |
+| `-c, --config PATH` | Config file. | `configs\config.yaml` |
+| `--apply` | Store the recommended values as approved overrides (writes to the DB). | off (dry run) |
+| `-y, --yes` | Skip the confirmation prompt when applying. | off |
+| `--list` | List the approved overrides already in effect, then exit. | off |
+
+```powershell
+# Dry run — just print what differs from your résumé (writes nothing)
+.\.venv\Scripts\python.exe apply.py sync-answers
+
+# Approve & store every recommended fix (asks to confirm first)
+.\.venv\Scripts\python.exe apply.py sync-answers --apply
+
+# Approve without the prompt
+.\.venv\Scripts\python.exe apply.py sync-answers --apply -y
+
+# Show the overrides currently in effect
+.\.venv\Scripts\python.exe apply.py sync-answers --list
+```
+
+> Prefer clicking? The dashboard's **🎯 Resume match** tab does the same thing
+> visually — tick the rows to approve and press *Sync approved*.
+
+---
+
 ### `dashboard`
 
-Launch the Streamlit web dashboard in your browser.
+Launch the Streamlit web dashboard in your browser. The UI is organised into
+Excel-style tabs — **📊 Overview** (KPIs, top companies, question frequency,
+résumé usage), **✅ Submitted** (every successful application as a collapsible
+**company — role** card; expand one to replay exactly what was asked and the
+answer submitted, start to finish), **🔎 Application details** (drill into any
+application — of any status — to see every
+field asked and the value submitted), **⚠️ Needs attention** (questions with no
+answer on record, the applications they blocked, and a **🔁 Reapply all** button
+that retries every failed/aborted job in a new console window), **⏭️ Skipped**
+(how many jobs were skipped and *why* — a reason breakdown with trends by day,
+company, workplace type and experience level, plus a per-job table and a legend),
+**🎯 Resume match** (grade
+answers against your résumé, a deviation-over-time chart, and one-click *sync* of
+approved corrections), and **🤝 Outreach** (drafted hiring-team messages with
+clickable profile links — both the full message and a short **≤300-char
+connection note** for the invitation, plus a **Done** checkbox / **Mark
+completed & remove** button to delete finished outreach from the database) — so
+nothing is one long scroll.
+
+The five headline KPI numbers are also **clickable cards**: press a card's
+**View details →** button and an inline drill-down opens under the header with
+charts for that category (per-day trend line, top companies, résumé usage,
+workplace type / experience level, Easy Apply vs external) and a filtered table
+whose job column is a clickable **Open ↗** link. Press **✕ Close** to dismiss it.
 
 | Option | Meaning |
 | --- | --- |
@@ -456,7 +540,7 @@ These stack onto any combination:
 .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y -n 10 -c configs\config.yaml --url "https://www.linkedin.com/jobs/search/?keywords=python&location=India&f_AL=true"
 ```
 
-> 🤝 **Message the hiring team:** by default (`outreach.enabled: true`, `mode: draft`), after a job is submitted the tool reads each *Meet the hiring team* recruiter's name and LinkedIn **profile URL** from the page, drafts a short personalised note, and — at the end of the run — writes a plain-text **report** to `generated/outreach/` listing every contact, their profile URL, and the message, so you can open each profile and send by hand. It clicks nothing, so it runs even under `-y`; nothing is collected during `--dry-run` (no submit → the cards never appear). Prefer it to send for you? Set `outreach.mode: send` for the interactive draft-**approve**-and-send flow (Enter sends, `n` skips; needs an interactive run, degrades to `draft` under `-y`). Either mode never contacts the same person twice and stops after `outreach.max_per_run`. Toggle the whole feature with `--message-hiring-team` / `--no-message-hiring-team`.
+> 🤝 **Message the hiring team:** by default (`outreach.enabled: true`, `mode: draft`), after a job is submitted the tool reads each *Meet the hiring team* recruiter's name and LinkedIn **profile URL** from the page, drafts **two** variants — the full message plus a short **connection note** (≤300 chars, for the free invitation) — and, at the end of the run, writes a plain-text **report** to `generated/outreach/` listing every contact, their profile URL, the résumé to attach, the full message, and the connection note, so you can open each profile and send by hand. It clicks nothing, so it runs even under `-y`; nothing is collected during `--dry-run` (no submit → the cards never appear). Prefer it to send for you? Set `outreach.mode: send` for the interactive draft-**approve**-and-send flow (Enter sends, `n` skips; needs an interactive run, degrades to `draft` under `-y`). Either mode never contacts the same person twice and stops after `outreach.max_per_run`. Toggle the whole feature with `--message-hiring-team` / `--no-message-hiring-team`. The connection note pulls your `portfolio`/`website` from `answers.yaml` and is auto-trimmed to stay ≤300 characters. Customise either template via `outreach.template` / `outreach.note_template`.
 
 > 📝 Note on `--limit` during `--dry-run`: the limit counts **submissions**, and a dry‑run never submits, so `-n` will **not** cut a dry‑run short — it still walks through a batch of jobs (roughly 30 per search). `-n` is meant to cap **real** runs.
 
@@ -487,7 +571,7 @@ Get-Content -Wait -Tail 40 logs\easy_apply_2026-07-13.log
 
 - 🟢 **Always start with `--dry-run`.** It fills forms and reaches the Submit button, then discards — nothing is ever sent.
 - 🔴 **`apply` without `--dry-run` submits real applications.** Use `--confirm-submit` your first few live runs so you approve each one (Enter = submit).
-- 🧍 **Don't run two browser commands at once** (e.g. `login` and `apply`) — they share the `.browser-profile` and will collide.
+- 🧍 **Don't run two browser commands at once** (e.g. `login`, `apply`, and `reapply` — including the dashboard's **🔁 Reapply all** button, which launches `reapply` in a new console) — they share the `.browser-profile` and will collide.
 - 🔐 The tool **never** stores your LinkedIn password. You log in yourself via `login`; only the browser session cookie is reused.
 - 🧾 Logs may contain your personal data (name, phone, CTC) by design — that's why `logs\` is git‑ignored. Don't paste raw logs publicly.
 - 🧹 `screenshots.cleanup` is on by default: end-of-run cleanup keeps application evidence but tidies unreferenced step/unknown screenshots.

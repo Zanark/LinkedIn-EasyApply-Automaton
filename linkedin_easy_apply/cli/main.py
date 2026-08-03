@@ -3,9 +3,11 @@
 Commands
 --------
 * ``apply``        run the Easy Apply automation
+* ``reapply``      retry every failed/aborted application (no search)
 * ``scan``         discover & score jobs without applying
 * ``stats``        print database statistics
 * ``export``       export jobs/applications to CSV or XLSX
+* ``sync-answers`` compare recorded answers with your résumé & approve fixes
 * ``dashboard``    launch the Streamlit dashboard
 * ``resume-test``  show which resume would be selected for a job
 * ``test-form``    recognise & resolve a single question (offline)
@@ -195,6 +197,73 @@ def apply(
 
 
 @app.command()
+def reapply(
+    config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c", help="Path to config.yaml."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Inspect and fill but never submit."),
+    interactive: bool | None = typer.Option(
+        None,
+        "--confirm-submit/--no-confirm-submit",
+        help="Ask in the terminal before each submit (defaults to Yes, so Enter submits). "
+        "Omit it to submit automatically.",
+    ),
+    limit: int | None = typer.Option(
+        None, "--limit", "-n", help="Cap how many failed jobs to retry (default: all)."
+    ),
+    message_hiring_team: bool | None = typer.Option(
+        None,
+        "--message-hiring-team/--no-message-hiring-team",
+        help="Draft hiring-team outreach after each successful apply (see 'apply').",
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Never prompt; auto-answer/submit."),
+    show_list: bool = typer.Option(
+        False, "--list", help="List the failed/aborted jobs that would be retried, then exit."
+    ),
+) -> None:
+    """Retry every failed or aborted application (no search).
+
+    Runs the exact Easy Apply pipeline against each previously failed job,
+    opening it by its stored URL. Jobs that were eventually submitted are never
+    retried. Tip: run 'sync-answers --apply' (or fix answers.yaml) first so the
+    corrected answers are used on the retry.
+    """
+    cfg = _load(config)
+    if show_list:
+        _print_reapply_targets(_database(cfg))
+        return
+    _run_orchestrator(
+        cfg,
+        mode="reapply",
+        dry_run=dry_run,
+        interactive=interactive,
+        limit=limit,
+        yes=yes,
+        message_hiring_team=message_hiring_team,
+    )
+
+
+def _print_reapply_targets(db: Database) -> None:
+    targets = db.reapply_targets()
+    if not targets:
+        console.print("[green]No failed or aborted applications to retry. 🎉[/green]")
+        return
+    table = Table(title=f"{len(targets)} job(s) to reapply")
+    table.add_column("Job", overflow="fold", max_width=40)
+    table.add_column("Company", overflow="fold", max_width=24)
+    table.add_column("Attempts", justify="right")
+    table.add_column("Last status")
+    table.add_column("Last attempt", style="dim")
+    for target in targets:
+        table.add_row(
+            target.get("title") or target.get("url") or "—",
+            target.get("company") or "—",
+            str(target.get("attempts") or 0),
+            target.get("last_status") or "—",
+            (target.get("last_attempt") or "")[:16],
+        )
+    console.print(table)
+
+
+@app.command()
 def scan(
     config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c"),
     limit: int | None = typer.Option(None, "--limit", "-n", help="Max jobs to scan."),
@@ -330,6 +399,7 @@ def stats(config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c")) -> Non
         "applications_submitted",
         "applications_today",
         "applications_failed",
+        "jobs_skipped_total",
         "runs",
         "errors",
         "distinct_questions",
@@ -394,6 +464,113 @@ def _export_xlsx(rows, output: Path) -> None:  # noqa: ANN001
         ws.append(list(row.values()))
     output.parent.mkdir(parents=True, exist_ok=True)
     wb.save(output)
+
+
+@app.command()
+def sync_answers(
+    config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c"),
+    apply_changes: bool = typer.Option(
+        False, "--apply", help="Store the recommended values as approved overrides."
+    ),
+    yes: bool = typer.Option(
+        False, "--yes", "-y", help="Skip the confirmation prompt when applying."
+    ),
+    show_overrides: bool = typer.Option(
+        False, "--list", help="List approved overrides already in effect, then exit."
+    ),
+) -> None:
+    """Compare recorded answers with your résumé and optionally approve the fixes.
+
+    Grades every answer the automation has submitted against ``master.yaml``.
+    Without ``--apply`` it is a dry run that only prints the differences; with
+    ``--apply`` each recommended value is stored as an approved override that the
+    fill workflow uses **first** — ahead of answers.yaml and the learned bank.
+    """
+    from linkedin_easy_apply.answers.resume_expectations import (
+        Verdict,
+        grade_comparison,
+        load_resume_profile,
+    )
+
+    cfg = _load(config)
+    db = _database(cfg)
+
+    if show_overrides:
+        _print_overrides(db)
+        return
+
+    profile = load_resume_profile(cfg)
+    if profile is None:
+        console.print(
+            "[red]master.yaml not found.[/red] Set 'resume.master_path' in config.yaml, "
+            "or point 'resume.builder.path' at the folder that holds it."
+        )
+        raise typer.Exit(code=2)
+
+    graded = grade_comparison(profile, db.answer_comparison())
+    mismatches = [g for g in graded if g.verdict is Verdict.MISMATCH and g.recommended]
+    if not mismatches:
+        console.print(
+            "[green]Every gradable answer already matches your résumé. Nothing to sync.[/green]"
+        )
+        return
+
+    table = Table(title=f"{len(mismatches)} answer(s) differ from your résumé")
+    table.add_column("Question", overflow="fold", max_width=42)
+    table.add_column("Answered", style="yellow")
+    table.add_column("Recommended", style="green")
+    table.add_column("Why", overflow="fold", max_width=38)
+    for gap in mismatches:
+        recommended = gap.recommended or ""
+        if gap.override:
+            recommended += " [dim](already approved)[/dim]"
+        table.add_row(gap.question, gap.answered or "—", recommended, gap.reason)
+    console.print(table)
+
+    if not apply_changes:
+        console.print(
+            "[dim]Dry run — nothing written. Re-run with --apply to store these as "
+            "approved overrides.[/dim]"
+        )
+        return
+
+    if not yes and not typer.confirm(
+        f"Approve and store {len(mismatches)} recommended value(s)?", default=True
+    ):
+        console.print("Aborted — no changes made.")
+        raise typer.Exit(code=1)
+
+    written = 0
+    for gap in mismatches:
+        db.set_answer_override(
+            gap.normalized,
+            gap.recommended or "",
+            gap.question_id,
+            "approved via sync-answers",
+        )
+        written += 1
+    console.print(
+        f"[green]Synced {written} answer(s).[/green] They'll be used the next time those "
+        "questions are asked."
+    )
+
+
+def _print_overrides(db: Database) -> None:
+    overrides = db.answer_overrides()
+    if not overrides:
+        console.print("[yellow]No approved overrides yet.[/yellow]")
+        return
+    table = Table(title=f"{len(overrides)} approved override(s) in effect")
+    table.add_column("Question", overflow="fold", max_width=52)
+    table.add_column("Approved value", style="green")
+    table.add_column("Updated", style="dim")
+    for override in overrides:
+        table.add_row(
+            override.get("question") or override.get("normalized") or "—",
+            override.get("value") or "",
+            override.get("updated_at") or "",
+        )
+    console.print(table)
 
 
 @app.command()

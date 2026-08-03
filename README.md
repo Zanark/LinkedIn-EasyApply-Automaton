@@ -41,10 +41,12 @@ confirmation, dedupe and daily limits built in.
 - **Dry-run & interactive** modes; graceful Ctrl+C shutdown; per-step and
   on-error screenshots with automatic cleanup of unreferenced captures.
 - **Meet-the-hiring-team outreach** — after a successful application, read each
-  recruiter's name and LinkedIn **profile URL** from the page, draft a short
-  personalised message, and write a plain-text **report** at the end of the run
-  for you to send by hand (never clicks anything; runs even under `--yes`). Opt
-  into `mode: send` to have it approve-and-send on LinkedIn instead. Toggle with
+  recruiter's name and LinkedIn **profile URL** from the page, draft **two**
+  messages — a full note to send once they connect **and** a short **connection
+  note** (≤300 chars) to attach to the invitation — and write a plain-text
+  **report** at the end of the run for you to send by hand (never clicks
+  anything; runs even under `--yes`). Opt into `mode: send` to have it
+  approve-and-send on LinkedIn instead. Toggle with
   `--message-hiring-team` / `outreach.enabled`.
 - **Verbose, decision-level logging** — a global `-v/--verbose` flag (or
   `logging.level: DEBUG`) narrates every field: what was parsed, which answer it
@@ -52,10 +54,21 @@ confirmation, dedupe and daily limits built in.
   exactly what the tool is "thinking."
 - **SQLite persistence** of jobs, applications, questions/answers, scores,
   errors — with learned-answer reuse, terminal-or-page question answering,
-  `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard that drills
-  into any application (every field asked + value submitted + résumé used),
-  flags the questions it had no answer for and the applications they blocked,
-  and shows drafted hiring-team outreach as clickable LinkedIn profile links.
+  `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard (organized into
+  **Overview / Submitted / Application details / Needs attention / Skipped /
+  Resume match / Outreach** tabs, with **clickable KPI cards** that drill into any
+  category) that lists **every successful application as a collapsible card**
+  (expand to replay exactly what was asked + the answer submitted + résumé used),
+  also drills into any single application, flags the questions it had no answer
+  for and the applications they blocked, **explains why every skipped job was
+  skipped** (reason
+  breakdown + trends), **grades every answer against your résumé** (with a
+  deviation-over-time chart and one-click *sync* of approved corrections), lets you
+  **retry every
+  failed/aborted job with one click** (Needs-attention tab → *Reapply all*, or the
+  `reapply` CLI), and shows drafted
+  hiring-team outreach as clickable LinkedIn profile links (with the full message,
+  a ≤300-char connection note, and a one-click *mark completed & remove*).
 - **Optional AI advisor** (OpenAI) that only *advises* — it can never submit.
 - Clean, typed, tested codebase (ruff + black + mypy + pytest).
 
@@ -121,9 +134,11 @@ Installing the package also exposes a `lea` console script, so `lea init`,
 | `init`                        | Scaffold example configs and runtime directories.       |
 | `login`                       | Open the browser to sign in to LinkedIn once (reused).  |
 | `apply`                       | Run the Easy Apply automation (`--dry-run`, `--confirm-submit`, `--message-hiring-team`, `--yes`, `--limit`, `--url`). |
+| `reapply`                     | Retry every failed/aborted application (no search); `--list` previews, `--dry-run`/`--limit`/`--yes` supported. |
 | `scan`                        | Discover & score jobs without applying.                 |
 | `stats`                       | Print database statistics.                              |
 | `export`                      | Export applications (joined with jobs) to CSV/XLSX.     |
+| `sync-answers`                | Compare recorded answers with your résumé; `--apply` stores approved fixes as overrides used first. |
 | `dashboard`                   | Launch the Streamlit dashboard.                         |
 | `resume-test <title>`         | Show which resume would be chosen for a job.            |
 | `test-form "<question>"`      | Recognise & resolve a single question (offline).        |

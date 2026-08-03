@@ -42,6 +42,20 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs(company);
 CREATE INDEX IF NOT EXISTS idx_jobs_easy_apply ON jobs(easy_apply);
 
+-- One row per skip *event* (a job the pipeline chose not to apply to). The
+-- aggregate count also lives in runs.jobs_skipped, but this table keeps the
+-- per-job reason so the dashboard can explain *why* jobs were skipped. Kept
+-- separate from applications so it never affects submit/reapply/stats logic.
+CREATE TABLE IF NOT EXISTS skips (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id     INTEGER REFERENCES runs(id) ON DELETE SET NULL,
+    job_id     INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
+    reason     TEXT NOT NULL,                  -- below_threshold | ai_advised_against | scan_only | <gate> | ...
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_skips_reason ON skips(reason);
+CREATE INDEX IF NOT EXISTS idx_skips_run ON skips(run_id);
+
 CREATE TABLE IF NOT EXISTS scores (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id     INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
@@ -97,6 +111,20 @@ CREATE TABLE IF NOT EXISTS answers (
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- User-approved answer overrides (from the dashboard "Resume match" tab or the
+-- `sync-answers` CLI). Keyed by the question's normalized text so it survives
+-- re-indexing; consulted FIRST at fill time (ahead of answers.yaml and the
+-- learned-answer bank), so an approved correction always wins.
+CREATE TABLE IF NOT EXISTS answer_overrides (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    normalized  TEXT NOT NULL UNIQUE,
+    question_id INTEGER REFERENCES questions(id) ON DELETE SET NULL,
+    value       TEXT NOT NULL,
+    note        TEXT,                            -- why (e.g. "resume: 6y total")
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Per-application record of what was actually asked and answered.
 CREATE TABLE IF NOT EXISTS application_answers (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,6 +169,7 @@ CREATE TABLE IF NOT EXISTS outreach_messages (
     person_key   TEXT NOT NULL,        -- dedup key: profile URL, else normalized name
     profile_url  TEXT,
     message      TEXT,
+    note         TEXT,                 -- short <=300-char connection-invite variant
     status       TEXT NOT NULL DEFAULT 'sent', -- sent | declined | failed | dry_run
     created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );

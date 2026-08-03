@@ -1,0 +1,42 @@
+# Dashboard — TODO
+
+## ✅ Done
+
+- [x] **Show how many jobs were skipped**
+  - Added a **Skipped** KPI to the dashboard header (all-time total from
+    `SUM(runs.jobs_skipped)`, so it counts historical runs too).
+
+- [x] **New "Skipped" tab — how many were skipped, why, + lots of graphs**
+  - New **⏭️ Skipped** tab (`dashboard/app.py :: _skipped_section`):
+    - Metrics: skip events · distinct reasons · most common reason
+    - **Why jobs were skipped** — reason breakdown (bar chart)
+    - **Skips over time** — per-day trend (line chart)
+    - Breakdowns **by company / workplace type / experience level** (bar charts)
+    - Full per-job **detail table** with a clickable job link
+    - A plain-English **legend** explaining every reason code
+
+- [x] **Clickable KPI cards → per-category focus drill-down**
+  - The five header KPIs (applications today, total submitted, failed, skipped,
+    jobs discovered) are now bordered **cards** with a **View details →** button.
+  - Clicking one opens an inline drill-down (`_focus_panel`) under the header
+    with category-specific charts (per-day trend line + top companies / résumé
+    usage / workplace type / experience level / Easy Apply-vs-external bars) and
+    a filtered record table with a clickable **Open ↗** job link. **✕ Close**
+    dismisses it.
+  - Query/aggregation is pure and Streamlit-free in `dashboard/focus.py`
+    (`build_focus_view` → `FocusView` / `FocusChart`), unit-tested in
+    `tests/test_focus.py` (8). `st.tabs` can't be switched programmatically, so
+    the panel renders in place via `st.session_state["focus_category"]`.
+
+### How it's wired (for reference)
+
+- New `skips` table (`database/sql/schema.sql`) — one row per skip event,
+  `(run_id, job_id, reason, created_at)`; kept separate from `applications`
+  so it never affects submit / reapply / stats logic.
+- `Database.record_skip()` + `Database.skip_events()` (LEFT JOIN to `jobs`).
+- `Orchestrator._note_skip()` now counts **and** persists the reason at every
+  skip site (gates, below-threshold, AI-advised, scan-only, reapply-open-failed,
+  and form-level skipped/dry_run/aborted).
+- Tests: `tests/test_skips.py` (9). Docs synced: README, ARCHITECTURE, INIT.MD,
+  faq, data-structures, architecture (learning docs).
+
