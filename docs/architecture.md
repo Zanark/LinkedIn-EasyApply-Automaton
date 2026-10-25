@@ -107,7 +107,7 @@ flowchart TD
 | **DynamicResumeBuilder** | `answers/dynamic_resume.py` | Optional: detect a job's cluster (keyword/AI) and shell out to the external builder to render a résumé tailored per job; caches per run; falls back on error. | I/O |
 | **option matchers** | `forms/matching.py` | `best_option` / `boolean_option` for select/radio. | pure |
 | **CoverLetterGenerator** | `answers/cover_letter.py` | Render a templated cover letter (Jinja2) to text, a `.pdf` (for uploads), and a `.txt`. | pure-ish |
-| **HiringTeamMessenger** | `answers/hiring_message.py` | Render a short personalised outreach message (Jinja2) for a hiring-team recruiter. | pure |
+| **HiringTeamMessenger** | `answers/hiring_message.py` | Render a hiring-team outreach **message** *and* a ≤300-char **connection note** (Jinja2), both opening with a fixed signature greeting. | pure |
 | **render_outreach_report** | `answers/hiring_report.py` | Render the drafted-contacts run into a plain-text outreach report. | pure |
 | **BrowserManager** | `browser/manager.py` | Own the Playwright lifecycle; reuse your logged-in profile. | I/O |
 | **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator); also `open_job(url)` to navigate to one job directly (used by *reapply*). | I/O |

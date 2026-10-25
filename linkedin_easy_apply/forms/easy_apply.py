@@ -38,6 +38,15 @@ AnswerLookup = Callable[[str], "str | None"]
 _OVERRIDE_YES = {"yes", "y", "true", "1"}
 _OVERRIDE_NO = {"no", "n", "false", "0"}
 
+# Signature phrases from LinkedIn's platform-side daily Easy Apply cap notice
+# ("We limit daily submissions ... Save this job and apply tomorrow"). Used as a
+# text fallback when the structured SUBMIT_LIMIT_MODAL selectors don't match.
+_DAILY_LIMIT_PHRASES = (
+    "apply tomorrow",
+    "limit daily submissions",
+    "daily application limit",
+)
+
 
 class ApplyStatus(StrEnum):
     SUBMITTED = "submitted"
@@ -45,6 +54,7 @@ class ApplyStatus(StrEnum):
     SKIPPED = "skipped"
     FAILED = "failed"
     ABORTED = "aborted"
+    LIMIT_REACHED = "limit_reached"
 
 
 @dataclass(slots=True)
@@ -667,11 +677,46 @@ class EasyApplyWorkflow:
         if not self._click(modal, selectors.BTN_SUBMIT):
             return self._abort(answers, step, "Submit button vanished")
         self._page.wait_for_timeout(1500)
+        if self._hit_daily_submission_limit():
+            shot = self._screenshot("daily-limit")
+            logger.error(
+                "LinkedIn DAILY SUBMISSION LIMIT reached - it rejected this submit "
+                "('save this job and apply tomorrow'). This application was NOT "
+                "submitted; stopping the run so we don't hammer the cap. Try again "
+                "tomorrow (LinkedIn's cap resets ~24h)."
+            )
+            self._discard()  # clear the notice / 'save this application?' overlay
+            return ApplyResult(
+                ApplyStatus.LIMIT_REACHED,
+                step,
+                "LinkedIn daily submission limit reached",
+                str(shot) if shot else None,
+                answers,
+            )
         shot = self._screenshot("after-submit")
         logger.info("Application submitted successfully")
         return ApplyResult(
             ApplyStatus.SUBMITTED, step, screenshot=str(shot) if shot else None, answers=answers
         )
+
+    def _hit_daily_submission_limit(self) -> bool:
+        """True if LinkedIn rejected the submit with its daily-cap notice.
+
+        After Submit, LinkedIn normally shows an "application sent" confirmation.
+        When the account has hit LinkedIn's *own* daily Easy Apply cap it instead
+        shows "We limit daily submissions ... Save this job and apply tomorrow".
+        We must recognise this and stop the run rather than assume success and
+        keep submitting into the cap job-after-job (which is exactly the pattern
+        that escalates bot detection)."""
+        if is_visible(first(self._page, selectors.SUBMIT_LIMIT_MODAL)):
+            return True
+        # Fallback: scan the visible modal/alert text for the signature phrases,
+        # in case the notice renders inside a container we didn't anticipate.
+        for scope in (selectors.MODAL, selectors.DISCARD_CONFIRMATION):
+            text = safe_text(first(self._page, scope)).lower()
+            if text and any(phrase in text for phrase in _DAILY_LIMIT_PHRASES):
+                return True
+        return False
 
     def _abort(self, answers: list[AnsweredQuestion], step: int, reason: str) -> ApplyResult:
         logger.warning("Aborting application at step {}: {}", step, reason)

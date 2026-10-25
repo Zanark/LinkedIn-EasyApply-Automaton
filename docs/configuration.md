@@ -64,9 +64,11 @@ Guard-rails applied to every run.
 
 | Key                   | Default | Description                                             |
 | --------------------- | ------- | ------------------------------------------------------- |
-| `max_per_run`         | `25`    | Hard cap on applications submitted in a single run.     |
+| `max_per_run`         | `25`    | Per-run target of **successful submissions** (`--limit`). The run paginates through the search results until this many jobs are submitted; skipped/failed/aborted jobs do **not** count toward it. In `scan` mode it caps jobs *scanned* instead. |
 | `max_per_company`     | `5`     | Cap per company (checked live against the database).    |
-| `max_daily`           | `50`    | Cap of submitted applications per calendar day.         |
+| `max_daily`           | `50`    | Cap of submitted applications per calendar day. A hard safety ceiling — `--limit` never overrides it; if it blocks the target the run stops and logs a shortfall warning. |
+| `max_search_pages`    | `40`    | Max result pages to crawl per search (page size = `search_page_size`). Raise it if a run can't reach `max_per_run` before the searches run out of jobs. |
+| `search_page_size`    | `25`    | Jobs per LinkedIn results page — the `&start=` step used when paginating (LinkedIn serves 25). |
 | `pause_after`         | `0`     | Pause after N applications (`0` disables).              |
 | `pause_seconds`       | `15.0`  | How long to pause.                                      |
 | `blacklist_companies` | `[]`    | Never apply to these companies.                         |
@@ -383,6 +385,11 @@ approval and types + sends each message on LinkedIn.
 | `note_template`    | *(none)*             | Optional path to a custom Jinja2 **connection-note** template. The rendered note is always trimmed to ≤300 characters. Falls back to the built-in note template. |
 | `skip_if_messaged` | `true`               | Never contact the same person twice (deduped by profile URL, else name). |
 | `report_dir`       | `generated/outreach` | Where the plain-text `draft`-mode report is written.               |
+| `send_connection_notes` | `false`         | **Opt-in.** After a run, open a fresh browser and auto-send each pending recruiter a free connection invitation with their ≤300-char note (the `connect` microservice). OFF because it clicks Connect + Send for real. |
+| `connect_dry_run`  | `false`              | Walk Connect → Add a note but never click Send (rehearsal for the connection pass). |
+| `connect_max_per_run` | `15`              | Cap on connection invitations sent per pass (LinkedIn's weekly limit is ~100–200). |
+| `connect_min_delay_seconds` | `8`         | Lower bound of the randomised, human-like pause between invitations. |
+| `connect_max_delay_seconds` | `25`        | Upper bound of that randomised pause.                              |
 
 ```yaml
 outreach:
@@ -393,6 +400,12 @@ outreach:
   # note_template: configs/hiring_note.j2     # optional custom ≤300-char note template
   skip_if_messaged: true
   report_dir: generated/outreach
+  # --- free connection-note microservice (opt-in) ---
+  send_connection_notes: false   # auto-send connection notes at the end of a run
+  connect_dry_run: false         # go through the flow but skip the final Send click
+  connect_max_per_run: 15
+  connect_min_delay_seconds: 8
+  connect_max_delay_seconds: 25
 ```
 
 Behaviour:
@@ -406,15 +419,27 @@ Behaviour:
 - **`send` is draft-and-approve.** A message is shown for your approval (Enter
   sends, `n` skips), so it needs an **interactive** run and only contacts
   recruiters with a free Message button. Under `--yes` it degrades to `draft`.
+- **The connection-note pass (`send_connection_notes` / `apply.py connect`) is
+  separate from `mode`.** It sends only the **free connection note** — never the
+  long message — in its own fresh browser after the run. Enable it in config to
+  auto-run at the end of every apply, or run `python apply.py connect` on demand
+  (`--dry-run` to rehearse, `--limit N`, `--run <id>`, `-y`). It de-dupes by
+  profile URL, paces itself with a randomised delay, stops on LinkedIn's weekly
+  invite limit, and marks each sent note so it's never sent twice (the dashboard
+  strikes it through). When it runs, a **`Connection notes`** summary table
+  (`Pending / Sent / Already connected / Skipped (no Connect) / Failed`) is printed
+  after the `Run #` table so you can see how many outreach invitations succeeded.
 - Every record (drafted, sent, declined, or failed) is written to the
   `outreach_messages` table for auditing and dedupe.
 - The message context includes the role, company, your name, years of experience
-  and the job's matched skills; the recruiter's first name personalises the
-  greeting. The **connection note** uses the same context plus your
+  and the job's matched skills; the recruiter's first name personalises a fixed
+  **signature greeting** — `Hi <first name>, I trust you are having an amazing
+  day!` — that opens **both** the full message and the connection note. The
+  **connection note** uses the same context plus your
   `portfolio` (falling back to `website`) from `answers.yaml`, and is
   automatically trimmed to stay within LinkedIn's **300-character** invitation
   limit — the tech-stack list is shortened first, then the portfolio link, so the
-  introduction and reason for reaching out always survive.
+  greeting and reason for reaching out always survive.
 
 > ⚠️ Reaching out at volume can look like spam and put your account at risk. Keep
 > `max_per_run` small and review every draft before you send.

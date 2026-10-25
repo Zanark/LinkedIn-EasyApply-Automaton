@@ -123,7 +123,7 @@ straight into YAML/SQLite yet stay type-checked in code.
 | `AnswerType` | `parser/categories.py` | text/number/boolean/date/choice/email/phone/url/file |
 | `QuestionCategory` | `parser/categories.py` | ~29 semantic question types |
 | `FieldKind` | `forms/field.py` | text/textarea/number/select/radio/checkbox/date/file |
-| `ApplyStatus` | `forms/easy_apply.py` | submitted/dry_run/skipped/failed… |
+| `ApplyStatus` | `forms/easy_apply.py` | submitted/dry_run/skipped/failed/aborted/limit_reached |
 | `BrowserEngine`, `AIProviderName` | `config/models.py` | chrome/edge/chromium; none/openai |
 
 **Why chosen:** replacing magic strings with an enum means the type checker
@@ -255,10 +255,12 @@ erDiagram
     runs ||--o{ jobs : discovers
     runs ||--o{ applications : contains
     runs ||--o{ skips : records
+    runs ||--o{ outreach_messages : drafted_in
     jobs ||--o{ scores : scored_by
     jobs ||--o{ applications : applied_via
     jobs ||--o{ skips : not_applied_to
     jobs ||--o{ ai_results : advised_on
+    jobs ||--o{ outreach_messages : contacts_for
     resumes ||--o{ applications : used_in
     applications ||--o{ application_answers : records
     questions ||--o| answers : learned
@@ -295,6 +297,23 @@ Structures at play inside the DB:
   for the dashboard's **Skipped** analytics (`record_skip` / `skip_events`). It's
   deliberately kept out of `applications` so it never perturbs submit / reapply /
   stats logic; the aggregate also lives in `runs.jobs_skipped` for history.
+
+- **An outreach audit + dedupe log** — `outreach_messages` records one row per
+  hiring-team recruiter contacted (or drafted for), keyed loosely by
+  `person_key`/`profile_url`, holding both the drafted `message` and the ≤300-char
+  connection `note`, a `note_sent_at` timestamp (`NULL` until you mark the free
+  connection note as sent), plus a `status` (`drafted`/`sent`/`declined`/`failed`).
+  `has_messaged_person` reads it to never contact anyone twice; `outreach_drafts`
+  joins each drafted row to the résumé submitted for that job for the dashboard's
+  **Outreach** tab; `mark_outreach_note_sent` stamps/clears `note_sent_at` (a
+  non-destructive "connection note sent" flag the dashboard strikes through), while
+  `delete_outreach` removes a row (message, note and all) once the full message is
+  sent and the outreach is complete. `pending_connection_invites` reads the same
+  table the other way — rows with a `note` and a `profile_url` whose `note_sent_at`
+  is still `NULL` — to feed the connection-note microservice
+  (`linkedin_easy_apply/connect`), which sends each a free connection invitation and
+  then calls `mark_outreach_note_sent`. Like `skips`, it is isolated from
+  `applications`.
 
 **Upsert as a structure operation:** `INSERT ... ON CONFLICT(...) DO UPDATE`
 (`upsert_job`, `create_application`, `learn_answer`) is the SQL "put into a map"

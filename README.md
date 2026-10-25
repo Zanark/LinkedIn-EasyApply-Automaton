@@ -136,6 +136,7 @@ Installing the package also exposes a `lea` console script, so `lea init`,
 | `apply`                       | Run the Easy Apply automation (`--dry-run`, `--confirm-submit`, `--message-hiring-team`, `--yes`, `--limit`, `--url`). |
 | `reapply`                     | Retry every failed/aborted application (no search); `--list` previews, `--dry-run`/`--limit`/`--yes` supported. |
 | `scan`                        | Discover & score jobs without applying.                 |
+| `connect`                     | Send pending recruiters a free LinkedIn connection invitation carrying their ≤300-char note (`--dry-run`, `--limit`, `--run`, `--yes`). Opens its own fresh browser. |
 | `stats`                       | Print database statistics.                              |
 | `export`                      | Export applications (joined with jobs) to CSV/XLSX.     |
 | `sync-answers`                | Compare recorded answers with your résumé; `--apply` stores approved fixes as overrides used first. |

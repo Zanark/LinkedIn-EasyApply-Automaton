@@ -25,6 +25,8 @@ jobs:
   max_per_run: 15
   max_per_company: 3
   max_daily: 40
+  max_search_pages: 40           # how deep to paginate each search to reach the target
+  search_page_size: 25           # LinkedIn results per page (the 'start' offset step)
   pause_after: 5                 # pause after every N applications (0 disables)
   pause_seconds: 20
   blacklist_companies: []
@@ -179,3 +181,15 @@ outreach:
   # note_template: path/to/note.j2 # optional custom Jinja2 note template (<=300 chars)
   skip_if_messaged: true  # never contact the same person twice
   report_dir: generated/outreach   # where the plain-text report is written
+
+  # --- free connection-note microservice (opt-in) --------------------------
+  # After a run finishes, open a FRESH browser and send each pending recruiter a
+  # free LinkedIn connection invitation carrying the <=300-char note (never the
+  # long message). OFF by default because it clicks Connect + Send for real. Run
+  # the same pass any time with:  python apply.py connect        (add --dry-run
+  # to walk through Connect + Add a note without ever clicking Send).
+  send_connection_notes: false   # true = auto-send connection notes at end of run
+  connect_dry_run: false         # go through the flow but skip the final Send click
+  connect_max_per_run: 15        # cap invites per run (LinkedIn weekly limit ~100-200)
+  connect_min_delay_seconds: 8   # randomised, human-like pause between invites
+  connect_max_delay_seconds: 25

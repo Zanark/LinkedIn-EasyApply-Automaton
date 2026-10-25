@@ -9,10 +9,28 @@ the returned :class:`FocusView` into widgets.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
 from linkedin_easy_apply.database import Database
+
+# Category buckets a breakdown falls back to when the underlying field was never
+# captured (the COALESCE defaults in the queries below, and the fillna in
+# app.py). A chart whose *every* bucket is one of these conveys nothing — e.g.
+# "By experience level" when no job ever recorded one — so the dashboard skips it.
+_PLACEHOLDER_CATEGORIES = frozenset({"unknown", "?", "(none)", "n/a", "na", "none", ""})
+
+
+def has_real_categories(labels: Iterable[Any]) -> bool:
+    """True if *labels* has at least one real (non-placeholder) category.
+
+    Used to hide breakdown charts that would only show a single ``unknown`` bar
+    because the underlying field (workplace type, experience level, …) was never
+    populated.
+    """
+    return any(str(label).strip().lower() not in _PLACEHOLDER_CATEGORIES for label in labels)
+
 
 # The five KPI cards, in header order: key -> (card label, one-line description).
 FOCUS_CATEGORIES: dict[str, tuple[str, str]] = {

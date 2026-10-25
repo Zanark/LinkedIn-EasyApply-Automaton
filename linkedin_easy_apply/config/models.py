@@ -53,6 +53,8 @@ class JobsConfig(BaseModel):
     max_per_run: int = 25
     max_per_company: int = 5
     max_daily: int = 50
+    max_search_pages: int = 40  # how deep to paginate each search (LinkedIn caps ~1000 results)
+    search_page_size: int = 25  # LinkedIn results per page; the 'start' offset steps by this
     pause_after: int = 0  # 0 disables the automatic pause
     pause_seconds: float = 15.0
     blacklist_companies: list[str] = Field(default_factory=list)
@@ -286,6 +288,17 @@ class OutreachConfig(BaseModel):
     note_template: Path | None = None  # optional custom Jinja2 note template (<=300 chars)
     skip_if_messaged: bool = True  # never contact the same person twice
     report_dir: Path = Path("generated/outreach")  # where the report is written
+
+    # --- free connection-note microservice (opt-in) --------------------------
+    # After a run, open a FRESH browser and send each pending recruiter a free
+    # LinkedIn *connection invitation* carrying the <=300-char note (never the
+    # long message). OFF by default because it clicks Connect + Send for real;
+    # the standalone ``connect`` command runs the same pass on demand.
+    send_connection_notes: bool = False
+    connect_dry_run: bool = False  # drive Connect -> Add a note but skip the final Send
+    connect_max_per_run: int = 15  # cap invites per run (LinkedIn weekly limit is ~100-200)
+    connect_min_delay_seconds: float = 8.0  # randomised, human-like pause between invites
+    connect_max_delay_seconds: float = 25.0
 
 
 class AppConfig(BaseModel):

@@ -174,7 +174,7 @@ _CTX = {
 
 def test_message_render_personalises():
     msg = HiringTeamMessenger().render({**_CTX, "recruiter_first_name": "Mrunal"})
-    assert msg.startswith("Hi Mrunal,")
+    assert msg.startswith("Hi Mrunal, I trust you are having an amazing day!")
     assert "Backend Engineer" in msg
     assert "Acme" in msg
     assert "Jane Doe" in msg
@@ -183,8 +183,19 @@ def test_message_render_personalises():
 
 def test_message_render_defaults_recruiter():
     msg = HiringTeamMessenger().render({"role": "SRE", "company": "Globex"})
-    assert "Hi there," in msg
+    assert "Hi there, I trust you are having an amazing day!" in msg
     assert "SRE" in msg
+
+
+def test_message_and_note_open_with_signature_greeting():
+    # The user's signature greeting must lead BOTH the full message and the
+    # short connection-invite note.
+    greeting = "I trust you are having an amazing day!"
+    msg = HiringTeamMessenger().render({**_CTX, "recruiter_first_name": "Mrunal"})
+    note = HiringTeamMessenger().render_note({**_NOTE_CTX, "recruiter_first_name": "Ria"})
+    assert msg.startswith(f"Hi Mrunal, {greeting}")
+    assert note.startswith(f"Hi Ria, {greeting}")
+    assert len(note) <= 300
 
 
 # -- connection note (<=300-char invite variant) ------------------------------
@@ -196,7 +207,7 @@ _NOTE_CTX = {**_CTX, "portfolio_url": "https://jane.dev"}
 def test_note_render_within_limit_and_personalises():
     note = HiringTeamMessenger().render_note({**_NOTE_CTX, "recruiter_first_name": "Ria"})
     assert len(note) <= 300
-    assert note.startswith("Hi Ria,")
+    assert note.startswith("Hi Ria, I trust you are having an amazing day!")
     assert "Jane Doe" in note
     assert "Backend Engineer" in note
     assert "Acme" in note
@@ -388,6 +399,58 @@ def test_delete_outreach_multiple_ids(tmp_path):
     removed = db.delete_outreach(ids[:2])
     assert removed == 2
     assert [d["person_name"] for d in db.outreach_drafts(run)] == ["in/c"]
+
+
+def test_outreach_drafts_expose_note_sent_at(tmp_path):
+    """Drafts carry ``note_sent_at`` (NULL until the connection note is marked sent)."""
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    db.record_outreach(person_key="in/a", person_name="Ada", note="n", status="drafted", run_id=run)
+    [draft] = db.outreach_drafts(run)
+    assert "note_sent_at" in draft
+    assert draft["note_sent_at"] is None
+
+
+def test_mark_outreach_note_sent_persists_without_deleting(tmp_path):
+    """Marking the connection note sent keeps the row (the full message is still
+    pending) and stamps ``note_sent_at`` — what the dashboard strikes through."""
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    db.record_outreach(
+        person_key="in/a",
+        person_name="Ada",
+        message="Full message",
+        note="Short note",
+        status="drafted",
+        run_id=run,
+    )
+    [draft] = db.outreach_drafts(run)
+
+    updated = db.mark_outreach_note_sent([draft["id"]])
+    assert updated == 1
+    [after] = db.outreach_drafts(run)
+    assert after["note_sent_at"]  # timestamp now set
+    assert after["message"] == "Full message"  # row + message survive (not deleted)
+
+
+def test_mark_outreach_note_sent_can_be_undone(tmp_path):
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    run = db.start_run("apply", ["s"])
+    db.record_outreach(person_key="in/a", person_name="Ada", note="n", status="drafted", run_id=run)
+    [draft] = db.outreach_drafts(run)
+    db.mark_outreach_note_sent([draft["id"]])
+    assert db.outreach_drafts(run)[0]["note_sent_at"]
+    db.mark_outreach_note_sent([draft["id"]], sent=False)
+    assert db.outreach_drafts(run)[0]["note_sent_at"] is None
+
+
+def test_mark_outreach_note_sent_empty_is_noop(tmp_path):
+    db = Database(tmp_path / "t.db")
+    db.initialize()
+    assert db.mark_outreach_note_sent([]) == 0
 
 
 # -- draft mode (default) -----------------------------------------------------

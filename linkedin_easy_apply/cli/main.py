@@ -5,6 +5,7 @@ Commands
 * ``apply``        run the Easy Apply automation
 * ``reapply``      retry every failed/aborted application (no search)
 * ``scan``         discover & score jobs without applying
+* ``connect``      send pending free connection invitations (each with its note)
 * ``stats``        print database statistics
 * ``export``       export jobs/applications to CSV or XLSX
 * ``sync-answers`` compare recorded answers with your résumé & approve fixes
@@ -22,7 +23,7 @@ import shutil
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import typer
 from rich.console import Console
@@ -33,6 +34,9 @@ from linkedin_easy_apply.config import AppConfig, ConfigError, load_config
 from linkedin_easy_apply.config.models import SearchConfig, SearchEntry
 from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.logging import setup_logging
+
+if TYPE_CHECKING:
+    from linkedin_easy_apply.connect.service import ConnectSummary
 
 app = typer.Typer(
     name="lea",
@@ -169,7 +173,15 @@ def apply(
         help="Ask in the terminal before each submit (defaults to Yes, so Enter submits). "
         "Omit it to submit automatically.",
     ),
-    limit: int | None = typer.Option(None, "--limit", "-n", help="Max applications this run."),
+    limit: int | None = typer.Option(
+        None,
+        "--limit",
+        "-n",
+        help="Target number of successful submissions this run. Skipped, failed and aborted "
+        "jobs do NOT count, so the crawler paginates through the search results until this "
+        "many are actually submitted (or the jobs run out / the daily cap is hit). "
+        "Defaults to jobs.max_per_run.",
+    ),
     url: str | None = typer.Option(None, "--url", help="Override searches with a single URL."),
     message_hiring_team: bool | None = typer.Option(
         None,
@@ -284,6 +296,80 @@ def scan(
     )
 
 
+@app.command()
+def connect(
+    config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c", help="Path to config.yaml."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Open Connect + Add a note but never click Send."
+    ),
+    limit: int | None = typer.Option(
+        None, "--limit", "-n", help="Max connection notes to send this pass."
+    ),
+    run_id: int | None = typer.Option(
+        None, "--run", help="Only send notes drafted in this run id (default: all pending)."
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt."),
+) -> None:
+    """Send pending free LinkedIn connection invitations, each with its <=300-char note.
+
+    Opens a fresh browser, visits every recruiter whose connection note has not yet
+    been sent, and clicks Connect -> Add a note -> Send. Successful invites are
+    marked so they are never sent twice. This is the same pass the ``apply`` run can
+    trigger at the end when ``outreach.send_connection_notes`` is enabled.
+    """
+    from linkedin_easy_apply.connect.service import ConnectionInviteService
+
+    cfg = _load(config)
+    db = _database(cfg)
+    effective = limit if limit is not None else cfg.outreach.connect_max_per_run
+    pending = db.pending_connection_invites(run_id, limit=effective)
+    if not pending:
+        console.print("[green]No pending connection notes to send.[/green]")
+        return
+    console.print(
+        f"[cyan]{len(pending)} pending connection note(s) to send[/cyan]"
+        + (" [dim](dry-run: Send is never clicked)[/dim]" if dry_run else "")
+    )
+    if not yes and not dry_run:
+        try:
+            if not typer.confirm(
+                "Open a browser and send these connection invitations now?", default=False
+            ):
+                console.print("[yellow]Cancelled.[/yellow]")
+                return
+        except (KeyboardInterrupt, EOFError, typer.Abort):
+            console.print("[yellow]Cancelled.[/yellow]")
+            return
+
+    service = ConnectionInviteService(cfg, db, dry_run=dry_run)
+    summary = service.run(run_id, limit=limit)
+    console.print(_connect_table(summary))
+
+
+def _connect_table(summary: ConnectSummary) -> Table:
+    """Build the connection-note outreach summary table.
+
+    Shared by the standalone ``connect`` command and the end-of-run
+    connection pass of ``apply``/``reapply`` so both render identically.
+    ``Sent`` is the count of successful outreach (invitations delivered).
+    """
+    dry = summary.dry_run
+    table = Table(title="Connection notes")
+    table.add_column("Metric")
+    table.add_column("Value", justify="right")
+    table.add_row("Pending", str(summary.total))
+    table.add_row(
+        "Sent (would-send)" if dry else "Sent",
+        f"[green]{summary.sent}[/green]",
+    )
+    table.add_row("Already connected", str(summary.already))
+    table.add_row("Skipped (no Connect)", str(summary.skipped))
+    table.add_row("Failed", f"[red]{summary.failed}[/red]" if summary.failed else "0")
+    if summary.limit_reached:
+        table.add_row("Weekly limit", "reached")
+    return table
+
+
 def _run_orchestrator(
     cfg: AppConfig,
     *,
@@ -380,6 +466,16 @@ def _run_orchestrator(
             f"[cyan]Hiring-team outreach:[/cyan] messages to send are drafted in "
             f"[bold]{summary.outreach_report}[/bold]"
         )
+    if summary.platform_daily_limit_hit:
+        console.print(
+            "[yellow]⚠ LinkedIn's daily Easy Apply cap was reached[/yellow] — it "
+            'rejected a submit with "save this job and apply tomorrow". This is '
+            "LinkedIn's own throttle (not a ban, and separate from this tool's "
+            "daily cap). The run stopped early so it wouldn't hammer the limit. "
+            "[bold]Try again tomorrow[/bold] (LinkedIn's cap resets ~24h)."
+        )
+    if summary.connect_summary is not None:
+        console.print(_connect_table(summary.connect_summary))
 
 
 @app.command()

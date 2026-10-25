@@ -6,7 +6,11 @@ from __future__ import annotations
 
 import pytest
 
-from linkedin_easy_apply.dashboard.focus import FOCUS_CATEGORIES, build_focus_view
+from linkedin_easy_apply.dashboard.focus import (
+    FOCUS_CATEGORIES,
+    build_focus_view,
+    has_real_categories,
+)
 from linkedin_easy_apply.database.db import Database
 
 
@@ -135,3 +139,14 @@ def test_every_chart_row_has_declared_axes(db: Database):
             assert chart.kind in {"bar", "line"}
             for row in chart.rows:
                 assert chart.x in row and chart.y in row
+
+
+def test_has_real_categories_detects_placeholder_only_breakdowns():
+    # An all-placeholder breakdown (e.g. every job's workplace_type was NULL and
+    # got COALESCE'd to 'unknown') conveys nothing -> the dashboard hides it.
+    assert has_real_categories(["unknown"]) is False
+    assert has_real_categories(["Unknown", "?", "(none)", "n/a", ""]) is False
+    assert has_real_categories([]) is False
+    # A single real bucket is enough to keep the chart, even alongside 'unknown'.
+    assert has_real_categories(["remote", "unknown"]) is True
+    assert has_real_categories(["Senior"]) is True

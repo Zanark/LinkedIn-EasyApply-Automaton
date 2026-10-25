@@ -31,6 +31,7 @@ from linkedin_easy_apply.answers.resume_selector import ResumeChoice, ResumeSele
 from linkedin_easy_apply.answers.store import AnswerStore
 from linkedin_easy_apply.browser import BrowserManager
 from linkedin_easy_apply.config.models import AppConfig
+from linkedin_easy_apply.connect.service import ConnectionInviteService, ConnectSummary
 from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.forms import (
     EasyApplyWorkflow,
@@ -41,6 +42,7 @@ from linkedin_easy_apply.forms import (
 from linkedin_easy_apply.forms.easy_apply import AnsweredQuestion, ApplyResult, ApplyStatus
 from linkedin_easy_apply.forms.outreach import ApproveHandler, HiringTeamOutreach
 from linkedin_easy_apply.jobs import Job, JobExtractor, JobSearch
+from linkedin_easy_apply.jobs.search import paginated_url
 from linkedin_easy_apply.jobs.seniority import DEFAULT_SENIORITY, detect_seniority
 from linkedin_easy_apply.parser import QuestionParser
 from linkedin_easy_apply.scoring import ScoringEngine
@@ -65,6 +67,9 @@ class RunSummary:
     failed: int = 0
     skip_reasons: dict[str, int] = field(default_factory=dict)
     outreach_report: Path | None = None
+    connection_notes_sent: int = 0
+    connect_summary: ConnectSummary | None = None
+    platform_daily_limit_hit: bool = False
 
     def note_skip(self, reason: str) -> None:
         self.skipped += 1
@@ -204,6 +209,7 @@ class Orchestrator:
                 search_names,
             )
 
+        proceed_connect = True
         try:
             with BrowserManager(self._config.browser) as browser:
                 if reapply:
@@ -223,6 +229,7 @@ class Orchestrator:
                 failed=summary.failed,
             )
         except KeyboardInterrupt:
+            proceed_connect = False
             logger.warning(
                 "Interrupted by Ctrl+C - shutting down gracefully "
                 "(scanned={}, applied={}, skipped={}, failed={})",
@@ -241,12 +248,15 @@ class Orchestrator:
                 notes="interrupted by user (Ctrl+C)",
             )
         except Exception as exc:
+            proceed_connect = False
             logger.exception("Run failed: {}", exc)
             self._db.log_error(str(exc), context="run", run_id=run_id)
             self._db.finish_run(run_id, "failed", scanned=summary.scanned, applied=summary.applied)
             raise
         finally:
             self._emit_outreach_report(run_id, summary)
+            if proceed_connect and mode != "scan":
+                self._maybe_send_connection_invites(run_id, summary)
             self._cleanup_screenshots()
         return summary
 
@@ -267,23 +277,82 @@ class Orchestrator:
             interactive=interactive,
             pause_on_unknown=self._config.run.pause_on_unknown_question,
         )
-        scan_cap = max(max_per_run * 5, 30)
+        page_size = max(1, self._config.jobs.search_page_size)
+        max_pages = max(1, self._config.jobs.max_search_pages)
+        seen_ids: set[str] = set()
 
         for entry in searches:
-            if summary.applied >= max_per_run and mode != "scan":
+            if self._reached_run_target(summary, mode, max_per_run):
                 break
             logger.info("=== Search: {} ===", entry.name)
-            for job in search_driver.iterate(entry.url, entry.name, scan_cap):
-                summary.scanned += 1
-                self._process_job(browser, job, summary, mode, settings, max_per_run)
-                if mode != "scan" and summary.applied >= max_per_run:
-                    logger.info("Reached max applications for this run ({})", max_per_run)
+            # Paginate through the search's result pages (page 0, 25, 50, ...) so a
+            # run can gather enough jobs to actually reach the submission target even
+            # when most postings are skipped or fail. Stops early on target/daily cap
+            # or when a page yields no new jobs (the search is exhausted).
+            for page in range(max_pages):
+                if self._reached_run_target(summary, mode, max_per_run):
+                    logger.info("Reached run target ({}) for this run", max_per_run)
                     return
-                if self._config.jobs.max_daily and (
-                    self._db.count_applications_today() >= self._config.jobs.max_daily
-                ):
+                if self._daily_limit_reached():
                     logger.info("Reached daily application limit ({})", self._config.jobs.max_daily)
                     return
+                page_url = paginated_url(entry.url, page * page_size)
+                new_jobs = 0
+                for job in search_driver.iterate(page_url, entry.name, page_size):
+                    key = job.external_id or job.url
+                    if key and key in seen_ids:
+                        continue
+                    if key:
+                        seen_ids.add(key)
+                    new_jobs += 1
+                    summary.scanned += 1
+                    self._process_job(browser, job, summary, mode, settings, max_per_run)
+                    if summary.platform_daily_limit_hit:
+                        logger.warning(
+                            "Stopping run: LinkedIn's daily submission cap was reached "
+                            "(try again tomorrow)."
+                        )
+                        return
+                    if self._reached_run_target(summary, mode, max_per_run):
+                        logger.info("Reached run target ({}) for this run", max_per_run)
+                        return
+                    if self._daily_limit_reached():
+                        logger.info(
+                            "Reached daily application limit ({})",
+                            self._config.jobs.max_daily,
+                        )
+                        return
+                if new_jobs == 0:
+                    logger.info(
+                        "Search '{}' exhausted after {} page(s) - no more new jobs",
+                        entry.name,
+                        page + 1,
+                    )
+                    break
+
+        if mode != "scan" and summary.applied < max_per_run:
+            logger.warning(
+                "Run ended with {}/{} submission(s): the searches ran out of new matching "
+                "jobs{}. Broaden search.searches, raise jobs.max_search_pages, or lower "
+                "--limit to reach the target.",
+                summary.applied,
+                max_per_run,
+                " or the daily cap was hit" if self._daily_limit_reached() else "",
+            )
+
+    def _reached_run_target(self, summary: RunSummary, mode: str, max_per_run: int) -> bool:
+        """The crawl's stop condition. ``--limit`` (``max_per_run``) counts
+        *successful submissions* in apply/reapply mode, so skipped, failed and
+        aborted jobs never consume the budget; in scan mode there are no
+        submissions, so it counts jobs scanned instead."""
+        if mode == "scan":
+            return summary.scanned >= max_per_run
+        return summary.applied >= max_per_run
+
+    def _daily_limit_reached(self) -> bool:
+        """True when today's submissions have reached the configured ``max_daily`` cap."""
+        cap = self._config.jobs.max_daily
+        return bool(cap) and self._db.count_applications_today() >= cap
 
     def _execute_reapply(
         self,
@@ -327,6 +396,12 @@ class Orchestrator:
                 continue
             summary.scanned += 1
             self._process_job(browser, job, summary, "apply", settings, max_per_run)
+            if summary.platform_daily_limit_hit:
+                logger.warning(
+                    "Stopping reapply: LinkedIn's daily submission cap was reached "
+                    "(try again tomorrow)."
+                )
+                return
             if self._config.jobs.max_daily and (
                 self._db.count_applications_today() >= self._config.jobs.max_daily
             ):
@@ -636,6 +711,36 @@ class Orchestrator:
             path,
         )
 
+    def _maybe_send_connection_invites(self, run_id: int | None, summary: RunSummary) -> None:
+        """Opt-in end-of-run pass: send this run's pending connection notes.
+
+        Controlled by ``outreach.send_connection_notes`` (OFF by default). The
+        apply run's browser has already closed by the time this runs, so
+        :class:`ConnectionInviteService` opens a FRESH browser - matching the
+        "close the window, then open it again just to connect" flow - and sends
+        each recruiter a free connection invitation carrying their <=300-char
+        note (never the long message). Never raises into the run result."""
+        if not self._config.outreach.send_connection_notes:
+            return
+        try:
+            result = ConnectionInviteService(self._config, self._db).run(run_id)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("Connection-note pass failed: {}", exc)
+            return
+        summary.connect_summary = result
+        summary.connection_notes_sent = result.sent
+        if not result.total:
+            return
+        logger.success(
+            "Connection notes: {} {}, {} already connected, {} skipped, {} failed{}",
+            result.sent,
+            "would-send [dry-run]" if result.dry_run else "sent",
+            result.already,
+            result.skipped,
+            result.failed,
+            " (weekly limit reached)" if result.limit_reached else "",
+        )
+
     def _persist_result(
         self, application_id: int, result: ApplyResult, summary: RunSummary, job: Job, job_id: int
     ) -> None:
@@ -653,6 +758,11 @@ class Orchestrator:
             summary.applied += 1
             logger.success("Applied to {}", job.summary)
             self._maybe_pause(summary)
+        elif result.status is ApplyStatus.LIMIT_REACHED:
+            # Platform-side daily cap - neither our skip nor a failure. The row is
+            # recorded as 'limit_reached'; the flag makes the crawl stop the run.
+            summary.platform_daily_limit_hit = True
+            logger.warning("LinkedIn daily submission cap hit - ending the run early")
         elif result.status is ApplyStatus.FAILED:
             summary.failed += 1
         else:

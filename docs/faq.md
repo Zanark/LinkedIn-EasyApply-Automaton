@@ -14,6 +14,21 @@ tool ships with conservative defaults (`max_per_run`, `max_per_company`,
 `max_daily`, optional pauses) to keep volume human-like, but **use it at your
 own risk**. Start with `scan` and `--dry-run`. See the disclaimer in the README.
 
+### I got "We limit daily submissions ... Save this job and apply tomorrow" — what happened?
+
+That's **LinkedIn's own daily Easy Apply cap** — a platform-side throttle, not a
+ban, and separate from this tool's `jobs.max_daily`. LinkedIn shows it *instead
+of* the "application sent" confirmation once your account has submitted enough
+Easy Applies for the day (the exact number varies by account age/activity).
+
+The tool **detects this notice and stops the run immediately** rather than
+recording a false submit and re-trying it on the next job (retrying into the cap
+is exactly what looks bot-like). The blocked job is recorded with status
+`limit_reached` — **not** counted as applied, failed, or skipped — and the CLI
+prints a yellow "daily Easy Apply cap was reached" note. Just **try again
+tomorrow**; LinkedIn's cap resets on a rolling ~24-hour basis. To stay under it,
+keep `--limit`/`max_daily` modest and spread runs across the day.
+
 ### How do I try it safely first?
 
 1. `lea scan` — discovers and scores jobs, writes nothing to LinkedIn.
@@ -197,7 +212,9 @@ each person's name and LinkedIn **profile URL** straight from the page, and draf
 **two** variants: a full personalised **message** (role, company, your
 background) to send once they connect, and a short **connection note** (≤300
 characters — LinkedIn's cap for the free invitation note) that introduces you,
-your background and why you're reaching out. At the end of the run
+your background and why you're reaching out. Both variants open with a fixed
+signature greeting (`Hi <first name>, I trust you are having an amazing day!`).
+At the end of the run
 it writes a plain-text **report** to `generated/outreach/` listing every contact,
 their profile URL, the résumé that was submitted for that job (so you know which
 file to attach), the drafted message, and the connection note (with its
@@ -227,6 +244,24 @@ Toggle the whole feature per-run with `--message-hiring-team` /
 `--no-message-hiring-team`. See [configuration → `outreach`](configuration.md#outreach).
 Reaching out at volume can look like spam, so keep the cap small and review each
 draft.
+
+### Can it send the connection notes automatically instead of me clicking each one?
+
+Yes — that's the opt-in **connection-note microservice**. The draft/report flow
+above only *writes* the ≤300-char note; sending the free invitation is a separate
+pass that clicks **Connect → Add a note → Send** for you. Run it standalone with
+`python apply.py connect` (add `--dry-run` to rehearse without sending, `--limit N`
+to cap, `--run <id>` to scope, `-y` to skip the prompt), or set
+`outreach.send_connection_notes: true` to have every `apply` run trigger it
+automatically at the end. Either way it opens its **own fresh browser** *after* the
+apply run's browser has closed (so it literally "closes the window, then opens it
+again just to connect"), sends only the **note** (never the long message — that
+still waits until they accept), de-dupes by profile URL, paces itself with a random
+8–25 s delay, stops the moment LinkedIn shows its weekly-invite-limit modal, and
+marks each sent note so it's never sent twice (the dashboard strikes it through).
+It is **off by default** because it clicks Connect + Send for real — start with
+`connect --dry-run` to confirm the flow works against the live page. See
+[configuration → `outreach`](configuration.md#outreach).
 
 ### Where is my data stored?
 

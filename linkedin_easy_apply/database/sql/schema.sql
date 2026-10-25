@@ -170,6 +170,7 @@ CREATE TABLE IF NOT EXISTS outreach_messages (
     profile_url  TEXT,
     message      TEXT,
     note         TEXT,                 -- short <=300-char connection-invite variant
+    note_sent_at TEXT,                 -- when the free connection note was sent; NULL = not yet (dashboard strikes it through)
     status       TEXT NOT NULL DEFAULT 'sent', -- sent | declined | failed | dry_run
     created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );

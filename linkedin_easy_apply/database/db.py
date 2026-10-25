@@ -71,6 +71,7 @@ class Database:
         """
         wanted: dict[tuple[str, str], str] = {
             ("outreach_messages", "note"): "TEXT",
+            ("outreach_messages", "note_sent_at"): "TEXT",
         }
         for (table, column), coltype in wanted.items():
             existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -700,8 +701,8 @@ class Database:
         (newest last), ordered by insertion.
         """
         sql = (
-            "SELECT o.id, o.person_name, o.profile_url, o.message, o.note, o.created_at,"
-            " j.title AS job_title, j.company AS job_company,"
+            "SELECT o.id, o.person_name, o.profile_url, o.message, o.note, o.note_sent_at,"
+            " o.created_at, j.title AS job_title, j.company AS job_company,"
             " r.name AS resume_name, r.path AS resume_path"
             " FROM outreach_messages o"
             " LEFT JOIN jobs j ON o.job_id = j.id"
@@ -720,6 +721,7 @@ class Database:
             "profile_url",
             "message",
             "note",
+            "note_sent_at",
             "created_at",
             "job_title",
             "job_company",
@@ -778,6 +780,59 @@ class Database:
                 wanted,
             )
             return int(cur.rowcount)
+
+    def mark_outreach_note_sent(self, ids: Sequence[int], *, sent: bool = True) -> int:
+        """Mark (or unmark) the <=300-char connection note as sent for outreach *ids*.
+
+        Sets ``note_sent_at`` to the current time (``sent=True``) or clears it to
+        ``NULL`` (``sent=False`` — an undo). Unlike :meth:`delete_outreach` this
+        keeps the row: the full message is still pending until the user sends it
+        and removes the outreach. The dashboard strikes a note through once its
+        ``note_sent_at`` is set. Returns the number of rows updated; a no-op
+        (returns ``0``) when *ids* is empty.
+        """
+        wanted = [int(i) for i in ids]
+        if not wanted:
+            return 0
+        placeholders = ",".join("?" for _ in wanted)
+        value = _now() if sent else None
+        with self.connect() as conn:
+            cur = conn.execute(
+                f"UPDATE outreach_messages SET note_sent_at=? WHERE id IN ({placeholders})",
+                [value, *wanted],
+            )
+            return int(cur.rowcount)
+
+    def pending_connection_invites(
+        self, run_id: int | None = None, *, limit: int | None = None
+    ) -> list[dict[str, Any]]:
+        """Outreach rows whose free <=300-char connection note has NOT been sent yet.
+
+        A "pending invite" needs a ``profile_url`` to open and a ``note`` to type,
+        and its ``note_sent_at`` must still be NULL so a note is never sent twice.
+        Consumed by the connection-note microservice
+        (:class:`~linkedin_easy_apply.connect.service.ConnectionInviteService`);
+        returns ``id``, ``person_name``, ``profile_url`` and ``note`` oldest-first,
+        optionally scoped to one *run_id* and/or capped to *limit* rows.
+        """
+        sql = (
+            "SELECT id, person_name, profile_url, note FROM outreach_messages"
+            " WHERE note_sent_at IS NULL"
+            " AND note IS NOT NULL AND trim(note) != ''"
+            " AND profile_url IS NOT NULL AND trim(profile_url) != ''"
+        )
+        params: list[Any] = []
+        if run_id is not None:
+            sql += " AND run_id = ?"
+            params.append(run_id)
+        sql += " ORDER BY id"
+        if limit is not None and limit > 0:
+            sql += " LIMIT ?"
+            params.append(int(limit))
+        keys = ("id", "person_name", "profile_url", "note")
+        with self.connect() as conn:
+            rows = conn.execute(sql, params).fetchall()
+        return [dict(zip(keys, row, strict=True)) for row in rows]
 
     # -- stats ----------------------------------------------------------------
     def stats(self) -> dict[str, Any]:

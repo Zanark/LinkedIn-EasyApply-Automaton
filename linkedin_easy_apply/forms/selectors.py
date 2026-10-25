@@ -44,6 +44,18 @@ BTN_SUBMIT = [
     "footer button:has-text('Submit application')",
     "footer button:has-text('Submit')",
 ]
+
+# LinkedIn's platform-side daily Easy Apply cap. Instead of the "application
+# sent" confirmation, a submit can be rejected with a notice like: "We limit
+# daily submissions to maintain quality and prevent bots ... Save this job and
+# apply tomorrow." Detected so the run stops cleanly instead of falsely recording
+# a submit and then hammering the cap on every subsequent job (which looks bot-like).
+SUBMIT_LIMIT_MODAL = [
+    "div[role='dialog']:has-text('apply tomorrow')",
+    "div[role='alertdialog']:has-text('apply tomorrow')",
+    "div[role='dialog']:has-text('limit daily submissions')",
+    ".artdeco-modal:has-text('Save this job and apply tomorrow')",
+]
 BTN_BACK = [
     "button[aria-label='Back to previous step']",
     "footer button:has-text('Back')",
@@ -223,4 +235,67 @@ POST_APPLY_UPSELL_DISMISS = [
     "button:has-text('Not now')",
     "div[role='dialog']:has-text('recruiters notice') button[aria-label*='Dismiss']",
     "div[role='dialog']:has(button:has-text('Update profile')) button[aria-label*='Dismiss']",
+]
+
+# --- Profile "Connect" + custom-note invitation ------------------------------
+# Used by the connection-note microservice (linkedin_easy_apply/connect). It opens
+# a recruiter's profile and sends a FREE connection invitation carrying the
+# <=300-char note. The primary Connect button in the profile top-card action bar.
+PROFILE_CONNECT_BUTTON = [
+    "main button[aria-label*='Invite'][aria-label*='to connect']",
+    "main button[aria-label*='to connect']",
+]
+# The "More" overflow button that hides Connect on most profiles. The live button
+# is just text "More" with NO aria-label (LinkedIn pushes Follow as primary and
+# tucks Connect inside this menu), and it is NOT an ``artdeco-dropdown__trigger``,
+# so a plain visible-text match is what actually works; the first hit in DOM order
+# is the top-card menu (About/Experience "...more" expanders come later).
+PROFILE_MORE_BUTTON = [
+    "main button:has-text('More')",
+    "main button[aria-label*='More actions']",
+]
+# The Connect entry inside the opened "More" overflow menu. Live, it is a
+# ``[role='menuitem']`` whose visible text is exactly "Connect" (no aria-label, and
+# it is NOT under ``.artdeco-dropdown__content``). We match by text here, but the
+# connector additionally verifies the entry's text is exactly "Connect" before
+# clicking - a substring match would also catch "Remove Connection" on an
+# already-connected profile and disconnect them, which must never happen.
+PROFILE_MORE_CONNECT = [
+    "[role='menuitem']:has-text('Connect')",
+    "div[role='button']:has-text('Connect')",
+]
+# "Pending" indicator = an invitation to this person is already outstanding.
+PROFILE_PENDING = [
+    "main button:has-text('Pending')",
+    "main span.artdeco-button__text:has-text('Pending')",
+]
+# The "Add a note" button in the invitation modal.
+INVITE_ADD_NOTE_BUTTON = [
+    "button[aria-label='Add a note']",
+    "button:has-text('Add a note')",
+]
+# The custom-note textarea revealed after clicking "Add a note".
+INVITE_NOTE_TEXTAREA = [
+    "textarea[name='message']",
+    "textarea#custom-message",
+    "textarea[id*='custom-message']",
+    "div[role='dialog'] textarea",
+]
+# The "Send" / "Send invitation" button in the invitation modal.
+INVITE_SEND_BUTTON = [
+    "button[aria-label='Send invitation']",
+    "button[aria-label*='Send now']",
+    "div[role='dialog'] button:has-text('Send')",
+]
+# The modal LinkedIn shows once the weekly invitation limit is hit (stop signal).
+INVITE_LIMIT_MODAL = [
+    "div[role='dialog']:has-text('weekly invitation limit')",
+    "div[role='dialog']:has-text('reached the weekly')",
+]
+# Dismiss/cancel in the invitation modal (used to back out cleanly on dry-run or
+# when the note field never appears).
+INVITE_DISMISS_BUTTON = [
+    "div[role='dialog'] button[aria-label='Dismiss']",
+    "div[role='dialog'] button[aria-label*='Cancel']",
+    "button[aria-label='Dismiss']",
 ]

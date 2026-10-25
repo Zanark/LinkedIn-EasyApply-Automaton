@@ -86,25 +86,52 @@ INFO  browser.manager:start - Launching edge (headless=False) with profile .brow
 
 ## Phase 2 — Discovery (`_execute` → `JobSearch.iterate`)
 
-9. Build a `JobSearch` driver and `WorkflowSettings`. Compute
-   `scan_cap = max(max_per_run * 5, 30)` — an upper bound on how many jobs to
-   look at per search.
-10. **For each enabled search**, log `=== Search: <name> ===` and open the
-    search URL.
-11. **`JobSearch.iterate(...)` is a generator.** It scrolls the results list,
-    collects job IDs into a **visited `set`** (no duplicates), and **stops
-    scrolling after 3 scrolls that add nothing** (you've hit the bottom) or after
-    a hard cap of 15 scrolls. It then **`yield`s one `Job` at a time**, each built
-    by `JobExtractor` (title, company, description, easy-apply flag, …).
+9. Build a `JobSearch` driver and `WorkflowSettings`, and an empty `seen_ids`
+   set that de-dupes jobs **across pages** for the whole run.
+10. **For each enabled search**, log `=== Search: <name> ===`.
+11. **Paginate.** For `page` in `0 .. jobs.max_search_pages - 1`, build a
+    page URL with `paginated_url(entry.url, page * jobs.search_page_size)`
+    (appends `&start=25`, `&start=50`, … — page 0 is the canonical URL,
+    unchanged) and call `JobSearch.iterate(page_url, …)`.
+12. **`JobSearch.iterate(...)` is a generator.** For one results page it scrolls
+    the list, collects job IDs into a **visited `set`** (no duplicates), and
+    **stops scrolling after 3 scrolls that add nothing** (bottom of that page) or
+    after a hard cap of 15 scrolls. It then **`yield`s one `Job` at a time**,
+    each built by `JobExtractor` (title, company, description, easy-apply flag, …).
 
 ```
-INFO  jobs.search:open    - Opening search https://www.linkedin.com/jobs/search/?keywords=software%20engineer&…
-INFO  jobs.search:iterate - Collected 7 job id(s) from 'software-engineer'
+INFO  orchestrator:_execute - === Search: software-engineer ===
+INFO  jobs.search:open       - Opening search https://www.linkedin.com/jobs/search/?keywords=software%20engineer&…&start=25
+INFO  jobs.search:iterate    - Collected 7 job id(s) from 'software-engineer'
 ```
 
-Each yielded job increments `summary.scanned` and flows into `_process_job`. The
-loop stops early when `summary.applied >= max_per_run` (except in scan mode) or
-the daily limit is hit.
+Each **new** job (skipped if its id/URL is already in `seen_ids`) increments
+`summary.scanned` and flows into `_process_job`.
+
+### Why `--limit N` means *N submissions*, not *N jobs looked at*
+
+`--limit` sets `max_per_run`, and the crawl's stop condition
+(`_reached_run_target`) counts **only successful submissions** in apply/reapply
+mode — `summary.applied`, which is incremented **exclusively** when a job reaches
+`ApplyStatus.SUBMITTED`. Skipped, failed and aborted jobs increment
+`summary.skipped` / `summary.failed` instead and **never consume the budget**, so
+the crawler keeps paginating until `applied >= N`. In **scan** mode there are no
+submissions, so `--limit` caps jobs *scanned* instead.
+
+The loop ends when any of these is true:
+
+- **Target reached** — `applied >= max_per_run` (or `scanned >= max_per_run` in
+  scan mode). Logs `Reached run target (N) for this run`.
+- **Daily cap hit** — today's submitted count reaches `jobs.max_daily`
+  (`_daily_limit_reached`). This is a hard safety ceiling: `--limit` does **not**
+  override it. Logs `Reached daily application limit (M)`.
+- **Search exhausted** — a page yields **zero new** jobs (also the graceful
+  fallback if LinkedIn ignores `&start=` and re-serves page 1), so the search
+  `break`s to the next one.
+
+If the run finishes below target (jobs ran out or the daily cap was hit), it logs
+a `WARNING` explaining the shortfall and how to fix it (broaden searches, raise
+`jobs.max_search_pages`, raise `jobs.max_daily`, or lower `--limit`).
 
 ---
 
@@ -227,6 +254,13 @@ When the **Submit** button is reached, the mode decides the ending:
 | **`--confirm-submit`** and you accept (Enter / `y`) | Clicks **Submit** | `SUBMITTED` |
 | **`--confirm-submit`** and you decline (`n`) | `_discard()` | `ABORTED` |
 | Loop couldn't progress / no button | `_abort()` → `_discard()` | `ABORTED` |
+| **LinkedIn's daily cap** — after Submit, LinkedIn shows "We limit daily submissions … Save this job and apply tomorrow" instead of the confirmation | `_hit_daily_submission_limit()` detects it, `_discard()` clears the notice, and the **run stops** (`platform_daily_limit_hit`) so it never hammers the cap | `LIMIT_REACHED` |
+
+> **`LIMIT_REACHED` is a real submit that LinkedIn rejected**, so it is recorded
+> as neither applied, failed, nor skipped — the application row gets status
+> `limit_reached`, the crawl loop returns early, and the CLI prints a yellow
+> "daily Easy Apply cap was reached — try again tomorrow" note. This is
+> LinkedIn's own throttle (a rolling ~24 h reset), separate from `jobs.max_daily`.
 
 > **This is the safety guarantee of a test run:** in `--dry-run` the tool walks
 > the entire form to the very last step and then **throws it away** — nothing is
@@ -278,7 +312,9 @@ orchestrator calls **`_reach_out_to_hiring_team(...)`** →
      are collected too).
 27c. Skip anyone already messaged (`db.has_messaged_person`) and de-dupe within
      the run.
-27d. Draft a personalised message (`HiringTeamMessenger.render`) and record it to
+27d. Draft **both** variants — the full message (`HiringTeamMessenger.render`)
+     and a ≤300-char connection note (`render_note`), both opening with the fixed
+     signature greeting — and record them (`message` + `note`) to
      `outreach_messages` with status `drafted`. **Nothing is clicked.**
 
 **`send` (opt-in) — draft, approve, message.** Needs an interactive session
@@ -298,7 +334,8 @@ the "application sent" modal (always, whether or not outreach ran), then
 At the very end of the run (Phase 8), `_emit_outreach_report(run_id)` queries the
 run's `drafted` rows (each joined to the résumé submitted for that job) and writes
 the plain-text report to `generated/outreach/outreach_run<id>_<timestamp>.txt`,
-naming each contact's profile URL, résumé to attach, and drafted message, and
+naming each contact's profile URL, résumé to attach, the drafted message and the
+≤300-char connection note, and
 printing its path in the run summary. The same drafts also surface on the
 `lea dashboard` as clickable LinkedIn profile links.
 
@@ -319,6 +356,33 @@ printing its path in the run summary. The same drafts also surface on the
     referenced by application records stay as evidence.
 31. `run()` returns the `RunSummary`; the CLI prints the summary table
     (scanned / applied / skipped / failed + skip-reason breakdown).
+
+---
+
+## Phase 8.5 — Connection-note pass (`_maybe_send_connection_invites`) — *only if opted in*
+
+Between the outreach report (step 27b) and the screenshot cleanup, and **only when
+`outreach.send_connection_notes: true`**, the `finally` opens a **brand-new
+browser** — the apply browser from step 29 has already closed — and sends this
+run's pending recruiters a free **connection invitation** carrying their ≤300-char
+note (never the long message). This is the `linkedin_easy_apply/connect`
+microservice; the same pass is available standalone as `apply.py connect`.
+
+- Skipped after **Ctrl+C** or a **failed** run, and in **scan** mode.
+- `ConnectionInviteService` loads pending invites (`note` present, `profile_url`
+  present, `note_sent_at IS NULL`), de-dupes by profile URL, and for each: navigate
+  → **Connect** (top card or **More** menu) → **Add a note** → type the note →
+  **Send**, pausing a randomised `connect_min…max_delay_seconds` between people.
+- Each success is marked via `mark_outreach_note_sent` (so it's never re-sent and
+  the dashboard strikes it through); it stops early if LinkedIn shows the weekly
+  invitation-limit modal.
+- Errors are swallowed with a warning — the connection pass can never change the
+  already-finished run's result. No pending invites → no browser is even launched.
+- **End-of-run output:** when this pass ran, the CLI prints a second **`Connection
+  notes`** table right after the `Run #` summary — `Pending / Sent / Already
+  connected / Skipped (no Connect) / Failed` (plus a `Weekly limit` row if hit).
+  `Sent` is the count of successful outreach. The standalone `apply.py connect`
+  command prints the same table.
 
 ---
 

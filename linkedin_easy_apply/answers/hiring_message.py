@@ -20,7 +20,7 @@ from jinja2 import (
     select_autoescape,
 )
 
-_DEFAULT_TEMPLATE = """Hi {{ recruiter_first_name | default('there') }},
+_DEFAULT_TEMPLATE = """Hi {{ recruiter_first_name | default('there') }}, I trust you are having an amazing day!
 
 I just applied for the {{ role }} role at {{ company }} and wanted to introduce myself.
 {% if tech_stack %}My background is a strong match, especially {{ tech_stack | join(', ') }}.
@@ -42,7 +42,7 @@ NOTE_CHAR_LIMIT = 300
 # introduces the candidate and says why they're reaching out; the tech-stack list
 # and portfolio link are trimmed first if space runs short (see ``render_note``).
 _DEFAULT_NOTE_TEMPLATE = (
-    "Hi {{ recruiter_first_name | default('there') }}, "
+    "Hi {{ recruiter_first_name | default('there') }}, I trust you are having an amazing day! "
     "I'm {{ candidate_name | default('a recent applicant', true) }}. "
     "I just applied for the {{ role }} role at {{ company }} and would love to connect."
     "{% if tech_stack %} Strong background in {{ tech_stack | join(', ') }}"

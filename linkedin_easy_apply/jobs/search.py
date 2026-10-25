@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterator
 from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from loguru import logger
 
@@ -20,6 +21,22 @@ from linkedin_easy_apply.jobs.extractor import JobExtractor
 from linkedin_easy_apply.jobs.models import Job
 
 _JOB_ID_RE = re.compile(r"/jobs/view/(\d+)")
+
+
+def paginated_url(url: str, start: int) -> str:
+    """Return *url* with LinkedIn's ``start`` pagination offset set to *start*.
+
+    LinkedIn job-search results are paginated via a ``start`` query parameter
+    (``start=25`` is the second page, ``start=50`` the third, ...). This rebuilds
+    the URL with that offset, replacing any existing ``start`` and leaving every
+    other query parameter untouched. ``start=0`` (the first page) is emitted
+    without the parameter so the canonical first-page URL is returned unchanged.
+    """
+    parts = urlsplit(url)
+    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k != "start"]
+    if start > 0:
+        query.append(("start", str(start)))
+    return urlunsplit(parts._replace(query=urlencode(query)))
 
 
 class JobSearch:

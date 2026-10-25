@@ -198,6 +198,10 @@ jobs:
 
   max_daily:
 
+  max_search_pages:
+
+  search_page_size:
+
 search:
 
   url:
@@ -249,6 +253,23 @@ searches:
 ```
 
 The application should iterate over every search.
+
+**Pagination & the run target.** `--limit N` (config `jobs.max_per_run`) is a
+target of **successful submissions**, not of jobs looked at. The orchestrator
+paginates through each search's result pages — `paginated_url(url, page * size)`
+appends `&start=25`, `&start=50`, … up to `jobs.max_search_pages` pages of
+`jobs.search_page_size` each — de-duping jobs across pages via a run-wide
+`seen_ids` set, and keeps crawling until `summary.applied >= N`. Because
+`applied` is incremented **only** on `ApplyStatus.SUBMITTED`, skipped / failed /
+aborted jobs never consume the budget. The crawl also stops on `jobs.max_daily`
+(a hard ceiling `--limit` cannot override) or when a page yields no new jobs
+(which is also the graceful fallback if LinkedIn ignores `&start=`). It stops
+early too if LinkedIn returns its **own daily Easy Apply cap** after a submit
+("Save this job and apply tomorrow"): `_finalize_submit` detects that notice
+(`ApplyStatus.LIMIT_REACHED`), flips `RunSummary.platform_daily_limit_hit`, and
+the loop returns so the tool never re-submits into the cap. That job is recorded
+as `limit_reached` — neither applied, failed, nor skipped. A shortfall
+is logged as a `WARNING`. In `scan` mode `--limit` caps jobs *scanned* instead.
 
 ---
 
@@ -758,11 +779,15 @@ Pieces:
 
 - `answers/hiring_message.py` — `HiringTeamMessenger` renders both variants from
   Jinja2 templates (built-in defaults, or user `template` / `note_template`
-  paths), mirroring the cover-letter generator. `render` produces the full
+  paths), mirroring the cover-letter generator. Both variants open with a fixed
+  **signature greeting** — `Hi <first name>, I trust you are having an amazing
+  day!` (baked into `_DEFAULT_TEMPLATE` and `_DEFAULT_NOTE_TEMPLATE`; a custom
+  template can replace it). `render` produces the full
   message; `render_note` produces the **connection note** and *guarantees* it is
   ≤300 characters (LinkedIn's invitation-note cap) by degrading gracefully —
   trimming the tech-stack list keyword by keyword, then dropping the portfolio
-  link, then a final word-boundary truncation.
+  link, then a final word-boundary truncation (the greeting and reason for
+  reaching out always survive).
 - `answers/hiring_report.py` — `render_outreach_report` turns drafted DB rows into
   the plain-text report (a pure function) with a **MESSAGE** block and a
   **CONNECTION NOTE** block (the latter shows its `n/300` character count).
@@ -774,6 +799,60 @@ Pieces:
 
 Errors are swallowed with a warning so outreach can never fail an
 otherwise-successful apply; nothing runs during `--dry-run` (no submit → no cards).
+
+---
+
+# Connection-Note Microservice (`linkedin_easy_apply/connect`)
+
+The hiring-team outreach pass above only **drafts** a message and a short ≤300-char
+connection note per recruiter — it clicks nothing. Actually *sending* the free
+connection invitation (Connect → **Add a note** → Send) is a separate,
+self-contained subsystem under `linkedin_easy_apply/connect/`. It shares the
+project's browser, config and database but is deliberately decoupled: it runs in
+its **own fresh browser session**, opened *after* the apply run's browser has
+closed — matching the "close the window once the applications are done, then open
+it again just to connect" flow.
+
+It sends **only the connection note**, never the long message (the long message
+still needs the recruiter to accept the invite first, and is handled by hand from
+the dashboard).
+
+**Two entry points, one implementation:**
+
+- **End-of-run hook** — when `outreach.send_connection_notes: true`, the
+  orchestrator's `run()` `finally` calls `_maybe_send_connection_invites(run_id)`
+  *after* the apply browser has closed, scoped to that run's drafts. Skipped after
+  Ctrl+C or a failed run, and in `scan` mode.
+- **Standalone command** — `python apply.py connect` runs the same pass on demand
+  over **all** pending invites (or `--run <id>` to scope, `--limit N` to cap,
+  `--dry-run` to walk Connect → Add a note without ever clicking Send, `-y` to skip
+  the confirm prompt).
+
+**Pieces:**
+
+- `connect/connector.py` — `ProfileConnector` is the thin, DOM-touching half
+  (mirrors `forms/outreach.py`): `send_invite(page, target)` navigates to the
+  profile, detects an already-connected/pending state, clicks **Connect** (from the
+  top card or the **More** overflow menu), clicks **Add a note**, types the note
+  (defensively trimmed to 300 chars), and clicks **Send** — returning a
+  `ConnectOutcome` (`sent` / `already` / `no_button` / `note_unavailable` /
+  `limit_reached` / `dry_run` / `failed`). `dry_run` does everything except the
+  final Send and backs out of the modal. It never raises.
+- `connect/service.py` — `ConnectionInviteService` is the orchestration half: it
+  loads pending invites (`database.pending_connection_invites`), de-dupes by
+  profile URL (a recruiter surfaced by two jobs is invited once, but **all** their
+  rows are marked), opens a fresh `BrowserManager`, paces itself with a randomised
+  human-like delay between invites (`connect_min/max_delay_seconds` — the codebase's
+  first jittered delay), stops early on LinkedIn's weekly-invite-limit modal, and
+  marks each sent note via `database.mark_outreach_note_sent` so it is never sent
+  twice (and the dashboard strikes it through). Returns a `ConnectSummary`.
+- `forms/selectors.py` — the `PROFILE_*` / `INVITE_*` candidate lists driving the
+  flow (the only un-unit-testable part; live selectors).
+
+**Safety:** OFF by default (`send_connection_notes: false`) because it clicks
+Connect + Send for real. The decision flow is fully unit-tested against a fake
+page; the DB marking, de-dup, limit-stop and dry-run paths are tested against a
+temp DB with a scripted fake connector.
 
 ---
 
@@ -874,10 +953,42 @@ one long scroll: **📊 Overview**, **✅ Submitted**, **🔎 Application detail
 `_application_detail_section` / `_needs_attention_section` / `_skipped_section` /
 `_resume_match_section` / `_outreach_section`).
 
+**Reports folder — first-page corner control.** The header is a two-column split
+(`st.columns([5, 1], vertical_alignment="center")`): the title on the left and a
+compact **📂 Reports** popover in the top-right corner. The popover surfaces the
+two directories where exported reports are written — the offline **analysis
+reports** (repo-root `reports/`, e.g. the answer-quality and codebase-review
+reports) and the per-run **outreach reports** (`outreach.report_dir`, default
+`generated/outreach`) — each with its resolved absolute path, an **Open folder**
+button and an **In browser** `file://` link. `resolve_report_dirs` anchors both
+paths to the project root (the parent of the `configs/` folder holding the active
+config) so they resolve regardless of the dashboard's working directory. Because
+browsers block `file://` links served from an `http://` origin, **Open folder** is
+the reliable action: it calls `_reveal_directory`, which creates the folder if
+missing and opens it in the host OS file browser (`os.startfile` on Windows;
+`open` / `xdg-open` elsewhere) through an injectable opener that keeps it
+unit-testable.
+
+**Chart rendering — horizontal bars + flat labels.** Streamlit's native
+`st.bar_chart` / `st.line_chart` rotate crowded x-axis labels to vertical, which
+is unreadable for company names and dates. Every chart therefore goes through two
+Altair helpers in `dashboard/app.py`: `_hbar` draws **horizontal** bars (the
+category sits on the Y axis so labels always read left-to-right, sorted
+longest-first) and `_line` draws time series with a compact horizontal `Jul 13`
+date axis. Altair ships with Streamlit, so this adds no dependency. A companion
+pure helper `dashboard/focus.has_real_categories` lets any breakdown be **hidden
+when every bucket is a placeholder** (`unknown` / `?` / `(none)`) — so a chart
+like *By experience level* is suppressed entirely when no job ever recorded one,
+rather than showing a single meaningless `unknown` bar. It reappears automatically
+if real data is ever captured.
+
 **Submitted tab (browse-all Q&A).** `_submitted_section` lists every successful
 (`status='submitted'`) application as a collapsible **company — role** expander,
 newest first; expanding one shows the résumé submitted, step count, a job link
-and a table of exactly what was asked and the answer submitted. Backed by
+and a table of exactly what was asked and the answer submitted. A **Successful
+submissions by job role** horizontal bar chart (`Counter` over each app's `title`,
+rendered with `_hbar`) sits above the list so you can see at a glance which roles
+convert. Backed by
 `database.submitted_applications` (the list) + `database.answers_for_applications`
 (a single bulk query that groups every application's answers by id, avoiding the
 N+1 that a per-expander `application_answers` call would cause). This complements
@@ -889,8 +1000,9 @@ with a **View details →** button. Clicking one stashes its category in
 `st.session_state["focus_category"]`; `_focus_panel` then renders an inline
 drill-down (`🔎 <title>` + **✕ Close**) directly under the cards with
 category-specific charts (submitted/failed/skipped/discovered per day as line
-charts, top companies / résumé usage / workplace-type / experience-level / Easy
-Apply-vs-external as bar charts) and a filtered record table whose `url` column is
+charts; top companies / résumé usage / Easy Apply-vs-external as horizontal bars;
+the workplace-type and experience-level bars render only when real data exists —
+see *Chart rendering* above) and a filtered record table whose `url` column is
 a clickable **Open ↗** link. All the query/aggregation is pure (Streamlit-free) in
 `dashboard/focus.py` — `build_focus_view(db, category) -> FocusView | None`
 returning `FocusChart` value objects — so it is unit-tested (`tests/test_focus.py`)
@@ -946,9 +1058,13 @@ a pre-apply gate (`not_easy_apply`, `already_applied`, `duplicate_company_role`,
 `ai_advised_against`, `scan_only`, `reapply_open_failed`, or a form-level
 `skipped`/`dry_run`/`aborted`. The tab (backed by `database.skip_events`, which
 LEFT JOINs each skip to its job) shows skip-count metrics, a **reason breakdown**
-bar chart, **skips over time**, and breakdowns **by company / workplace type /
-experience level**, plus a full detail table (with a job link) and a plain-English
-legend for every reason code. The `skips` table is deliberately separate from
+bar chart, **skips over time**, and a **top companies skipped** breakdown, plus a
+full detail table (with a job link) and a plain-English legend for every reason
+code. The **by workplace type / by experience level** breakdowns (and the
+Workplace/Level columns in the detail table) are shown only when at least one job
+actually recorded those fields — because they are NULL for every job scraped so
+far, they are currently hidden rather than drawn as a lone `unknown` bar (see
+*Chart rendering* above). The `skips` table is deliberately separate from
 `applications`, so it never perturbs submit / reapply / stats logic; the Overview
 **Skipped** KPI is the historical `SUM(runs.jobs_skipped)` (populated even for
 runs that predate this table).
@@ -965,22 +1081,34 @@ time line chart** (share of gradable answers per day that disagreed with the
 résumé — a downward trend as corrections land), a differences-by-category bar,
 and an editable **sync table**: tick *Approve* (edit the recommended value if
 needed) and press *Sync approved* to store each value as an approved override.
+The table lists **only rows that still need a decision** — once a differing answer
+is approved it drops out of the list and appears in the collapsible **Approved
+overrides in effect** panel below (from which it can be removed to bring it back);
+a caption reports how many already-approved rows are hidden.
 Backed by `database.answer_comparison` / `answered_history` /
 `answer_overrides`, graded by `resume_expectations.grade_comparison` /
-`deviation_by_day`. Approved overrides are written to the `answer_overrides`
-table and read **first** at fill time (see *Answer resolution*), so the next
-application uses the corrected value; the same set is also drivable from the
-`sync-answers` CLI.
+`deviation_by_day` (each `GradedAnswer.override` carries the row's stored
+override, which is what the table filters on). Approved overrides are written to
+the `answer_overrides` table and read **first** at fill time (see *Answer
+resolution*), so the next application uses the corrected value; the same set is
+also drivable from the `sync-answers` CLI.
 
 **Hiring-team outreach (web view):** the drafted "messages to send" as an
 editable table with clickable LinkedIn profile links (so you open each profile in
-one click), the résumé to attach, and a **Done** checkbox — tick the ones you've
-finished and press **Remove completed** to delete them (message, note and all)
-via `database.delete_outreach`. Each contact also has an expander with the
-copy-ready full message **and** the ≤300-char connection note (shown with its
-live character count) plus its own **Mark completed & remove** button. Backed by
-`database.outreach_drafts`, which joins each draft to the résumé submitted for
-that job and exposes its row `id` so the UI can target it for deletion.
+one click), the résumé to attach, a read-only **Note sent** column (`✓`/`—`), and a
+**Message sent** checkbox — tick the contacts whose full message you've sent and
+press **Remove message-sent outreach** to delete them (message, note and all) via
+`database.delete_outreach`. Each contact also has an expander with the copy-ready
+full message **and** the ≤300-char connection note (shown with its live character
+count) and **two** action buttons that mirror LinkedIn's two-step reality:
+**✉️ Connection note sent** flags the free invite note as sent
+(`database.mark_outreach_note_sent`) — the row is **kept** (the full message is
+still pending until they accept) and the note is rendered **struck through** with a
+timestamp so anyone opening the dashboard can see the connection step is done
+(an **↩️ Undo note sent** button clears it); **📨 Message sent — mark done &
+remove** deletes the whole outreach once the message itself has gone out. Backed by
+`database.outreach_drafts`, which joins each draft to the résumé submitted for that
+job and exposes its row `id` (and `note_sent_at`) so the UI can target it.
 
 ---
 
