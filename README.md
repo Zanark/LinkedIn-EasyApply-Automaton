@@ -88,8 +88,9 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m playwright install chromium
 ```
 
-Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[dev]` (e.g.
-`pip install -e ".[dev]"`).
+Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[gui]`, `.[dev]` (e.g.
+`pip install -e ".[dev]"`). `.[gui]` adds PySide6 for the desktop app — see
+[docs/gui.md](docs/gui.md).
 
 ## Quickstart
 
@@ -140,7 +141,8 @@ Installing the package also exposes a `lea` console script, so `lea init`,
 | `stats`                       | Print database statistics.                              |
 | `export`                      | Export applications (joined with jobs) to CSV/XLSX.     |
 | `sync-answers`                | Compare recorded answers with your résumé; `--apply` stores approved fixes as overrides used first. |
-| `dashboard`                   | Launch the Streamlit dashboard.                         |
+| `gui`                         | Open the desktop app — the same commands in a window (`--theme deepseafoam\|harbor-daylight`). Needs `.[gui]`. |
+| `dashboard`                   | Launch the Streamlit dashboard (also on the GUI's Data page). |
 | `resume-test <title>`         | Show which resume would be chosen for a job.            |
 | `test-form "<question>"`      | Recognise & resolve a single question (offline).        |
 | `test-browser`                | Launch the browser and verify your logged-in session.   |
@@ -165,7 +167,7 @@ lazily, so the pure-logic modules run and unit-test without a browser.
 
 ```
 linkedin_easy_apply/   the package (config, parser, scoring, answers, forms,
-                       browser, jobs, ai, database, cli, dashboard, utils,
+                       browser, jobs, ai, database, cli, gui, dashboard, utils,
                        orchestrator.py)
 configs/               *.example.yaml templates (init copies these)
 generated/resume/      resume PDFs the automaton attaches (git-ignored)
@@ -181,6 +183,8 @@ INIT.MD                run guide: every command & option with examples
 - **[Run Guide (INIT.MD)](INIT.MD)** — how to start the tool and **every**
   command/option with copy-paste examples.
 - [Configuration](docs/configuration.md) — every file and key explained.
+- [Desktop GUI](docs/gui.md) — the windowed front end, its themes, and how it
+  maps one-to-one onto these CLI commands.
 - [Resume generation](generated/resume/README.md) — how the automaton gets the
   resume it submits (built by the external dynamic-resume-builder).
 - [Developer Guide](docs/developer_guide.md) — architecture & how to extend.

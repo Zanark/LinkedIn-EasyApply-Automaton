@@ -111,6 +111,8 @@ resume:
 scoring:
   threshold: 20
   case_sensitive: false
+  enforce: true                  # false = score everything but never skip on score
+                                 # alone (same as passing --ignore-score)
   rules:
     - { keyword: backend, weight: 20 }
     - { keyword: azure, weight: 20 }

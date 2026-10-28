@@ -449,9 +449,18 @@ class Orchestrator:
             logger.info("Skip ({}) - {}", gate, job.summary)
             return
         if not score.passed:
-            self._note_skip(summary, "below_threshold", job_id)
-            logger.info("Skip (score {} < {}) - {}", score.score, score.threshold, job.summary)
-            return
+            # scoring.enforce (or --ignore-score) keeps the score as a recorded
+            # signal without letting it gate the run.
+            if self._config.scoring.enforce:
+                self._note_skip(summary, "below_threshold", job_id)
+                logger.info("Skip (score {} < {}) - {}", score.score, score.threshold, job.summary)
+                return
+            logger.info(
+                "Score {} < {} but scoring is not enforced - continuing with {}",
+                score.score,
+                score.threshold,
+                job.summary,
+            )
 
         resume = self._resume_selector.select(job.title or "", job.description)
         if resume is not None:

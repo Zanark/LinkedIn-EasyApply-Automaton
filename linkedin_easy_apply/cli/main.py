@@ -9,6 +9,7 @@ Commands
 * ``stats``        print database statistics
 * ``export``       export jobs/applications to CSV or XLSX
 * ``sync-answers`` compare recorded answers with your résumé & approve fixes
+* ``gui``          open the desktop app (same commands, windowed)
 * ``dashboard``    launch the Streamlit dashboard
 * ``resume-test``  show which resume would be selected for a job
 * ``test-form``    recognise & resolve a single question (offline)
@@ -191,12 +192,21 @@ def apply(
         "write a plain-text report at the end of the run for you to send by hand. "
         "Never clicks anything. Defaults to the outreach.enabled config value.",
     ),
+    ignore_score: bool = typer.Option(
+        False,
+        "--ignore-score",
+        help="Apply regardless of the keyword score. The score is still computed, "
+        "logged and stored - it just stops skipping jobs below scoring.threshold. "
+        "Hard gates (already applied, blacklist, exclude_keywords, ...) still apply.",
+    ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Never prompt; auto-answer/submit."),
 ) -> None:
     """Run the Easy Apply automation."""
     cfg = _load(config)
     if url:
         cfg.search = SearchConfig(searches=[SearchEntry(name="cli", url=url)])
+    if ignore_score:
+        cfg.scoring.enforce = False
     _run_orchestrator(
         cfg,
         mode="apply",
@@ -226,6 +236,11 @@ def reapply(
         "--message-hiring-team/--no-message-hiring-team",
         help="Draft hiring-team outreach after each successful apply (see 'apply').",
     ),
+    ignore_score: bool = typer.Option(
+        False,
+        "--ignore-score",
+        help="Retry regardless of the keyword score (see 'apply --ignore-score').",
+    ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Never prompt; auto-answer/submit."),
     show_list: bool = typer.Option(
         False, "--list", help="List the failed/aborted jobs that would be retried, then exit."
@@ -242,6 +257,8 @@ def reapply(
     if show_list:
         _print_reapply_targets(_database(cfg))
         return
+    if ignore_score:
+        cfg.scoring.enforce = False
     _run_orchestrator(
         cfg,
         mode="reapply",
@@ -670,8 +687,35 @@ def _print_overrides(db: Database) -> None:
 
 
 @app.command()
+def gui(
+    config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c"),
+    theme: str | None = typer.Option(
+        None,
+        "--theme",
+        help="deepseafoam (dark) or harbor-daylight (light). Defaults to the last one used.",
+    ),
+) -> None:
+    """Open the desktop app (the GUI front end for these same commands)."""
+    from linkedin_easy_apply.gui import THEMES, GuiUnavailableError, launch
+
+    if theme and theme.strip().lower() not in THEMES:
+        console.print(
+            f"[red]Unknown theme '{theme}'.[/red] Choose one of: {', '.join(THEMES)}."
+        )
+        raise typer.Exit(code=2)
+    try:
+        exit_code = launch(config_path=str(config), theme=theme)
+    except GuiUnavailableError as exc:
+        # markup=False: the hint contains "pip install .[gui]", which Rich would
+        # otherwise swallow as a style tag.
+        console.print(str(exc), style="red", markup=False, highlight=False)
+        raise typer.Exit(code=2) from exc
+    raise typer.Exit(code=exit_code)
+
+
+@app.command()
 def dashboard(config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c")) -> None:
-    """Launch the Streamlit dashboard."""
+    """Launch the Streamlit dashboard (also reachable from the GUI's Data page)."""
     import os
     import subprocess
 
