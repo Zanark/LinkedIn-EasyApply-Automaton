@@ -1,6 +1,18 @@
-<div align="center">
+<p align="center">
+  <img src="docs/mark.svg" width="80" height="80" alt="Easy Apply Automaton: a seafoam paper plane launching from a deep teal panel">
+</p>
+<p align="center">
+  <img src="docs/readme-banner.svg" width="800" alt="Easy Apply Automaton — Automate your LinkedIn applications.">
+</p>
+<p align="center">
+  <a href="docs/setup-and-commands.md">Setup &amp; commands</a> &nbsp; · &nbsp;
+  <a href="docs/gui.md">Desktop GUI</a> &nbsp; · &nbsp;
+  <a href="docs/configuration.md">Configuration</a> &nbsp; · &nbsp;
+  <a href="INIT.MD">Run guide</a> &nbsp; · &nbsp;
+  <a href="docs/troubleshooting.md">Troubleshooting</a>
+</p>
 
-# LinkedIn Easy Apply Automaton
+<div align="center">
 
 **Discovers jobs from your searches, scores them against your criteria, picks the right résumé,
 answers every question from your own answer file, and applies — in a window or from the terminal.**

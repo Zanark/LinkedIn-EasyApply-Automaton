@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="276" viewBox="0 0 960 276" role="img" aria-labelledby="title description">
+  <title id="title">Easy Apply Automaton — Automate your LinkedIn applications.</title>
+  <desc id="description">An editorial wordmark in warm ivory on near-black teal, with a quiet seafoam rule.</desc>
+  <rect width="960" height="276" rx="12" fill="#000F13"/>
+  <text x="480" y="54" text-anchor="middle" fill="#93A1A1" font-family="'Segoe UI', Aptos, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="6">EASY APPLY AUTOMATON</text>
+  <text x="480" y="126" text-anchor="middle" fill="#EEE8D5" font-family="'Segoe UI', Aptos, Arial, sans-serif" font-size="48" font-weight="300">Automate your</text>
+  <text x="480" y="189" text-anchor="middle" fill="#EEE8D5" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-style="italic">LinkedIn applications.</text>
+  <path d="M436 232h88" stroke="#00A591" stroke-width="2" stroke-linecap="round"/>
+</svg>

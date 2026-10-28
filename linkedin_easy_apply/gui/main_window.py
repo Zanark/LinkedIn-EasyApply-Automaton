@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 from PySide6.QtCore import QSettings, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QDesktopServices, QKeySequence
+from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -66,6 +66,7 @@ class MainWindow(QMainWindow):
         self._dashboard_started = False
 
         self.setWindowTitle(f"Easy Apply Automaton {__version__}")
+        self.setWindowIcon(application_icon())
         self.resize(1180, 780)
         self._build_ui()
         self._connect_runner()
@@ -680,10 +681,28 @@ class MainWindow(QMainWindow):
         event.accept()
 
 
+def application_icon() -> QIcon:
+    """The project mark, or an empty icon when the asset is missing.
+
+    Importing ``QtSvg`` is what registers Qt's SVG image handler; without it
+    ``QIcon`` silently loads nothing and the window gets a blank icon.
+    """
+    mark = project_root() / "docs" / "mark.svg"
+    if not mark.is_file():
+        return QIcon()
+    try:
+        import PySide6.QtSvg  # noqa: F401
+    except ImportError:  # pragma: no cover - QtSvg ships with PySide6
+        return QIcon()
+    return QIcon(str(mark))
+
+
 def run(config_path: str = "configs/config.yaml", theme: str | None = None) -> int:
     """Create the application and show the window. Returns the Qt exit code."""
     application = QApplication.instance() or QApplication([])
     application.setApplicationName("Easy Apply Automaton")
+    application.setApplicationDisplayName("Easy Apply Automaton")
+    application.setWindowIcon(application_icon())
     window = MainWindow(config_path=config_path, theme=theme)
     window.show()
     return application.exec()
