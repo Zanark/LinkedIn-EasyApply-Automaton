@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/mark.svg" width="80" height="80" alt="Easy Apply Automaton: a seafoam paper plane launching from a deep teal panel">
+  <img src="docs/mark.svg" width="80" height="80" alt="Easy Apply Automaton: an application form whose fields fill themselves, struck through by an automation bolt">
 </p>
 <p align="center">
-  <img src="docs/readme-banner.svg" width="800" alt="Easy Apply Automaton — Automate your LinkedIn applications.">
+  <img src="docs/readme-banner.svg" width="820" alt="Easy Apply Automaton — Automate your LinkedIn applications.">
 </p>
 <p align="center">
   <a href="docs/setup-and-commands.md">Setup &amp; commands</a> &nbsp; · &nbsp;

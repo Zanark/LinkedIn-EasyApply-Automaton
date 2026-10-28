@@ -1,13 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="title description">
   <title id="title">Easy Apply Automaton</title>
-  <desc id="description">A seafoam paper plane launching out of a deep teal panel, trailing three speed marks.</desc>
+  <desc id="description">An application form whose fields fill themselves in seafoam, struck through by an automation bolt.</desc>
   <rect width="96" height="96" rx="22" fill="#001E26"/>
-  <rect x="1" y="1" width="94" height="94" rx="21" fill="none" stroke="#00A591" stroke-width="2" opacity="0.5"/>
-  <g stroke="#586E75" stroke-width="3" stroke-linecap="round">
-    <path d="M12 59h13"/>
-    <path d="M18 69h12"/>
-    <path d="M27 79h10"/>
-  </g>
-  <path d="M82 17 L16 46 L45 57 Z" fill="#00A591"/>
-  <path d="M82 17 L45 57 L53 82 Z" fill="#EEE8D5"/>
+  <rect x="1" y="1" width="94" height="94" rx="21" fill="none" stroke="#00A591" stroke-width="2" opacity="0.45"/>
+
+  <!-- the application form -->
+  <rect x="20" y="12" width="50" height="72" rx="6" fill="#EEE8D5"/>
+  <rect x="28" y="23" width="20" height="4" rx="2" fill="#586E75"/>
+
+  <!-- fields: two filled, the third still filling -->
+  <rect x="28" y="36" width="34" height="7" rx="3.5" fill="#00A591"/>
+  <rect x="28" y="50" width="34" height="7" rx="3.5" fill="#00A591"/>
+  <rect x="28" y="64" width="13" height="7" rx="3.5" fill="#586E75" opacity="0.4" transform="translate(21 0)"/>
+  <rect x="28" y="64" width="19" height="7" rx="3.5" fill="#00A591"/>
+
+  <!-- automation bolt, carved out of the form with a dark halo -->
+  <path d="M74 42 L57 70 L68 70 L63 92 L88 61 L76 61 Z" fill="#001E26" stroke="#001E26" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M74 42 L57 70 L68 70 L63 92 L88 61 L76 61 Z" fill="#00A591"/>
 </svg>

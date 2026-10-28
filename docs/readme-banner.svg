@@ -1,9 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="276" viewBox="0 0 960 276" role="img" aria-labelledby="title description">
   <title id="title">Easy Apply Automaton — Automate your LinkedIn applications.</title>
-  <desc id="description">An editorial wordmark in warm ivory on near-black teal, with a quiet seafoam rule.</desc>
+  <desc id="description">A terminal-style wordmark: a shell prompt above a heavy monospace name, with a seafoam block cursor after the tagline.</desc>
   <rect width="960" height="276" rx="12" fill="#000F13"/>
-  <text x="480" y="54" text-anchor="middle" fill="#93A1A1" font-family="'Segoe UI', Aptos, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="6">EASY APPLY AUTOMATON</text>
-  <text x="480" y="126" text-anchor="middle" fill="#EEE8D5" font-family="'Segoe UI', Aptos, Arial, sans-serif" font-size="48" font-weight="300">Automate your</text>
-  <text x="480" y="189" text-anchor="middle" fill="#EEE8D5" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-style="italic">LinkedIn applications.</text>
-  <path d="M436 232h88" stroke="#00A591" stroke-width="2" stroke-linecap="round"/>
+  <rect x="139" y="56" width="5" height="164" rx="2.5" fill="#00A591"/>
+
+  <text x="167" y="92" font-family="'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="18">
+    <tspan fill="#00A591">$</tspan><tspan fill="#586E75" xml:space="preserve"> apply.py apply --limit 15</tspan>
+  </text>
+
+  <text x="167" y="156" fill="#EEE8D5" font-family="'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="54" font-weight="700" letter-spacing="1">EASY APPLY AUTOMATON</text>
+
+  <text id="tagline" x="167" y="204" fill="#93A1A1" font-family="'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace" font-size="24">Automate your LinkedIn applications</text>
+  <rect id="cursor" x="669" y="185" width="13" height="25" fill="#00A591"/>
 </svg>
