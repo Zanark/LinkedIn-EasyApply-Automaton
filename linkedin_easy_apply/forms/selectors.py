@@ -128,14 +128,37 @@ RESUME_UPLOAD_BUTTON = [
 ]
 
 # Job list / card selectors on a search results page.
+# LinkedIn has shipped several result-list redesigns and still serves older
+# markup to some accounts, so every known variant is listed. ``first_group``
+# uses the first selector that matches at least once, hence most-specific first.
 JOB_CARD = [
-    "div.job-card-container",
-    "li.jobs-search-results__list-item",
-    "div[data-job-id]",
+    "li[data-occludable-job-id]",  # current virtualised results list
+    "div.job-card-container",  # previous redesign
+    "li.jobs-search-results__list-item",  # legacy
+    "li.scaffold-layout__list-item:has(a[href*='/jobs/view/'])",
+    "[data-job-id][class*='job-card']",
+    "div.base-card[data-entity-urn*='jobPosting']",  # logged-out / guest page
 ]
+# Last-resort discovery when no card selector matches: every link to a job.
+JOB_CARD_LINK = "a[href*='/jobs/view/']"
 JOB_LIST_CONTAINER = [
-    "div.jobs-search-results-list",
-    "ul.jobs-search__results-list",
+    "div.scaffold-layout__list",  # current results column
+    "div.jobs-search-results-list",  # previous redesign
+    "div.jobs-search-results-list__list",
+    "ul.jobs-search__results-list",  # logged-out / guest page
+]
+# Shown when LinkedIn is serving a sign-in wall instead of the results page.
+AUTH_WALL = [
+    "input[name='session_key']",
+    "form.login__form",
+    "section.authwall",
+    "div.authwall-join-form",
+]
+# Shown when the search itself legitimately matched nothing.
+NO_RESULTS = [
+    ".jobs-search-no-results-banner",
+    "text=No matching jobs found",
+    "text=We couldn't find any jobs",
 ]
 
 # Job detail (right-hand pane) selectors.

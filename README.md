@@ -1,225 +1,180 @@
-# LinkedIn-EasyApply-Automaton
+<div align="center">
 
-A production-quality, **modular** framework that automates the LinkedIn **Easy
-Apply** workflow: it discovers jobs from your saved searches, scores them against
-your criteria, picks the right resume, fills every question from your own answer
-file, and applies — automatically by default, with dry-run, optional per-submit
-confirmation, dedupe and daily limits built in.
+# LinkedIn Easy Apply Automaton
 
-> ⚠️ **Read this first.** Automating LinkedIn violates their Terms of Service and
-> can get your account restricted. This project is provided for educational
-> purposes; **use it at your own risk**. It **never** stores your password —
-> you stay logged in through your own browser profile.
+**Discovers jobs from your searches, scores them against your criteria, picks the right résumé,
+answers every question from your own answer file, and applies — in a window or from the terminal.**
 
-## Highlights
+<img src="docs/images/gui-run-deepseafoam.png" alt="The desktop app running an Easy Apply crawl, with live log output" width="900">
 
-- **Reuses your logged-in browser profile** (Playwright persistent context) —
-  no credentials, no automated login.
-- **Dynamic question recognition** — a hybrid keyword + fuzzy parser maps
-  free-form Easy Apply questions to your answers; unknown questions pause for
-  input and are **remembered** for next time, and a `custom_questions` keyword
-  map pre-answers bespoke screening questions for unattended runs.
-- **Config-driven everything** — searches, scoring, filters, limits, resume
-  selection, logging and AI are all YAML. No hardcoded values.
-- **Weighted job scoring** with whole-word matching (so `go` ≠ `google`) and
-  punctuation keywords (`c++`, `.net`).
-- **Smart resume attach** — picks the best resume, reuses an existing LinkedIn
-  resume card when present, or uploads the PDF automatically.
-- **Per-job dynamic résumés (opt-in)** — point `resume.builder.path` at the
-  downloaded builder and the automaton renders a résumé **tailored to each job**
-  right before applying (e.g. an AI-heavy posting surfaces your `Data & AI`
-  skills first). Deterministic keyword clusters offline, or an optional AI mode;
-  either way it only re-emphasises your `master.yaml`, never fabricates. See
-  [configuration → `resume.builder`](docs/configuration.md#resumebuilder-dynamic-per-job-resumes).
-- **Resumes from one master file** — the automaton attaches PDFs from
-  `generated/resume/`, built by the standalone
-  **[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)**
-  (one `master.yaml` → a pixel-tuned one-page PDF, Raleway + seafoam accent,
-  publishable straight into `generated/resume/` with `--out-dir`).
-- **Safety rails**: per-run / per-company / daily caps, blacklist/whitelist,
-  include/exclude keywords, URL + company-role dedupe.
-- **Dry-run & interactive** modes; graceful Ctrl+C shutdown; per-step and
-  on-error screenshots with automatic cleanup of unreferenced captures.
-- **Meet-the-hiring-team outreach** — after a successful application, read each
-  recruiter's name and LinkedIn **profile URL** from the page, draft **two**
-  messages — a full note to send once they connect **and** a short **connection
-  note** (≤300 chars) to attach to the invitation — and write a plain-text
-  **report** at the end of the run for you to send by hand (never clicks
-  anything; runs even under `--yes`). Opt into `mode: send` to have it
-  approve-and-send on LinkedIn instead. Toggle with
-  `--message-hiring-team` / `outreach.enabled`.
-- **Verbose, decision-level logging** — a global `-v/--verbose` flag (or
-  `logging.level: DEBUG`) narrates every field: what was parsed, which answer it
-  resolved and *from where*, and whether it filled or skipped — so you see
-  exactly what the tool is "thinking."
-- **SQLite persistence** of jobs, applications, questions/answers, scores,
-  errors — with learned-answer reuse, terminal-or-page question answering,
-  `stats`, CSV/XLSX `export`, and an optional Streamlit dashboard (organized into
-  **Overview / Submitted / Application details / Needs attention / Skipped /
-  Resume match / Outreach** tabs, with **clickable KPI cards** that drill into any
-  category) that lists **every successful application as a collapsible card**
-  (expand to replay exactly what was asked + the answer submitted + résumé used),
-  also drills into any single application, flags the questions it had no answer
-  for and the applications they blocked, **explains why every skipped job was
-  skipped** (reason
-  breakdown + trends), **grades every answer against your résumé** (with a
-  deviation-over-time chart and one-click *sync* of approved corrections), lets you
-  **retry every
-  failed/aborted job with one click** (Needs-attention tab → *Reapply all*, or the
-  `reapply` CLI), and shows drafted
-  hiring-team outreach as clickable LinkedIn profile links (with the full message,
-  a ≤300-char connection note, and a one-click *mark completed & remove*).
-- **Optional AI advisor** (OpenAI) that only *advises* — it can never submit.
-- Clean, typed, tested codebase (ruff + black + mypy + pytest).
+</div>
 
-## Requirements
+> ⚠️ **Read this first.** Automating LinkedIn violates their Terms of Service and can get your account
+> restricted. This project is provided for educational purposes; **use it at your own risk.** It never
+> stores your password — you stay logged in through your own browser profile.
 
-- Python **3.12+**
-- Microsoft Edge (default), Google Chrome, or bundled Chromium
-- A LinkedIn account you are logged into within the chosen browser profile
+---
 
-## Install
+## Two front ends, one engine
+
+The desktop app is a **front end for the CLI**, not a second implementation. Every button builds an
+`apply.py` command, prints it to the log, and runs it — so the window and the terminal can never
+drift apart.
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e .
-
-# First time only, if you use bundled Chromium (not needed for Edge/Chrome):
-.\.venv\Scripts\python.exe -m playwright install chromium
+.\.venv\Scripts\python.exe apply.py gui            # drive it from a window
+.\.venv\Scripts\python.exe apply.py apply -n 15    # drive it from the terminal
 ```
 
-Optional extras: `.[ai]`, `.[dashboard]`, `.[export]`, `.[dev]` (e.g.
-`pip install -e ".[dev]"`).
+---
 
-## Quickstart
+## Two themes
 
-```powershell
-# 1. Scaffold config files + runtime folders
-.\.venv\Scripts\python.exe apply.py init
+Dark **DeepSeaFoam** and light **Harbor Daylight**, switchable from the sidebar and remembered
+between launches.
 
-# 2. Edit configs/config.yaml (searches, scoring, limits)
-#    and configs/answers.yaml (your details & skills).
-#    Put your resume PDF(s) in generated/resume/ and reference them in config.yaml.
+| DeepSeaFoam | Harbor Daylight |
+| --- | --- |
+| <img src="docs/images/gui-run-deepseafoam.png" alt="Run page in the dark DeepSeaFoam theme" width="430"> | <img src="docs/images/gui-run-harbor-daylight.png" alt="Run page in the light Harbor Daylight theme" width="430"> |
 
-# 3. Sign in to LinkedIn once (opens Edge; session is saved to the profile)
-.\.venv\Scripts\python.exe apply.py login
+Both palettes come from the [DeepSeaFoam](https://github.com/Zanark/DeepSeaFoam) design project.
 
-# 4. Confirm the saved session works
-.\.venv\Scripts\python.exe apply.py test-browser
+---
 
-# 5. Discover & score jobs without applying
-.\.venv\Scripts\python.exe apply.py scan
+## What you can do in the window
 
-# 6. Practice run — fills everything, never submits
-.\.venv\Scripts\python.exe apply.py apply --dry-run
+### Run — scan, apply, reapply, connect
 
-# 7. For real — submits automatically (no clicks)
-.\.venv\Scripts\python.exe apply.py apply --limit 1
+Pick an action, set a limit, hit Start. The log streams live and colours each line by severity; Stop
+terminates the run cleanly. **Copy command** puts the exact terminal equivalent on your clipboard.
 
-# 7b. For real, but confirm each submit in the terminal (Enter = submit)
-.\.venv\Scripts\python.exe apply.py apply --confirm-submit
-```
+<img src="docs/images/gui-run-deepseafoam.png" alt="Run page with action, limit, search URL, safety toggles and a live colour-coded log" width="900">
 
-> 💡 Add `-v` **before** any command for full DEBUG narration of every decision,
-> e.g. `.\.venv\Scripts\python.exe apply.py -v apply --dry-run -y`. See
-> **[INIT.MD](INIT.MD)** for a copy-paste run guide covering every option.
+### Configuration — edit and validate before you run
 
-Installing the package also exposes a `lea` console script, so `lea init`,
-`lea scan`, `lea apply --dry-run`, etc. work once the venv is active.
+Validate parses your YAML **and** runs it through the same config model the CLI loads, so a bad value
+is caught here instead of halfway through a crawl. Save refuses to write a file that does not validate.
 
-## Commands
+<img src="docs/images/gui-config-deepseafoam.png" alt="Configuration page editing config.yaml with Validate, Save and Reload" width="900">
 
-| Command                       | Description                                             |
-| ----------------------------- | ------------------------------------------------------- |
-| `init`                        | Scaffold example configs and runtime directories.       |
-| `login`                       | Open the browser to sign in to LinkedIn once (reused).  |
-| `apply`                       | Run the Easy Apply automation (`--dry-run`, `--confirm-submit`, `--message-hiring-team`, `--yes`, `--limit`, `--url`). |
-| `reapply`                     | Retry every failed/aborted application (no search); `--list` previews, `--dry-run`/`--limit`/`--yes` supported. |
-| `scan`                        | Discover & score jobs without applying.                 |
-| `connect`                     | Send pending recruiters a free LinkedIn connection invitation carrying their ≤300-char note (`--dry-run`, `--limit`, `--run`, `--yes`). Opens its own fresh browser. |
-| `stats`                       | Print database statistics.                              |
-| `export`                      | Export applications (joined with jobs) to CSV/XLSX.     |
-| `sync-answers`                | Compare recorded answers with your résumé; `--apply` stores approved fixes as overrides used first. |
-| `dashboard`                   | Launch the Streamlit dashboard.                         |
-| `resume-test <title>`         | Show which resume would be chosen for a job.            |
-| `test-form "<question>"`      | Recognise & resolve a single question (offline).        |
-| `test-browser`                | Launch the browser and verify your logged-in session.   |
-| `version`                     | Print the version.                                      |
+### Answers — the file that fills the forms
 
-> **Global option:** add `-v` / `--verbose` **before** any command for
-> DEBUG-level, decision-by-decision logging. For every command's full option list
-> with copy-paste examples, see **[INIT.MD](INIT.MD)**.
+<img src="docs/images/gui-answers-harbor-daylight.png" alt="Answers page editing answers.yaml in the Harbor Daylight theme" width="900">
+
+### Data — statistics, export, dashboard
+
+<img src="docs/images/gui-data-deepseafoam.png" alt="Data page showing database statistics, export controls and the dashboard launcher" width="900">
+
+### Tools — sign in, verify, inspect
+
+One-shot commands plus every runtime folder — logs, screenshots, generated résumés, outreach reports,
+search diagnostics — one click from Explorer.
+
+<img src="docs/images/gui-tools-deepseafoam.png" alt="Tools page with one-shot commands and runtime folder shortcuts" width="900">
+
+---
+
+## The analytics dashboard
+
+A separate read-only Streamlit surface, opened from the GUI's Data page or `apply.py dashboard`.
+Clickable KPI cards drill into any category; seven tabs cover submitted applications (expand any one
+to replay what was asked, what was answered and which résumé went out), the questions that blocked an
+application, **why** every skipped job was skipped, how well your answers match your résumé, and
+drafted hiring-team outreach.
+
+<img src="docs/images/dashboard.png" alt="The Streamlit dashboard with KPI cards and seven analysis tabs, on a fresh database" width="900">
+
+<sub>Shown on a fresh, empty database — the zeros are real, not a redaction.</sub>
+
+---
 
 ## How it works
 
 ```
-discover → extract → dedupe → filter → score → select resume
+discover → extract → dedupe → filter → score → select résumé
         → (AI advise) → Easy Apply workflow → persist → learn answers
 ```
 
-The `Orchestrator` coordinates focused modules (`config`, `parser`, `scoring`,
-`answers`, `forms`, `browser`, `jobs`, `ai`, `database`). Playwright is imported
-lazily, so the pure-logic modules run and unit-test without a browser.
+The `Orchestrator` coordinates focused modules (`config`, `parser`, `scoring`, `answers`, `forms`,
+`browser`, `jobs`, `ai`, `database`). Playwright is imported lazily, so the pure-logic modules run
+and unit-test without a browser.
 
-## Project structure
+---
 
+## Highlights
+
+- **Your browser, your session.** A Playwright persistent context reuses a profile you signed into by
+  hand. No credentials, no automated login, no password ever stored.
+- **Questions answered dynamically.** A hybrid keyword + fuzzy parser maps free-form Easy Apply
+  questions onto your answer file. Unknown questions pause for input and are **remembered**; a
+  `custom_questions` map pre-answers bespoke screening questions for unattended runs.
+- **Weighted scoring you control.** Whole-word matching (so `go` ≠ `google`) and punctuation keywords
+  (`c++`, `.net`), negative weights as vetoes, and an explainable per-job breakdown stored in the
+  database. Set `scoring.enforce: false` or pass `--ignore-score` to keep the score as a signal
+  without letting it skip anything.
+- **Résumés that fit the job.** Picks the best PDF from `generated/resume/`, reuses an existing
+  LinkedIn résumé card when present, or uploads. Opt into per-job **dynamic résumés** and the
+  standalone [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder) re-emphasises
+  your `master.yaml` for each posting — it never fabricates.
+- **Safety rails.** Per-run, per-company and daily caps; blacklist/whitelist; include/exclude
+  keywords; URL and company-role dedupe; LinkedIn's own daily cap detected and respected; graceful
+  Ctrl+C.
+- **Hiring-team outreach.** After a successful application, read each recruiter's name and profile
+  URL, draft a full message **and** a ≤300-char connection note, and write a report for you to send
+  by hand. Never clicks anything unless you opt into `mode: send`.
+- **It tells you what it is thinking.** `-v` narrates every field: what was parsed, which answer
+  resolved and *from where*, filled or skipped. When discovery finds nothing it reports why — page
+  title, per-selector match counts, and a screenshot + HTML dump in `logs/diagnostics/`.
+- **Everything persisted.** SQLite for jobs, applications, questions, scores, skips and errors, with
+  learned-answer reuse, `stats`, and CSV/XLSX export.
+- **Optional AI advisor** that only *advises* — it can never submit.
+- Clean, typed, tested codebase (ruff + black + mypy + pytest).
+
+---
+
+## Quick start
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[gui,dashboard]"
+
+.\.venv\Scripts\python.exe apply.py init          # scaffold configs
+.\.venv\Scripts\python.exe apply.py login         # sign in once, by hand
+.\.venv\Scripts\python.exe apply.py scan          # discover + score, never applies
+.\.venv\Scripts\python.exe apply.py gui           # or drive it from the window
 ```
-linkedin_easy_apply/   the package (config, parser, scoring, answers, forms,
-                       browser, jobs, ai, database, cli, dashboard, utils,
-                       orchestrator.py)
-configs/               *.example.yaml templates (init copies these)
-generated/resume/      resume PDFs the automaton attaches (git-ignored)
-generated/coverletter/ auto-generated cover letters, `.pdf` + `.txt` per job (git-ignored)
-docs/                  configuration, developer guide, FAQ, troubleshooting
-tests/                 unit tests for the pure-logic modules
-apply.py               CLI entry point
-INIT.MD                run guide: every command & option with examples
-```
+
+📖 **Full setup, every command and every option: [docs/setup-and-commands.md](docs/setup-and-commands.md)**
+
+---
 
 ## Documentation
 
-- **[Run Guide (INIT.MD)](INIT.MD)** — how to start the tool and **every**
-  command/option with copy-paste examples.
-- [Configuration](docs/configuration.md) — every file and key explained.
-- [Resume generation](generated/resume/README.md) — how the automaton gets the
-  resume it submits (built by the external dynamic-resume-builder).
-- [Developer Guide](docs/developer_guide.md) — architecture & how to extend.
-- [FAQ](docs/faq.md) — safety, AI, resumes, data storage.
-- [Troubleshooting](docs/troubleshooting.md) — fixes for common problems.
+| Guide | What's in it |
+| --- | --- |
+| **[Setup & Commands](docs/setup-and-commands.md)** | Install, extras, first run, and the complete command/option reference. |
+| [Run Guide (INIT.MD)](INIT.MD) | Narrative walkthrough with copy-paste examples. |
+| [Desktop GUI](docs/gui.md) | The window, its five pages, the themes, and how it maps onto the CLI. |
+| [Configuration](docs/configuration.md) | Every file and key explained. |
+| [Troubleshooting](docs/troubleshooting.md) | Fixes for common problems. |
+| [FAQ](docs/faq.md) | Safety, AI, résumés, data storage. |
+| [Résumé generation](generated/resume/README.md) | How the automaton gets the PDF it submits. |
 
 ### Learning the internals
 
-Deep-dive guides that teach the computer-science behind this codebase — written
-for engineers who want to understand *why* it's built this way and map it to
-patterns used at bigger companies:
+Deep dives that teach the computer science behind this codebase and map it to patterns used at scale:
 
-- [Run Lifecycle](docs/run-lifecycle.md) — a stage-by-stage walkthrough of one
-  run: where it starts, how a job is discovered, what happens when a job is
-  found, how the form is filled, and how it ends (with the log lines you'll see).
-- [Architecture & Design Patterns](docs/architecture.md) — component/sequence
-  diagrams, the Functional-Core/Imperative-Shell style, and every design pattern
-  used here (Facade, Strategy, Factory, Repository, Null Object…) with real code.
-- [Data Structures](docs/data-structures.md) — the maps, sets, enums, DTOs and
-  relational schema used, each with complexity and where industry uses it.
-- [Algorithms](docs/algorithms.md) — normalization, fuzzy matching, weighted
-  scoring, backoff and more, each with a real-world example.
-- [Resume generation](docs/resume-studio.md) — how content/presentation are kept
-  separate, and why the resume builder is a standalone tool the automaton merely
-  consumes finished PDFs from.
+- [Run Lifecycle](docs/run-lifecycle.md) — one run, stage by stage, with the log lines you'll see.
+- [Architecture & Design Patterns](docs/architecture.md) — diagrams, Functional-Core/Imperative-Shell,
+  and every pattern used here with real code.
+- [Data Structures](docs/data-structures.md) — the maps, sets, enums, DTOs and schema, with complexity.
+- [Algorithms](docs/algorithms.md) — normalization, fuzzy matching, weighted scoring, backoff.
+- [Résumé generation](docs/resume-studio.md) — why the builder is a standalone tool.
 
-## Development
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.\.venv\Scripts\ruff.exe check .
-.\.venv\Scripts\black.exe --check .
-.\.venv\Scripts\mypy.exe linkedin_easy_apply
-.\.venv\Scripts\python.exe -m pytest
-```
+---
 
 ## Disclaimer
 
-This software is not affiliated with, endorsed by, or connected to LinkedIn.
-Automating the platform may violate LinkedIn's User Agreement and could lead to
-account restrictions. You are solely responsible for how you use it.
-
+This software is not affiliated with, endorsed by, or connected to LinkedIn. Automating the platform
+may violate LinkedIn's User Agreement and could lead to account restrictions. You are solely
+responsible for how you use it.

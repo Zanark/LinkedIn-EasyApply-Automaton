@@ -191,7 +191,9 @@ checked first and win over any score; then the **score threshold** applies:
 | `company_limit` | you've hit `max_per_company` for that company |
 
 **Phase 2 — score:** if it clears the gates but `score < threshold`, it's
-skipped as `below_threshold`.
+skipped as `below_threshold`. Set `scoring.enforce: false` (or pass
+`--ignore-score`) to keep scoring everything while never skipping on score
+alone — see [configuration → *Ignoring the score*](configuration.md#ignoring-the-score).
 
 **Two later, silent skips:** `ai_advised_against` (only when AI is enabled) and
 `scan_only` (`scan` mode never applies). Every decision is in the log — the

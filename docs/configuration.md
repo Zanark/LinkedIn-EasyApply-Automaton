@@ -212,6 +212,7 @@ use sync to fix what the bot already submitted (e.g. a stale total-experience of
 scoring:
   threshold: 20
   case_sensitive: false
+  enforce: true
   rules:
     - {keyword: backend, weight: 25}
     - {keyword: "c++",   weight: 15}
@@ -222,6 +223,7 @@ scoring:
 | --------------- | ------- | ------------------------------------------------------- |
 | `threshold`     | `0`     | Minimum score to be eligible; job passes if `score >= threshold`. |
 | `case_sensitive`| `false` | When `false`, matching is case-insensitive.             |
+| `enforce`       | `true`  | When `false`, the score never skips a job (still computed + stored). |
 | `rules`         | `[]`    | List of `{keyword, weight}` pairs (weights may be negative). |
 
 #### How the score is computed
@@ -279,6 +281,24 @@ The score decides *eligibility*, but a job is first run through hard **gates**
 (`_pre_apply_checks`) that can skip it **regardless of score** — see
 [FAQ → *Why was a job skipped?*](faq.md#why-was-a-job-skipped). The algorithmic
 write-up lives in [`algorithms.md`](algorithms.md#5-weighted-keyword-scoring--threshold).
+
+#### Ignoring the score
+
+To keep scoring as a *signal* without letting it skip anything, set
+`enforce: false` (or pass `--ignore-score` to `apply` / `reapply` for a one-off
+run). The score is still computed, logged as `[SCORE FAIL] 12/20` and written to
+the `scores` table — it just never produces a `below_threshold` skip:
+
+```yaml
+scoring:
+  enforce: false   # score everything, skip nothing on score alone
+```
+
+The hard gates still apply, so `already_applied`, `blacklisted`,
+`excluded_keyword`, `company_limit` and friends keep working. The older trick of
+setting `threshold: -999999` has the same effect; `enforce: false` just says so
+explicitly. Note that `threshold: 0` is **not** equivalent while you have
+negative rules — a job hitting one penalty drops below `0` and is still skipped.
 
 #### Tuning
 

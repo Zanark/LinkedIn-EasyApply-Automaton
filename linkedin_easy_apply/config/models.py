@@ -191,6 +191,9 @@ class ScoringConfig(BaseModel):
     threshold: int = 0
     rules: list[ScoringRule] = Field(default_factory=list)
     case_sensitive: bool = False
+    # When False the score is still computed, logged and stored, but a job below
+    # the threshold is no longer skipped (see also the --ignore-score CLI flag).
+    enforce: bool = True
 
 
 class LoggingConfig(BaseModel):
