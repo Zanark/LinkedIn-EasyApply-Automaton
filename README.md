@@ -5,7 +5,7 @@
 **Discovers jobs from your searches, scores them against your criteria, picks the right résumé,
 answers every question from your own answer file, and applies — in a window or from the terminal.**
 
-<img src="docs/images/gui-run-deepseafoam.png" alt="The desktop app running an Easy Apply crawl, with live log output" width="900">
+<img src="docs/images/gui-run-deepseafoam.png" alt="The desktop app running an Easy Apply crawl, with a live colour-coded log" width="900">
 
 </div>
 
@@ -33,6 +33,15 @@ drift apart.
 Dark **DeepSeaFoam** and light **Harbor Daylight**, switchable from the sidebar and remembered
 between launches.
 
+| Role | DeepSeaFoam (dark) | Harbor Daylight (light) |
+| --- | --- | --- |
+| Ambient field | `#000F13` | `#F3F2E9` |
+| Panels | `#001E26` | `#E3ECE7` |
+| Reading ink | `#93A1A1` | `#355451` |
+| Headings | `#EEE8D5` | `#173D3A` |
+| Accent | `#00A591` | `#006F63` |
+| Status | `#45D072` · `#EBE565` · `#E84A5F` | `#247449` · `#77600E` · `#AD3E55` |
+
 | DeepSeaFoam | Harbor Daylight |
 | --- | --- |
 | <img src="docs/images/gui-run-deepseafoam.png" alt="Run page in the dark DeepSeaFoam theme" width="430"> | <img src="docs/images/gui-run-harbor-daylight.png" alt="Run page in the light Harbor Daylight theme" width="430"> |
@@ -48,8 +57,6 @@ Both palettes come from the [DeepSeaFoam](https://github.com/Zanark/DeepSeaFoam)
 Pick an action, set a limit, hit Start. The log streams live and colours each line by severity; Stop
 terminates the run cleanly. **Copy command** puts the exact terminal equivalent on your clipboard.
 
-<img src="docs/images/gui-run-deepseafoam.png" alt="Run page with action, limit, search URL, safety toggles and a live colour-coded log" width="900">
-
 ### Configuration — edit and validate before you run
 
 Validate parses your YAML **and** runs it through the same config model the CLI loads, so a bad value
@@ -59,9 +66,14 @@ is caught here instead of halfway through a crawl. Save refuses to write a file 
 
 ### Answers — the file that fills the forms
 
+The same editor for `answers.yaml`, whose path is read from your config. **Run sync-answers** grades
+every recorded answer against your résumé and reports the drift.
+
 <img src="docs/images/gui-answers-harbor-daylight.png" alt="Answers page editing answers.yaml in the Harbor Daylight theme" width="900">
 
 ### Data — statistics, export, dashboard
+
+A live snapshot of the database, CSV/XLSX export, and the dashboard launcher.
 
 <img src="docs/images/gui-data-deepseafoam.png" alt="Data page showing database statistics, export controls and the dashboard launcher" width="900">
 
@@ -82,7 +94,7 @@ to replay what was asked, what was answered and which résumé went out), the qu
 application, **why** every skipped job was skipped, how well your answers match your résumé, and
 drafted hiring-team outreach.
 
-<img src="docs/images/dashboard.png" alt="The Streamlit dashboard with KPI cards and seven analysis tabs, on a fresh database" width="900">
+<img src="docs/images/dashboard.png" alt="The Streamlit dashboard with KPI cards and seven analysis tabs" width="900">
 
 <sub>Shown on a fresh, empty database — the zeros are real, not a redaction.</sub>
 
