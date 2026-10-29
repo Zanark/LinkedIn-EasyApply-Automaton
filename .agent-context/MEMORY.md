@@ -48,6 +48,32 @@
 - `threshold: 0` is **not** "scoring off" while negative rules exist - one penalty drops a job below
   zero. Use `enforce: false` (or `--ignore-score`).
 
+### The 2026 LinkedIn rebuild (confirmed live 2026-10-29)
+
+**Class-based selectors are permanently dead on the jobs UI.** Verified against the live site:
+
+- `/jobs/search/` redirects to `/jobs/search-results/?currentJobId=<id>`.
+- Class names are build-generated hashes (`ajrhc3`, `ajrk8d`, `ajrayf`) - they change every deploy,
+  so never key off them again.
+- There is **no** `data-job-id`, `data-occludable-job-id` or `data-entity-urn` anywhere, and **no
+  `h1`** on the detail pane.
+- Result cards are `<button>` elements, not links. Only the *selected* job has a `/jobs/view/` link,
+  which is why a link-based fallback returns exactly one id.
+
+What is stable, and what the code now uses instead:
+
+| Need | Source |
+| --- | --- |
+| The 25 cards | buttons whose accessible name matches `Dismiss .+ job`, minus those whose own `aria-label` starts with "Dismiss" (that is the nested dismiss control) |
+| Job id | click the card, then read `currentJobId` from `page.url` |
+| Title + company | `document.title` = `"<job title> \| <company> \| LinkedIn"` |
+| Description | the `About the job` heading's first ancestor with >400 chars of text |
+| Location | the card's own text, before the `(Hybrid)`/`(On-site)`/`(Remote)` marker |
+
+Both strategies are kept and whichever finds more cards wins, so the crawler still works if an
+account is served the older build. `page.accessibility` no longer exists in current Playwright - use
+`locator.aria_snapshot()`, which also reveals content inside shadow roots.
+
 ### Job discovery
 
 - LinkedIn **virtualises** the results column: the window scrollbar does not load more cards, and

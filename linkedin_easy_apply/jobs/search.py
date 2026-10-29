@@ -9,6 +9,7 @@ run the Easy Apply workflow on the same page.
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,8 @@ _SLUG_JOB_ID_RE = re.compile(r"/jobs/view/[^/?#]*?(\d{6,})")
 # Guest result cards identify the posting through an entity urn instead of a link.
 _URN_JOB_ID_RE = re.compile(r"jobPosting:(\d+)")
 _AUTH_WALL_URL_RE = re.compile(r"linkedin\.com/(login|authwall|checkpoint|uas/)", re.IGNORECASE)
+# Result cards on the hashed-class rebuild are matched by accessible name.
+_CARD_NAME_RE = re.compile(selectors.CARD_ACCESSIBLE_NAME)
 
 # Walk up from a job card to the nearest scrollable ancestor and page it down.
 # LinkedIn virtualises the results column, so scrolling the *window* never loads
@@ -109,15 +112,104 @@ class JobSearch:
         self._wait_for_results()
 
     def iterate(self, url: str, search_name: str, max_jobs: int) -> Iterator[Job]:
-        """Yield up to *max_jobs* jobs from *url*."""
+        """Yield up to *max_jobs* jobs from *url*.
+
+        Two discovery strategies: the id-based one (``data-job-id`` and job
+        links) and the accessible-name one for LinkedIn's hashed-class rebuild,
+        where cards carry no id at all. Whichever finds more cards wins, so the
+        crawler works against either build without being told which it is.
+        """
         self.open(url)
-        job_ids = self._collect_ids(max_jobs)
+        job_ids = self._collect_ids(max_jobs, report=False)
+        card_indices = self._card_indices()
+
+        if len(card_indices) > len(job_ids):
+            logger.info(
+                "Collected {} job card(s) from '{}' by accessible name",
+                len(card_indices),
+                search_name,
+            )
+            yield from self._iterate_cards(card_indices, search_name, max_jobs)
+            return
+
         logger.info("Collected {} job id(s) from '{}'", len(job_ids), search_name)
+        if not job_ids:
+            self._report_empty_results()
+            return
         for job_id in job_ids[:max_jobs]:
             if not self._open_card(job_id):
                 continue
             self._page.wait_for_timeout(1200)
             yield self._extractor.extract(self._page, search_name=search_name)
+
+    # -- accessible-name discovery -------------------------------------------
+    def _card_buttons(self) -> Any | None:
+        """Every button whose accessible name matches a result card."""
+        try:
+            return self._page.get_by_role("button", name=_CARD_NAME_RE)
+        except Exception:  # pragma: no cover - fake pages in tests
+            return None
+
+    def _card_indices(self) -> list[int]:
+        """Indices of the real cards, excluding their nested Dismiss buttons.
+
+        A card's accessible name absorbs the nested "Dismiss <title> job"
+        control, so both match; only the Dismiss button carries that text as its
+        own ``aria-label``.
+        """
+        buttons = self._card_buttons()
+        if buttons is None:
+            return []
+        try:
+            total = buttons.count()
+        except Exception:  # pragma: no cover - defensive
+            return []
+        indices: list[int] = []
+        for index in range(total):
+            label = self._safe(lambda i=index: buttons.nth(i).get_attribute("aria-label")) or ""
+            if not label.strip().startswith(selectors.DISMISS_LABEL_PREFIX):
+                indices.append(index)
+        return indices
+
+    def _iterate_cards(
+        self, indices: list[int], search_name: str, max_jobs: int
+    ) -> Iterator[Job]:
+        for index in indices[:max_jobs]:
+            # Read the card before clicking: once selected it is relabelled
+            # "Selected, ..." and carries the location we still need.
+            card_text = self._card_text(index)
+            if not self._activate_card(index):
+                continue
+            # The detail pane swaps in and the URL gains ?currentJobId=<id>.
+            self._page.wait_for_timeout(1800)
+            yield self._extractor.extract(
+                self._page, search_name=search_name, card_text=card_text
+            )
+
+    def _card_text(self, index: int) -> str | None:
+        buttons = self._card_buttons()
+        if buttons is None:
+            return None
+        return self._safe(lambda: buttons.nth(index).inner_text())
+
+    def _activate_card(self, index: int) -> bool:
+        """Click the card at *index*, re-querying because the list re-renders."""
+        self._clear_blocking_modal()
+        for attempt in range(2):
+            buttons = self._card_buttons()
+            if buttons is None:
+                return False
+            try:
+                card = buttons.nth(index)
+                card.scroll_into_view_if_needed(timeout=5000)
+                card.click(timeout=5000)
+                return True
+            except Exception as exc:  # pragma: no cover - defensive
+                if attempt == 0 and self._clear_blocking_modal():
+                    continue
+                logger.warning("Could not open job card {}: {}", index, exc)
+                return False
+        return False
 
     def open_job(self, url: str, search_name: str = "reapply") -> Job | None:
         """Navigate straight to a single job page and extract it.
@@ -139,26 +231,24 @@ class JobSearch:
 
     # -- internals ------------------------------------------------------------
     def _wait_for_results(self) -> bool:
-        """Block until the first job card is in the DOM.
+        """Block until results appear under *either* discovery strategy.
 
-        LinkedIn renders the results list client-side after the document loads,
-        so a fixed sleep raced the first paint and silently produced zero jobs.
-        Returns ``False`` when nothing appeared within the timeout; the caller
-        reports the reason via :meth:`_report_empty_results`.
+        LinkedIn renders the list client-side, so a fixed sleep raced the first
+        paint. Polling both strategies matters because waiting on the CSS
+        selectors alone burns the whole timeout on the rebuilt page, where they
+        can never match.
         """
-        selector = ", ".join(selectors.JOB_CARD)
-        try:
-            self._page.wait_for_selector(
-                selector, state="attached", timeout=self._results_timeout_ms
-            )
-        except Exception:
-            logger.debug("No job card attached within {} ms", self._results_timeout_ms)
-            return False
-        # Let the remaining cards of the first batch hydrate.
-        self._page.wait_for_timeout(1200)
-        return True
+        deadline = time.monotonic() + self._results_timeout_ms / 1000
+        while time.monotonic() < deadline:
+            if self._card_indices() or self._current_ids():
+                # Let the rest of the first batch hydrate.
+                self._page.wait_for_timeout(1000)
+                return True
+            self._page.wait_for_timeout(500)
+        logger.debug("No job cards appeared within {} ms", self._results_timeout_ms)
+        return False
 
-    def _collect_ids(self, max_jobs: int, max_scrolls: int = 15) -> list[str]:
+    def _collect_ids(self, max_jobs: int, max_scrolls: int = 15, *, report: bool = True) -> list[str]:
         ordered: list[str] = []
         seen: set[str] = set()
         stagnant = 0
@@ -173,7 +263,7 @@ class JobSearch:
             stagnant = 0 if grew else stagnant + 1
             if stagnant >= 3:
                 break
-        if not ordered:
+        if not ordered and report:
             self._report_empty_results()
         return ordered
 
@@ -284,7 +374,13 @@ class JobSearch:
             return False
 
     def _clear_blocking_modal(self) -> bool:
-        """Dismiss a leftover Easy Apply / discard-confirmation modal, if present."""
+        """Dismiss a leftover Easy Apply / discard-confirmation overlay.
+
+        This matters more than it looks: an Easy Apply form that opened but was
+        not recognised stays on screen and swallows every later click, so one
+        bad job used to take the whole run down with it. The legacy CSS checks
+        cannot see the rebuilt form, hence the role-based pass as well.
+        """
         try:
             if first(self._page, selectors.DISCARD_CONFIRMATION) is not None:
                 self._force_click(selectors.BTN_DISCARD)
@@ -297,8 +393,44 @@ class JobSearch:
                 self._page.wait_for_timeout(300)
                 return True
         except Exception:  # pragma: no cover - defensive
+            pass
+        return self._close_application_form()
+
+    def _close_application_form(self) -> bool:
+        """Close an open "Apply to <company>" form without submitting it."""
+        if not self._application_form_open():
             return False
-        return False
+        logger.debug("An Easy Apply form is still open - closing it before continuing")
+        try:
+            self._page.keyboard.press("Escape")
+            self._page.wait_for_timeout(900)
+        except Exception:  # pragma: no cover - defensive
+            pass
+        for pattern in (selectors.DISCARD_BUTTON_NAME, selectors.DISMISS_BUTTON_NAME):
+            try:
+                button = self._page.get_by_role("button", name=re.compile(pattern, re.IGNORECASE))
+                if button.count() > 0:
+                    button.first.click(timeout=3000)
+                    self._page.wait_for_timeout(800)
+            except Exception:  # pragma: no cover - defensive
+                continue
+            if not self._application_form_open():
+                return True
+        return not self._application_form_open()
+
+    def _application_form_open(self) -> bool:
+        """True only when the form is *visible*.
+
+        The heading stays in the DOM after the form closes, so testing presence
+        alone reports it open forever and retries the close on every card.
+        """
+        try:
+            heading = self._page.get_by_role(
+                "heading", name=re.compile(selectors.MODAL_HEADING_NAME)
+            )
+            return heading.count() > 0 and heading.first.is_visible()
+        except Exception:  # pragma: no cover - defensive
+            return False
 
     def _scroll_list(self, current_count: int) -> bool:
         """Scroll the results list to trigger lazy loading. Returns True if new cards appeared."""

@@ -18,6 +18,25 @@ from linkedin_easy_apply.jobs.models import Job
 
 _APPLICANTS_RE = re.compile(r"([\d,]+)\s+applicant", re.IGNORECASE)
 _JOB_ID_RE = re.compile(r"/jobs/view/(\d+)")
+# The rebuilt results page keeps the id only in the query string.
+_CURRENT_JOB_ID_RE = re.compile(r"[?&]currentJobId=(\d+)")
+# "Senior Cloud Engineer | Teradata | LinkedIn"
+_DOC_TITLE_RE = re.compile(r"^(?P<title>.+?)\s*\|\s*(?P<company>.+?)\s*\|\s*LinkedIn\s*$")
+# Result cards end their location with the workplace type in brackets.
+_WORKPLACE_PAREN_RE = re.compile(r"\((?:Remote|Hybrid|On-?site)\)", re.IGNORECASE)
+_VERIFIED_MARKER = "(Verified job)"
+
+# Climb from the "About the job" heading to the ancestor that holds the body.
+_DESCRIPTION_JS = """
+el => {
+  let node = el;
+  for (let i = 0; i < 6 && node; i++) {
+    node = node.parentElement;
+    if (node && node.innerText && node.innerText.length > 400) return node.innerText;
+  }
+  return (node && node.innerText) || '';
+}
+"""
 _WORKPLACE_RE = re.compile(r"\b(remote|hybrid|on[- ]?site)\b", re.IGNORECASE)
 _EMPLOYMENT_RE = re.compile(
     r"\b(full[- ]?time|part[- ]?time|contract|temporary|internship|volunteer)\b", re.IGNORECASE
@@ -59,14 +78,58 @@ def parse_metadata(text: str) -> dict[str, Any]:
 
 
 def extract_job_id(url: str) -> str | None:
-    match = _JOB_ID_RE.search(url or "")
-    return match.group(1) if match else None
+    """Return the job id from a canonical ``/jobs/view/`` or ``currentJobId`` URL."""
+    for pattern in (_JOB_ID_RE, _CURRENT_JOB_ID_RE):
+        match = pattern.search(url or "")
+        if match:
+            return match.group(1)
+    return None
+
+
+def parse_card_location(
+    card_text: str | None, *, title: str | None = None, company: str | None = None
+) -> str | None:
+    """Pull the location out of a result card's text.
+
+    A card reads ``"<title> (Verified job)<title> <company><location> (<workplace>)..."``,
+    so the location is what is left between the company and the workplace
+    marker once the repeated title and the company are removed.
+    """
+    text = " ".join((card_text or "").split())
+    if not text:
+        return None
+    marker = _WORKPLACE_PAREN_RE.search(text)
+    if not marker:
+        return None
+    head = text[: marker.start()].strip()
+    if _VERIFIED_MARKER in head:
+        head = head.split(_VERIFIED_MARKER, 1)[1].strip()
+    for prefix in (title, company):
+        if prefix and head.lower().startswith(prefix.lower()):
+            head = head[len(prefix) :].strip()
+    head = head.strip(" -·,")
+    # A sane location is a few words, not a leftover sentence.
+    return head if head and len(head.split()) <= 6 else None
+
+
+def parse_document_title(raw: str | None) -> tuple[str | None, str | None]:
+    """Split ``"<job title> | <company> | LinkedIn"`` into its two parts.
+
+    The rebuilt job page has no ``h1`` and only hashed class names, but the
+    document title still carries both fields.
+    """
+    match = _DOC_TITLE_RE.match((raw or "").strip())
+    if not match:
+        return None, None
+    return (match.group("title").strip() or None, match.group("company").strip() or None)
 
 
 class JobExtractor:
     """Read the currently displayed job-detail pane into a :class:`Job`."""
 
-    def extract(self, page: Any, *, search_name: str | None = None) -> Job:
+    def extract(
+        self, page: Any, *, search_name: str | None = None, card_text: str | None = None
+    ) -> Job:
         url = self._canonical_url(page)
         job = Job(url=url, external_id=extract_job_id(url), search_name=search_name)
 
@@ -74,10 +137,30 @@ class JobExtractor:
         job.company = self._text(page, selectors.JOB_COMPANY)
         job.description = self._text(page, selectors.JOB_DESCRIPTION)
 
+        # Class-based selectors return nothing on the rebuilt page; fall back to
+        # the document title and the "About the job" heading, which survive.
+        if not job.title or not job.company:
+            doc_title, doc_company = parse_document_title(self._page_title(page))
+            job.title = job.title or doc_title
+            job.company = job.company or doc_company
+        if not job.description:
+            job.description = self._description_by_heading(page)
+
         metadata_text = " ".join(
-            filter(None, (self._text(page, selectors.JOB_PRIMARY_DESC), self._insights(page)))
+            filter(
+                None,
+                (
+                    self._text(page, selectors.JOB_PRIMARY_DESC),
+                    self._insights(page),
+                    # The card carries workplace type and posting signals that
+                    # the rebuilt detail pane no longer exposes by class.
+                    card_text,
+                ),
+            )
         )
         location = self._first_segment(self._text(page, selectors.JOB_PRIMARY_DESC))
+        if not location:
+            location = parse_card_location(card_text, title=job.title, company=job.company)
         if location:
             job.location = location
 
@@ -107,6 +190,26 @@ class JobExtractor:
     def _text(self, page: Any, selector_list: list[str]) -> str | None:
         node = first(page, selector_list)
         text = safe_text(node) if node is not None else ""
+        return text or None
+
+    @staticmethod
+    def _page_title(page: Any) -> str | None:
+        try:
+            return page.title()
+        except Exception:  # pragma: no cover - defensive
+            return None
+
+    @staticmethod
+    def _description_by_heading(page: Any) -> str | None:
+        """Read the posting body from the ``About the job`` section."""
+        try:
+            heading = page.get_by_role("heading", name=selectors.JOB_DESCRIPTION_HEADING)
+            if heading.count() == 0:
+                return None
+            raw = heading.first.evaluate(_DESCRIPTION_JS)
+        except Exception:  # pragma: no cover - defensive
+            return None
+        text = " ".join((raw or "").split())
         return text or None
 
     def _insights(self, page: Any) -> str | None:

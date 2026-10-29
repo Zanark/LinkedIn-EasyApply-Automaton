@@ -20,6 +20,14 @@ MODAL = [
     "div[data-test-modal][role='dialog']",
     "div[role='dialog']:has(.jobs-easy-apply-content)",
 ]
+# On the rebuilt UI the form is NOT a dialog - confirmed live, `role=dialog` and
+# `aria-modal` both return zero. What it does have is a level-2 heading reading
+# "Apply to <company>" and a `contentinfo` footer holding Next/Review/Submit.
+MODAL_HEADING_NAME = r"^Apply to "
+MODAL_FOOTER_ROLE = "contentinfo"
+# Controls that close the form without submitting.
+DISMISS_BUTTON_NAME = r"^Dismiss$"
+DISCARD_BUTTON_NAME = r"^Discard"
 
 # Individual field containers within a step.
 FIELD_CONTAINER = [
@@ -141,6 +149,21 @@ JOB_CARD = [
 ]
 # Last-resort discovery when no card selector matches: every link to a job.
 JOB_CARD_LINK = "a[href*='/jobs/view/']"
+
+# --- accessible-name strategy (LinkedIn's hashed-class rebuild) --------------
+# The 2026 jobs UI ships build-generated class names (``ajrhc3``...), no
+# ``data-job-id`` and no ``h1``, so nothing above can match it. The content is
+# still exposed through ARIA, which is what these describe.
+#
+# Every result card is a button whose accessible name ends with the nested
+# "Dismiss <title> job" control. That nested button matches the same pattern,
+# so cards are the matches whose own aria-label does NOT start with "Dismiss".
+CARD_ACCESSIBLE_NAME = r"Dismiss .+ job"
+DISMISS_LABEL_PREFIX = "Dismiss"
+# The job description lives under this heading; the id is only in the URL.
+JOB_DESCRIPTION_HEADING = "About the job"
+# ``document.title`` is "<job title> | <company> | LinkedIn".
+DOCUMENT_TITLE_SUFFIX = "LinkedIn"
 JOB_LIST_CONTAINER = [
     "div.scaffold-layout__list",  # current results column
     "div.jobs-search-results-list",  # previous redesign

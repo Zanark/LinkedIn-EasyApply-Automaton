@@ -8,6 +8,7 @@ fallback, and the diagnostics emitted when a page genuinely yields nothing.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -15,6 +16,11 @@ import pytest
 from loguru import logger
 
 from linkedin_easy_apply.forms import selectors
+from linkedin_easy_apply.jobs.extractor import (
+    extract_job_id,
+    parse_card_location,
+    parse_document_title,
+)
 from linkedin_easy_apply.jobs.search import JobSearch, job_id_from_value, paginated_url
 
 
@@ -219,9 +225,96 @@ def test_empty_results_reports_no_matching_jobs(tmp_path: Path):
     assert "no matching jobs" in "\n".join(messages)
 
 
+# -- the hashed-class rebuild ------------------------------------------------- #
+# LinkedIn's 2026 jobs UI ships build-generated class names, no data-job-id and
+# no <h1>. These cover the replacements: ids from the URL, title/company from
+# the document title, location from the card's own text.
+def test_job_id_from_current_job_id_url():
+    """The rebuilt results page keeps the id only in the query string."""
+    url = "https://www.linkedin.com/jobs/search-results/?currentJobId=4482505282&keywords=x"
+    assert extract_job_id(url) == "4482505282"
+
+
+def test_canonical_job_url_still_preferred():
+    assert extract_job_id("https://www.linkedin.com/jobs/view/4123456789/") == "4123456789"
+
+
+def test_job_id_absent():
+    assert extract_job_id("https://www.linkedin.com/jobs/search/?keywords=python") is None
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("Full Stack Engineer | Deloitte | LinkedIn", ("Full Stack Engineer", "Deloitte")),
+        ("Senior Cloud Engineer | Teradata | LinkedIn", ("Senior Cloud Engineer", "Teradata")),
+        # A pipe inside the job title must not break the company field.
+        ("Engineer | Data | Acme Corp | LinkedIn", ("Engineer", "Data | Acme Corp")),
+        ("(99+) Jobs | LinkedIn", (None, None)),
+        ("LinkedIn", (None, None)),
+        ("", (None, None)),
+        (None, (None, None)),
+    ],
+)
+def test_parse_document_title(raw, expected):
+    assert parse_document_title(raw) == expected
+
+
+@pytest.mark.parametrize(
+    ("card", "title", "company", "expected"),
+    [
+        (
+            "Selected, Full Stack Engineer (Verified job) Full Stack Engineer Deloitte "
+            "Hyderabad (Hybrid) 19 connections work here Viewed",
+            "Full Stack Engineer",
+            "Deloitte",
+            "Hyderabad",
+        ),
+        (
+            "CDI/CDQ Developer (Verified job) CDI/CDQ Developer Tata Consultancy Services "
+            "Greater Hyderabad Area (On-site) Actively reviewing applicants",
+            "CDI/CDQ Developer",
+            "Tata Consultancy Services",
+            "Greater Hyderabad Area",
+        ),
+        (
+            "Backend Engineer (Verified job) Backend Engineer Globex Remote (Remote) Promoted",
+            "Backend Engineer",
+            "Globex",
+            "Remote",
+        ),
+        # No workplace marker at all -> nothing to anchor on.
+        ("Some Job Acme Posted 3 days ago", "Some Job", "Acme", None),
+        ("", None, None, None),
+        (None, None, None, None),
+    ],
+)
+def test_parse_card_location(card, title, company, expected):
+    assert parse_card_location(card, title=title, company=company) == expected
+
+
+def test_parse_card_location_rejects_a_sentence():
+    """A long leftover is not a location; better None than garbage."""
+    card = (
+        "Engineer (Verified job) Engineer Acme we are looking for someone who can "
+        "do many different things (Remote)"
+    )
+    assert parse_card_location(card, title="Engineer", company="Acme") is None
+
+
+def test_card_name_pattern_matches_a_card_and_its_dismiss_button():
+    """Both match; only the Dismiss button carries that text as its aria-label."""
+    pattern = re.compile(selectors.CARD_ACCESSIBLE_NAME)
+    assert pattern.search("Senior Cloud Engineer ... Dismiss Senior Cloud Engineer job ...")
+    assert pattern.search("Dismiss Senior Cloud Engineer job")
+    assert "Dismiss Senior Cloud Engineer job".startswith(selectors.DISMISS_LABEL_PREFIX)
+    assert not "Senior Cloud Engineer (Verified job)".startswith(selectors.DISMISS_LABEL_PREFIX)
+
+
 # -- pagination -------------------------------------------------------------- #
 def test_paginated_url_round_trip():
     url = "https://www.linkedin.com/jobs/search/?keywords=python&f_AL=true"
     assert paginated_url(url, 0) == url
     assert paginated_url(url, 25).endswith("&start=25")
     assert paginated_url(paginated_url(url, 25), 50).endswith("&start=50")
+

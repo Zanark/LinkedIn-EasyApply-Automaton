@@ -76,10 +76,12 @@ trusting this table if time has passed.
 
 ## Open questions
 
-- **Why did the scan return 0 jobs?** Three live candidates, none eliminated: stale selectors after a
-  LinkedIn redesign; the automation profile hitting a sign-in wall (it is a separate profile from the
-  everyday browser, so being logged in there proves nothing); or the results list simply not rendering
-  inside the old ~6 s budget. The hardening covers all three and now reports which one it was.
+- ~~Why did the scan return 0 jobs?~~ **ANSWERED 2026-10-29 by a live run.** LinkedIn rebuilt the
+  jobs UI with hashed class names, no id attributes and no `h1`; discovery was repaired with an
+  accessible-name strategy. See the JOURNAL entry and `MEMORY.md` → "The 2026 LinkedIn rebuild".
+- **Is the Easy Apply modal broken the same way?** Almost certainly - it relies on the same kind of
+  class selectors - but it has **not** been examined. Checking it means opening a real application
+  form. Nothing about submitting has been re-verified since the rebuild.
 - **Commit shape** for the uncommitted branch is undecided.
 - **Chat indexing gap.** Context Mesh `config.json` sets
   `sessionStateRoot = C:\Users\mishrad\.copilot\session-state` (the Copilot CLI store, 425 sessions).

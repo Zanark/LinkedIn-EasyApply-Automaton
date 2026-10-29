@@ -2,6 +2,26 @@
 
 > Newest at top.
 
+## 2026-10-29 - Root cause found and discovery repaired: LinkedIn rebuilt the jobs UI
+
+Ran the CLI live. The failure was NOT the one guessed earlier. LinkedIn shipped a rebuilt jobs UI:
+`/jobs/search/` redirects to `/jobs/search-results/?currentJobId=<id>`; class names are now
+build-generated hashes (`ajrhc3`, `ajrk8d`); **no** `data-job-id`/`data-occludable-job-id`/
+`data-entity-urn` anywhere; cards are `<button>` not `<a>`; and the detail pane has **no `h1`**.
+Only the selected job has a `/jobs/view/` link, which is why the link fallback returned exactly one
+id and the extractor produced `? @ ? (?)` and `[SCORE FAIL] 0/10` on everything.
+
+Not a block and not a logout - the page renders 25 jobs; probes proved the content is reachable
+through ARIA. Repaired by adding an accessible-name strategy alongside the id strategy (whichever
+finds more cards wins, so both builds work): cards = buttons matching `Dismiss .+ job` whose own
+`aria-label` does not start with "Dismiss"; ids read from `currentJobId` after clicking;
+title/company from `document.title` ("<title> | <company> | LinkedIn"); description from the
+"About the job" heading's container; location parsed from the card text before it is clicked.
+
+Verified live: 25 cards collected, `Full Stack Engineer @ Deloitte (Hyderabad)` scoring 80/10 with a
+real keyword breakdown and a matched resume. 497 tests pass (18 new). The Easy Apply **modal** has
+not been examined and is likely broken the same way - that is the next piece.
+
 ## 2026-10-28 - Work location reconciled against this checkout
 
 While verifying the new store, `git status` in this checkout showed ` M forms/selectors.py`,

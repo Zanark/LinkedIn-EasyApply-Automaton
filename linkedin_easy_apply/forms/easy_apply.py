@@ -9,6 +9,7 @@ discards the application.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -139,8 +140,10 @@ class EasyApplyWorkflow:
         if not self._open_modal():
             return ApplyResult(ApplyStatus.SKIPPED, reason="Easy Apply button not available")
 
-        modal = first(self._page, selectors.MODAL)
-        if modal is None:
+        # The rebuilt form has no dialog wrapper to scope to, so fall back to
+        # the page itself; field lookups are by role and still resolve.
+        modal = first(self._page, selectors.MODAL) or self._page
+        if modal is None:  # pragma: no cover - defensive
             return ApplyResult(ApplyStatus.FAILED, reason="Easy Apply modal did not open")
 
         last_signature: str | None = None
@@ -186,10 +189,30 @@ class EasyApplyWorkflow:
         logger.info("Clicking 'Easy Apply' to open the application modal")
         button.click()
         self._page.wait_for_timeout(1200)
-        opened = first(self._page, selectors.MODAL) is not None
+        opened = self._modal_is_open()
         if not opened:
             logger.warning("Easy Apply modal did not appear after clicking the button")
         return opened
+
+    def _modal_is_open(self) -> bool:
+        """True when the Easy Apply form is on screen.
+
+        The rebuilt form is not a ``role=dialog`` - it is identified by its
+        "Apply to <company>" heading - so the legacy CSS check alone reports a
+        working modal as missing.
+        """
+        if first(self._page, selectors.MODAL) is not None:
+            return True
+        return self._modal_heading() is not None
+
+    def _modal_heading(self) -> Any | None:
+        try:
+            heading = self._page.get_by_role(
+                "heading", name=re.compile(selectors.MODAL_HEADING_NAME)
+            )
+            return heading.first if heading.count() > 0 else None
+        except Exception:  # pragma: no cover - defensive
+            return None
 
     def _detect_action(self, modal: Any) -> str:
         if is_visible(first(modal, selectors.BTN_SUBMIT)):
