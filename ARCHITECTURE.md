@@ -22,6 +22,17 @@ The application should be built so that new automation workflows can be added la
 
 The application should automate my own LinkedIn Easy Apply workflow.
 
+**Desktop delivery implementation.** The GUI is a CLI shell with live prompt
+input, per-submit approval and common Search/Limits/Browser/Behavior controls.
+Validated per-run presets live privately in `logs\gui-runs`; saved YAML is not
+changed by run customization. Frozen resources and writable workspace are
+separated by `runtime.py`. The Windows x64 one-folder package shares dependencies
+between `EasyApplyAutomaton.exe` and `lea.exe`, uses installed Edge/Chrome, and
+defaults to `%LOCALAPPDATA%\EasyApplyAutomaton` (`LEA_WORKSPACE` override).
+The tag-gated release pipeline publishes only after offline source and frozen
+checks; unsigned binaries, fresh-machine and live-application qualification
+remain explicit limits. See [the desktop guide](docs/gui.md).
+
 Assume I am already logged into LinkedIn.
 
 The application should open my logged-in browser profile, navigate to a LinkedIn Job Search page, inspect each job, determine whether it qualifies, and apply to it automatically while handling multi-step Easy Apply forms.
@@ -376,10 +387,11 @@ Fallback to default resume
 Log the chosen resume at INFO with its reason, then pause `run.resume_review_pause`
 seconds (default 3) before applying so the pick is readable in the live log.
 
-When attaching inside LinkedIn, first inspect the on-page resume cards and
-select the one whose filename matches the target. Upload the PDF only when no
-matching card exists, then select the uploaded card. Ask for manual upload only
-when no programmatic file input is available.
+When attaching inside LinkedIn, inspect filename-labelled resume radios before
+legacy cards on the active resume step. Preserve an already-selected filename
+match, otherwise select and verify it. Upload once only when no match exists;
+selection failure must not trigger a duplicate upload. Ignore hidden upload
+inputs on unrelated steps and keep generic radio filling away from the verified picker.
 
 **Per-job dynamic generation (optional).** When `resume.builder.enabled`, the
 orchestrator invokes the external [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)
@@ -453,6 +465,11 @@ Discard
 Close
 
 Detect progress.
+
+After Submit, require positive LinkedIn confirmation before recording success.
+Wait up to 20 seconds for confirmation/rejection. An ambiguous result is
+`unconfirmed`, not failed or submitted: stop the run, persist the evidence,
+exclude automatic retries, and return a nonzero CLI exit code.
 
 Handle unexpected dialogs.
 
@@ -669,6 +686,10 @@ mapped to a boolean resolution, mirroring a custom Yes/No answer.
 
 Before prompting for an unconfigured answer, query previously learned question
 answers in SQLite and reuse a match automatically.
+
+Never replace missing per-skill years with total career experience. Unknown technology
+questions stay unresolved. Hybrid/commuting preferences require explicit approved answers,
+and arbitrary nonempty text cannot be coerced into agreement on a Yes/No control.
 
 ---
 
@@ -944,6 +965,16 @@ AI Results
 
 Build optional Streamlit dashboard.
 
+**DeepSeaFoam appearance.** `.streamlit/config.toml` defines the native dark theme
+for controls, tables, charts and status colors (Streamlit 1.60+). The pure
+`dashboard/theme.build_stylesheet()` reuses `gui/theme.py`'s Qt-free semantic
+palettes for warm headings, KPI-card panels and interaction states. Stable
+`kpi_card_*` container keys scope card styling without generated CSS class names.
+CSS `light-dark()` keeps scoped emphasis compatible with light color schemes;
+this is not a complete custom Harbor Daylight theme. Launch from the repository
+root and restart a dashboard started before the native theme file was added.
+Queries, actions and data persistence are unchanged.
+
 **Layout — Excel-style tabs.** A persistent header shows the headline KPIs
 (applications today, total submitted, failed, **skipped**, jobs discovered) and a
 success-rate bar; the detail views are split across seven `st.tabs` so nothing is
@@ -1113,6 +1144,11 @@ job and exposes its row `id` (and `note_sent_at`) so the UI can target it.
 ---
 
 # CLI
+
+`apply` can process an ordered exact-job batch configured in `search.job_urls`.
+The shared URL-target executor opens those jobs without crawling, then uses the
+same gates, scoring, resume handling and persisted application workflow.
+This also applies to `--dry-run`; it does not bypass company/daily caps.
 
 Commands:
 

@@ -1,0 +1,48 @@
+EASY APPLY AUTOMATON - WINDOWS PORTABLE
+
+1. Extract the ENTIRE ZIP to a writable folder.
+2. Double-click EasyApplyAutomaton.exe. Do not move it out of this folder.
+   The companion lea.exe is the same tool for PowerShell/Command Prompt.
+3. First launch creates examples in:
+   %LOCALAPPDATA%\EasyApplyAutomaton\configs
+   Edit Configuration and Answers with your own verified information.
+4. Put your PDF resumes in:
+   %LOCALAPPDATA%\EasyApplyAutomaton\generated\resume
+   Point resume.default/mapping to those filenames.
+5. In Tools, run "Sign in to LinkedIn" and complete login yourself in Edge.
+   Return to the GUI and send Enter after login. No credentials are collected.
+6. Start with Scan, then Apply with Dry run checked. Dry run fills real forms
+   but never submits. Live Apply/Reapply/Connect ask before starting.
+
+The Run page has per-submit confirmation and an input field for CLI prompts.
+Send Enter accepts the prompt's displayed default. Stop forcibly terminates
+the child; it is not a guarantee of graceful browser cleanup.
+
+Edge/Chrome must already be installed. For Chromium, use Tools ->
+Install Chromium browser (downloads separately). No browser is bundled.
+Python is bundled; you do not need to install it for ordinary automation.
+
+Portable binaries are unsigned. Windows SmartScreen may show a warning.
+Verify SHA256SUMS against the downloaded ZIP before deciding to run it.
+Do not disable antivirus, change security policies, or run as Administrator.
+
+Keep the whole application folder together when moving or upgrading.
+Replace it with a newly extracted release; the separate workspace is retained.
+Existing configs are never overwritten automatically. Back up your workspace.
+LEA_WORKSPACE can select a different private writable workspace.
+
+Included: native GUI, CLI, statistics and CSV/XLSX exports.
+Source-only extras: Streamlit dashboard and OpenAI integration.
+Dynamic resume building needs the separate builder and an explicit external
+resume.builder.python executable. Without it, static resumes are used.
+
+This tool has no auto-updater or background tracking service.
+Never upload your configs, browser profile, database, logs or generated
+documents to an issue. They may contain personal data or credentials.
+
+Source and documentation:
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/blob/main/docs/gui.md
+
+Offline smoke checks are not a guarantee of compatibility with every Windows
+machine or LinkedIn layout. Use responsibly and observe platform restrictions.

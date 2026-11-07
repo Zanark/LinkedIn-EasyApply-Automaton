@@ -3,7 +3,7 @@
 Everything the automaton does is driven by YAML configuration — there are no
 hardcoded behaviours. This guide documents every file and key.
 
-All config lives under `configs/`. Run `lea init` to copy the bundled
+Application YAML lives under `configs/`. Run `lea init` to copy the bundled
 `*.example.yaml` files to their real names:
 
 | Example                       | Real file (git-ignored)   | Purpose                          |
@@ -11,6 +11,38 @@ All config lives under `configs/`. Run `lea init` to copy the bundled
 | `config.example.yaml`         | `configs/config.yaml`     | Main application configuration   |
 | `answers.example.yaml`        | `configs/answers.yaml`    | Your personal answers            |
 | `searches.example.yaml`       | `configs/searches.yaml`   | Reusable search-URL library      |
+
+## Desktop workspace and per-run settings
+
+The source app uses the repository as its workspace. The Windows executables
+default to `%LOCALAPPDATA%\EasyApplyAutomaton`; `LEA_WORKSPACE` overrides that
+location. Relative paths resolve from the workspace, not the extracted EXE
+folder. First launch copies missing examples only, never existing private data.
+Source configs and browser sessions are not migrated automatically.
+
+The GUI's **Customize settings for this run** tabs cover Search, Limits,
+Browser and Behavior. Start/Copy validates changed values through the normal
+loader and writes a private `logs\gui-runs` preset, preserving all other
+configuration. The saved YAML is unchanged. The command preview identifies
+when a preset will be created. Treat presets as personal runtime data, not
+public examples. Use Configuration/Save for permanent changes.
+
+The portable build excludes the Streamlit and OpenAI extras and browser
+binaries. An enabled external resume builder requires its own Python path;
+the EXE is not a Python interpreter. See [desktop setup](gui.md).
+
+## Dashboard appearance
+
+The optional dashboard uses **DeepSeaFoam** by default. Its native Streamlit
+theme is configured separately in `.streamlit/config.toml`, not in application
+YAML. This covers backgrounds, controls, dataframe surfaces, chart colors and
+semantic status colors; `dashboard/theme.py` reuses the desktop app's Qt-free
+palette for warm headings and KPI-card styling.
+
+The `[dashboard]` extra requires **Streamlit 1.60 or newer**. Launch the dashboard
+from the repository root so Streamlit reads the project theme, and restart an
+already-running dashboard once after adding the theme file. Application config,
+answers and database paths are unchanged.
 
 ## Environment-variable expansion
 
@@ -80,6 +112,7 @@ Guard-rails applied to every run.
 
 ```yaml
 search:
+  job_urls: []  # optional exact-job application batch
   searches:
     - name: backend
       url: "https://www.linkedin.com/jobs/search/?keywords=backend&f_AL=true"
@@ -90,6 +123,14 @@ Build a URL by running a normal LinkedIn search, applying the **Easy Apply**
 filter, and copying the address bar (`f_AL=true` is that filter). URLs must
 point to `linkedin.com`. Disabled entries are skipped. You can keep a library in
 `searches.yaml` and paste entries here.
+
+For a bounded batch, set `search.job_urls` to an ordered list of HTTPS
+`https://www.linkedin.com/jobs/view/<numeric-id>/` URLs. `apply` opens only those
+jobs, without crawling or substituting other postings. Duplicate URLs are normalized
+and removed. All normal scoring, duplicate/uncertain-submission checks, company and
+daily caps still apply; `--dry-run` rehearses the same list. `--limit` still limits
+successful completions, not a guaranteed streak. `scan` uses searches and `reapply`
+uses the database; an explicit `apply --url` replaces the configured target list.
 
 ### `answers`
 
@@ -109,6 +150,13 @@ point to `linkedin.com`. Disabled entries are skipped. You can keep a library in
 
 Selection order: **mapping match** (score ≥ 60) → **filename-keyword overlap**
 with the job text → **default**.
+
+On the active LinkedIn resume step, filename-labelled radios are checked before
+legacy cards. An already-selected match is preserved; otherwise selection is verified
+against freshly discovered controls because choosing a document can rebuild the picker.
+Matching ignores case and numbered-copy suffixes such as ` (2)`, not distinct variants.
+Only a missing match permits one upload. Hidden upload inputs on other steps are ignored;
+failure to select an existing match is an error, not permission to upload a duplicate.
 
 > 💡 The PDFs in `generated/resume/` are built from one master content file by
 > the standalone **[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder)** —
@@ -380,6 +428,12 @@ prompt defaults to **Yes**, so pressing Enter submits); omit it to submit
 automatically. The global `-v` / `--verbose` flag (placed **before** the
 command) forces `DEBUG` logging for that run.
 
+`--limit` counts confirmed submissions (completed forms in a dry run), not a
+consecutive-success streak. After a real Submit, the workflow waits up to 20 seconds
+for LinkedIn confirmation. An uncertain result is persisted as `unconfirmed`, stops
+the run with CLI exit code 2, and is excluded from automatic retry. Review it on LinkedIn
+before taking further action; it is not counted as applied, failed, or skipped.
+
 ### `outreach`
 
 Post-apply handling of the **"Meet the hiring team"** recruiters shown on a job
@@ -514,6 +568,12 @@ visible option label (for example `India (+91)`). If it is omitted, the tool
 silently uses `+91` and only prompts when the portal is already set to a
 *different* country code.
 
+**Missing facts and work preferences.** A skill needs its own configured years (or an
+approved/learned answer); missing years never fall back to total career experience.
+An explicit zero remains valid. Hybrid and commuting questions fall through to explicit
+custom answers rather than reusing remote-work preference or home city. Keep conditional
+preferences job-specific; a blanket Yes rule cannot enforce a city condition.
+
 **Salary, INR and monthly questions.** Store `current_ctc` as the **annual**
 amount (plain integer, no commas or currency). **Expected** salary is chosen per
 job by the role's **seniority tier** — inferred from the job title (falling back
@@ -529,7 +589,8 @@ it divides the annual amount by 12 instead: **expected** salary rounds to the
 nearest **100,000** while **current** salary rounds to the nearest **10,000**
 (30 LPA → `250000`/month) so it stays accurate. Expected values are recomputed per
 job and never persisted; a computed current-salary value is saved so it is reused
-without recomputing.
+without recomputing. "Financial expectations (monthly gross)" is also recognized as
+an expected monthly salary question; it uses the same configured values, not an invented answer.
 
 **Notice period.** Notice-period answers are **always submitted as a plain
 number** (e.g. `45`), never `45 days` — even for a generic "What is your notice

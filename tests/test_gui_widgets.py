@@ -35,19 +35,19 @@ def _html(console: Console) -> str:
     return console.document().toHtml()
 
 
-def test_only_complete_lines_are_rendered(console: Console):
+def test_partial_prompts_are_visible_and_completed_once(console: Console):
     console.append_text("first line\nhalf a ")
-    assert "first line" in console.toPlainText()
-    assert "half a" not in console.toPlainText()
+    assert console.toPlainText() == "first line\nhalf a "
     console.append_text("line\n")
-    assert "half a line" in console.toPlainText()
+    assert console.toPlainText() == "first line\nhalf a line"
 
 
-def test_flush_emits_the_trailing_partial_line(console: Console):
+def test_flush_preserves_the_visible_prompt_once(console: Console):
     console.append_text("no newline yet")
-    assert console.toPlainText().strip() == ""
+    assert console.toPlainText() == "no newline yet"
     console.flush()
-    assert "no newline yet" in console.toPlainText()
+    console.flush()
+    assert console.toPlainText() == "no newline yet"
 
 
 def test_carriage_returns_do_not_create_blank_lines(console: Console):

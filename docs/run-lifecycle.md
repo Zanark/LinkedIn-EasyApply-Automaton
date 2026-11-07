@@ -70,7 +70,9 @@ The CLI (`cli/main.py`) prepares everything before any browser opens:
 
 5. Resolve the effective flags (`dry_run`, `interactive`, `max_per_run`) from the
    arguments, falling back to config.
-6. Read `search.enabled_searches`; if none are enabled it raises immediately.
+6. For `apply`, a nonempty `search.job_urls` selects an exact ordered job batch.
+   Otherwise read `search.enabled_searches`; if none are enabled it raises immediately.
+   `reapply` instead obtains its targets from the database.
 7. **`db.start_run(...)`** inserts a row in the `runs` table and returns a
    `run_id`; a `RunSummary` counter object is created.
 8. Enter the browser context manager: **`with BrowserManager(...) as browser:`**
@@ -85,6 +87,11 @@ INFO  browser.manager:start - Launching edge (headless=False) with profile .brow
 ---
 
 ## Phase 2 — Discovery (`_execute` → `JobSearch.iterate`)
+
+An exact `search.job_urls` batch uses `_execute_reapply` and `JobSearch.open_job`
+instead of discovery: it opens only the supplied URLs, then enters the same
+per-job pipeline below. It retains daily/company caps, scoring and duplicate guards;
+it never searches for replacement jobs. Dry runs use that same target list.
 
 9. Build a `JobSearch` driver and `WorkflowSettings`, and an empty `seen_ids`
    set that de-dupes jobs **across pages** for the whole run.
@@ -172,7 +179,7 @@ INFO  orchestrator:_process_job - Job: Lead Back End Engineer @ HDFC Bank (1 day
 INFO  orchestrator:_process_job - [SCORE FAIL] 16/20 | Lead Back End Engineer @ HDFC Bank (1 day ago)
 DEBUG orchestrator:_process_job - Scored 'Lead Back End Engineer': 16 vs threshold 20 -> FAIL (breakdown: {'sql': 8, 'backend': 8})
 INFO  orchestrator:_process_job - Skip (score 16 < 20) - Lead Back End Engineer @ HDFC Bank (1 day ago)
-INFO  orchestrator:_tailor_resume - Tailored resume 'Debashish_Mishra_ai.pdf' for 'Senior AI Engineer' (tailored: keyword cluster 'ai' (score 8))
+INFO  orchestrator:_tailor_resume - Tailored resume 'Example_ai.pdf' for 'Senior AI Engineer' (tailored: keyword cluster 'ai' (score 8))
 ```
 
 (See [`configuration.md` → scoring](configuration.md#scoring) and
@@ -219,6 +226,8 @@ gate + score logic.)
       parse → resolve → fill pipeline:
       1. **parser** turns the label into a `QuestionCategory` (with a confidence),
       2. **resolver** looks up the value from `answers.yaml` (or learned answers),
+         never replacing missing skill years with total experience. Hybrid/commuting
+         preferences require their own approved answers.
       3. if it's an **unknown** question and prompting is on, **`_resolve_interactively()`**
          lets you either type in the terminal *or* fill LinkedIn directly and
          press Enter — jo value final hai, wahi DB mein save hoti hai as
@@ -227,6 +236,8 @@ gate + score logic.)
          same value, it logs `already filled ... leaving as is` and skips the
          overwrite; otherwise it logs `filled with '…'` or `could not fill -
          left blank` (it never guesses a wrong option);
+         unrelated nonempty text cannot be coerced into Yes. Hidden native radio
+         choices use associated-label clicks and checked-state verification.
     - **`_detect_action()`** looks for the step's button → `submit` / `review` /
       `next` / `none`;
     - on **`next`/`review`**: record a "signature" of the step, click the button,
@@ -250,17 +261,18 @@ When the **Submit** button is reached, the mode decides the ending:
 | Situation | What happens | Result status |
 | --- | --- | --- |
 | **`--dry-run`** (a test run) | Logs `DRY-RUN: reached the Submit button … discarding WITHOUT submitting`, then **`_discard()`** clicks *Discard* and confirms the discard dialog | `DRY_RUN` |
-| **Default (auto-submit)** — no `--confirm-submit` | Clicks **Submit** straight away | `SUBMITTED` |
-| **`--confirm-submit`** and you accept (Enter / `y`) | Clicks **Submit** | `SUBMITTED` |
+| **Default (auto-submit)** — no `--confirm-submit` | Clicks **Submit**, then waits for visible LinkedIn confirmation | `SUBMITTED` only after confirmation |
+| **`--confirm-submit`** and you accept (Enter / `y`) | Clicks **Submit**, then waits for visible LinkedIn confirmation | `SUBMITTED` only after confirmation |
 | **`--confirm-submit`** and you decline (`n`) | `_discard()` | `ABORTED` |
-| Loop couldn't progress / no button | `_abort()` → `_discard()` | `ABORTED` |
+| Loop couldn't progress / no button | `_abort()` → `_discard()` | `FAILED` |
 | **LinkedIn's daily cap** — after Submit, LinkedIn shows "We limit daily submissions … Save this job and apply tomorrow" instead of the confirmation | `_hit_daily_submission_limit()` detects it, `_discard()` clears the notice, and the **run stops** (`platform_daily_limit_hit`) so it never hammers the cap | `LIMIT_REACHED` |
+| No recognized confirmation or rejection within 20 seconds | Capture evidence, stop the run, exclude that URL from automatic retry; CLI exit 2 | `UNCONFIRMED` |
 
 > **`LIMIT_REACHED` is a real submit that LinkedIn rejected**, so it is recorded
 > as neither applied, failed, nor skipped — the application row gets status
 > `limit_reached`, the crawl loop returns early, and the CLI prints a yellow
-> "daily Easy Apply cap was reached — try again tomorrow" note. This is
-> LinkedIn's own throttle (a rolling ~24 h reset), separate from `jobs.max_daily`.
+> "daily Easy Apply cap was reached" note. This is LinkedIn's own throttle,
+> separate from `jobs.max_daily`; the exact reset time is not verified.
 
 > **This is the safety guarantee of a test run:** in `--dry-run` the tool walks
 > the entire form to the very last step and then **throws it away** — nothing is
@@ -286,9 +298,12 @@ INFO  forms.easy_apply:_finalize_submit - DRY-RUN: reached the Submit button at 
     learning; ek baar batao, baar-baar nahi). *Expected*-salary answers are tagged
     `tier` and deliberately **not** learned, since they are job-specific and
     recomputed per role.
-27. If `SUBMITTED`: bump `summary.applied`, log a success line, and
+27. If confirmed `SUBMITTED`: bump `summary.applied`, log a success line, and
     **`_maybe_pause()`** throttles (a human-like pause every N applications). If
-    `FAILED`: bump `summary.failed`. Otherwise: `note_skip(status)`.
+    `FAILED`: bump `summary.failed`. `UNCONFIRMED` increments its own counter;
+    `LIMIT_REACHED` sets the platform-limit flag. Neither counts as a success,
+    failure or skip. A `DRY_RUN` increments `dry_runs` and records its skip reason;
+    other non-success outcomes use `note_skip(status)`.
 
 ---
 
@@ -343,8 +358,9 @@ printing its path in the run summary. The same drafts also surface on the
 
 ## Phase 8 — Finishing the run (`run` → `finally`)
 
-28. After all searches finish (or a limit is hit), **`db.finish_run(run_id,
-    "completed", scanned, applied, skipped, failed)`** closes out the `runs` row.
+28. After all searches finish (or a limit is hit), **`db.finish_run`** closes out
+    the `runs` row. Normal runs use `completed`; an uncertain Submit uses `stopped`
+    with a verification note and its application remains `unconfirmed`.
     If anything threw, it's logged, the run is marked `failed`, and re-raised.
     Ctrl+C is the polite exit path now: even at a prompt it discards any open
     modal, marks the current application `aborted`, and still heads to summary —
@@ -356,6 +372,15 @@ printing its path in the run summary. The same drafts also surface on the
     referenced by application records stay as evidence.
 31. `run()` returns the `RunSummary`; the CLI prints the summary table
     (scanned / applied / skipped / failed + skip-reason breakdown).
+    Only visible LinkedIn confirmation counts as applied. The workflow waits up
+    to 20 seconds after Submit; without confirmation it stops instead of retrying.
+    The CLI shows an `Unconfirmed` row and exits with code 2. Database search and
+    reapply guards exclude that job until manual review.
+
+Read-only work-history and education steps are distinguished by their visible
+form text, not an empty editable-field list. The workflow waits briefly for a
+delayed transition before declaring no progress, so a valid read-only page
+change is not incorrectly recorded as a failed application.
 
 ---
 
@@ -368,7 +393,7 @@ run's pending recruiters a free **connection invitation** carrying their ≤300-
 note (never the long message). This is the `linkedin_easy_apply/connect`
 microservice; the same pass is available standalone as `apply.py connect`.
 
-- Skipped after **Ctrl+C** or a **failed** run, and in **scan** mode.
+- Skipped after **Ctrl+C**, a **failed** or **unconfirmed** run, and in **scan** mode.
 - `ConnectionInviteService` loads pending invites (`note` present, `profile_url`
   present, `note_sent_at IS NULL`), de-dupes by profile URL, and for each: navigate
   → **Connect** (top card or **More** menu) → **Add a note** → type the note →

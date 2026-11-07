@@ -1,0 +1,39 @@
+# Numeric compensation answers, notice parsing and resume-review logging
+Workstream-ID: lea-04
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/5
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-20 numeric-answer batch and supporting follow-ups
+Status: DONE
+Milestone: Configured numeric answers and visible resume decisions
+Dependencies: None
+
+## Purpose
+Record the implemented numeric-answer and resume-log batch without publishing
+any applicant's compensation, notice period or private configuration.
+
+## Tasks
+- [x] Prefer configured numeric notice days for day-specific questions.
+- [x] Calculate monthly current compensation from configured annual compensation.
+- [x] Implement the original monthly expected calculation and numeric rounding.
+- [x] Emit plain numeric monetary answers without currency symbols or separators.
+- [x] Log the resume choice before a configurable review pause; omit the pause in scan.
+- [x] Correct local-calendar daily-count comparisons in database queries.
+- [x] Add focused tests and update configuration/lifecycle documentation.
+
+## Acceptance criteria
+- [x] Numeric parsing, monthly calculations, tags and notice-day paths have recorded coverage.
+- [x] The technical batch is distinguishable from later tier-policy overrides.
+
+## Completion evidence
+The legacy source records 12 salary/notice cases, a 121-test green suite and clean
+Ruff/Black/mypy checks. It also records the local-date database correction.
+Expected-compensation policy evolved later in lea-05 and lea-06; the original
+rounding behavior is historical, not the current policy to restore.
+DONE covers the recorded implementation/local-verification batch. Historical
+review/live-test/publication follow-through is not represented as newly satisfied.
+No actual compensation or notice values are included.
+
+## Completion log
+- 2026-07-20: Original numeric-answer and resume-log implementation recorded.
+- 2026-07-21: Monthly rounding and local-date correction recorded in follow-up evidence.
+- 2026-11-06: Created the bounded public-safe historical projection; no product behavior changed.

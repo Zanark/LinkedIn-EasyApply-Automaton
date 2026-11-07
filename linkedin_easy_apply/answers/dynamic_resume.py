@@ -34,6 +34,7 @@ from linkedin_easy_apply.config.models import (
     ResumeClusterConfig,
 )
 from linkedin_easy_apply.jobs.models import Job
+from linkedin_easy_apply.runtime import is_frozen
 
 
 def _slug(text: str) -> str:
@@ -91,6 +92,14 @@ class DynamicResumeBuilder:
     def enabled(self) -> bool:
         """True only when configured *and* the builder script actually exists."""
         if not self._config.enabled:
+            return False
+        if is_frozen() and self._config.python is None:
+            if not self._warned:
+                logger.warning(
+                    "The portable EXE is not a Python interpreter. Set resume.builder.python "
+                    "to the external builder's Python executable. Falling back to static resumes."
+                )
+                self._warned = True
             return False
         if self._builder_path is None or not self._render_script().is_file():
             if not self._warned:

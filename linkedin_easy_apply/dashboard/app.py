@@ -30,6 +30,7 @@ from linkedin_easy_apply.answers.resume_expectations import (
 from linkedin_easy_apply.config import load_config
 from linkedin_easy_apply.dashboard.focus import build_focus_view, has_real_categories
 from linkedin_easy_apply.dashboard.reapply_launch import launch_reapply, reapply_command
+from linkedin_easy_apply.dashboard.theme import build_stylesheet
 from linkedin_easy_apply.database import Database
 
 
@@ -221,6 +222,7 @@ def _reports_corner(config_path: str, config: Any) -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Easy Apply Dashboard", page_icon="💼", layout="wide")
+    st.html(build_stylesheet())
 
     config_path = os.environ.get("LEA_CONFIG", "configs/config.yaml")
     if not Path(config_path).exists():
@@ -247,7 +249,7 @@ def main() -> None:
         ("discovered", "Jobs discovered", stats["total_jobs"]),
     ]
     for col, (key, label, value) in zip(cols, kpis, strict=True):
-        with col, st.container(border=True):
+        with col, st.container(border=True, key=f"kpi_card_{key}"):
             st.metric(label, value)
             if st.button("View details →", key=f"kpi_{key}", width="stretch"):
                 st.session_state["focus_category"] = key

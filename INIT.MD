@@ -2,6 +2,26 @@
 
 A copy‑paste friendly guide to **starting the tool** and **every command / option**, with ready‑to‑run examples for Windows PowerShell.
 
+## Portable Windows app
+
+Download and fully extract the Windows x64 ZIP from
+[Releases](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/latest).
+Double-click `EasyApplyAutomaton.exe`; keep `lea.exe` and `_internal` beside it.
+Python is included, but use an installed Edge/Chrome. Private configs and
+runtime data default to `%LOCALAPPDATA%\EasyApplyAutomaton`; `LEA_WORKSPACE`
+overrides the workspace. Existing source data is not migrated automatically.
+
+On first launch, edit Configuration and Answers, add your PDFs through the
+workspace shown in Tools, sign in with Tools, then Scan and Dry run. The Run
+page includes Search/Limits/Browser/Behavior settings, private per-run presets,
+submission approval and an input row for prompts. **Stop is forceful**, not
+graceful Ctrl+C. See [the full desktop guide](docs/gui.md) for limitations:
+unsigned EXEs, no bundled dashboard/OpenAI, and an external Python requirement
+for dynamic resume building.
+
+The commands below are for the source checkout. In the extracted release
+folder, replace `.\.venv\Scripts\python.exe apply.py` with `.\lea.exe`.
+
 > Every example below can be pasted **as‑is** into your terminal from the project folder:
 > `C:\devdesk\homedesk\LinkedIn-EasyApply-Automaton`
 
@@ -70,7 +90,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe apply.py init
 ```
 
-Then edit `configs\config.yaml` (searches, scoring) and `configs\answers.yaml` (your data). Put a resume in `generated\resume\` whose filename matches `resume.default` in `config.yaml` (e.g. `Debashish_Mishra_1page.pdf`), or generate a tailored set with the standalone [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder) (`render.py publish-variants --out-dir <this-repo>\generated\resume`).
+Then edit `configs\config.yaml` (searches, scoring) and `configs\answers.yaml` (your data). Put a resume in `generated\resume\` whose filename matches `resume.default` in `config.yaml` (e.g. `Example_1page.pdf`), or generate a tailored set with the standalone [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder) (`render.py publish-variants --out-dir <this-repo>\generated\resume`).
 
 > **Optional — a fresh résumé per job.** Download the [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder), set `resume.builder.enabled: true` and `resume.builder.path: C:\path\to\dynamic-resume-builder` in `config.yaml`, and the automaton renders a résumé **tailored to each job** right before applying (e.g. an AI-heavy posting → your AI skills first). Keyword clusters work offline; see [`docs/configuration.md → resume.builder`](docs/configuration.md#resumebuilder-dynamic-per-job-resumes).
 
@@ -264,9 +284,9 @@ Run the actual Easy Apply automation. **This is the main command** — see §7 f
 | `-c, --config PATH` | Config file. | `configs\config.yaml` |
 | `--dry-run` | Fill every form but **never submit** (reaches Submit, then discards). | off (live!) |
 | `--confirm-submit` / `--no-confirm-submit` | Confirm before **each** submit (prompt defaults to **Yes**, so Enter submits) / submit automatically. | auto‑submit |
-| `-n, --limit INT` | Max applications (submissions) this run. | config `jobs.max_per_run` |
+| `-n, --limit INT` | Max confirmed submissions this run, not scans or a consecutive-success streak. | config `jobs.max_per_run` |
 | `--url TEXT` | Ignore configured searches; use this one search URL. | — |
-| `-y, --yes` | Never prompt — auto‑answer unknown questions and auto‑submit. | prompts on |
+| `-y, --yes` | Never prompt; use available answers and auto-submit. Unresolved questions are not guessed. | prompts on |
 | `--message-hiring-team` / `--no-message-hiring-team` | After each successful apply, read every "Meet the hiring team" recruiter (name + LinkedIn profile URL), draft a message, and write a plain-text report at the end of the run for you to send by hand. Never clicks anything; runs even under `-y`. Overrides `outreach.enabled`. (Set `outreach.mode: send` to message on LinkedIn instead.) | config `outreach.enabled` (on) |
 
 ```powershell
@@ -278,6 +298,19 @@ Run the actual Easy Apply automation. **This is the main command** — see §7 f
 ```
 
 > ⚠️ Running `apply` **without** `--dry-run` submits **real** applications to LinkedIn. Start with `--dry-run`.
+
+The tool reuses a matching uploaded resume before uploading; it re-reads the picker to verify selection,
+including when LinkedIn replaces its controls.
+
+For an exact batch, put ordered LinkedIn `/jobs/view/<numeric-id>/` URLs in
+`search.job_urls`. `apply` uses only those jobs, with the same checks and limits;
+`--dry-run` rehearses the list. An explicit `--url` switches back to that search.
+
+Missing skill years are left unanswered, not replaced with total experience. Hybrid/commuting
+questions need explicit approved answers; an unrelated city or degree never implies Yes.
+After Submit it waits up to 20 seconds for positive LinkedIn confirmation or a rejection.
+No confirmation means `unconfirmed`, not applied or failed: the run stops, exits with code 2,
+and excludes that job from automatic search/reapply until it has been manually reviewed.
 
 ---
 
@@ -292,7 +325,7 @@ Retry **every failed or aborted application** in one go — no search crawl. It 
 | `--dry-run` | Fill every form but **never submit**. | off (live!) |
 | `--confirm-submit` / `--no-confirm-submit` | Confirm before each submit / submit automatically. | auto‑submit |
 | `-n, --limit INT` | Cap how many failed jobs to retry. | all of them |
-| `-y, --yes` | Never prompt — auto‑answer unknown questions and auto‑submit. | prompts on |
+| `-y, --yes` | Never prompt; use available answers and auto-submit. Missing facts are not guessed. | prompts on |
 | `--message-hiring-team` / `--no-message-hiring-team` | Draft hiring-team outreach after each success (see `apply`). | config `outreach.enabled` |
 
 ```powershell
@@ -447,6 +480,11 @@ notice and other preferences are never flagged.
 
 ### `dashboard`
 
+The default appearance is **DeepSeaFoam**, matching the desktop app's dark palette.
+Native Streamlit settings in `.streamlit/config.toml` theme widgets, tables and charts;
+the dashboard adds warm headings and panel-filled KPI cards. Run from the repository
+root, and restart an older dashboard process once after the theme update.
+
 Launch the Streamlit web dashboard in your browser. The UI is organised into
 Excel-style tabs — **📊 Overview** (KPIs, top companies, question frequency,
 résumé usage), **✅ Submitted** (every successful application as a collapsible
@@ -477,7 +515,8 @@ whose job column is a clickable **Open ↗** link. Press **✕ Close** to dismis
 | `-c, --config PATH` | Config file. |
 
 ```powershell
-# Requires the [dashboard] extra installed
+# Requires the [dashboard] extra (Streamlit 1.60 or newer)
+Set-Location "C:\devdesk\homedesk\LinkedIn-EasyApply-Automaton"
 .\.venv\Scripts\python.exe apply.py dashboard
 ```
 
@@ -490,7 +529,7 @@ Three flags decide **what the tool prompts you for and whether it submits**. Und
 | Flag | What it controls |
 | --- | --- |
 | `--dry-run` | If present, the tool **never submits** (fills, then discards). If absent, it **submits for real**. |
-| `-y, --yes` | If present, **no prompts at all** — unknown questions are auto‑handled and submits are automatic. |
+| `-y, --yes` | If present, **no prompts at all** — use available answers; leave unknowns unanswered. Submits are automatic. |
 | `--confirm-submit` | If present (and not `-y`), asks **"Submit application to …?"** before every submission. The prompt **defaults to Yes**, so a bare Enter submits; type `n` to skip. Omit it to submit automatically. |
 
 ### The 8 core combinations

@@ -19,6 +19,8 @@ answers every question from your own answer file, and applies — in a window or
 
 <img src="docs/images/gui-run-deepseafoam.png" alt="The desktop app running an Easy Apply crawl, with a live colour-coded log" width="900">
 
+<sub>Run controls, private overrides, wrapped logs and prompt input; fictional preview data.</sub>
+
 </div>
 
 > ⚠️ **Read this first.** Automating LinkedIn violates their Terms of Service and can get your account
@@ -29,9 +31,15 @@ answers every question from your own answer file, and applies — in a window or
 
 ## Two front ends, one engine
 
-The desktop app is a **front end for the CLI**, not a second implementation. Every button builds an
-`apply.py` command, prints it to the log, and runs it — so the window and the terminal can never
-drift apart.
+The desktop app is a **front end for the CLI**, not a second implementation. Every button builds
+the same command, prints it to the log, and runs it: `apply.py` from source or `lea.exe` when packaged.
+
+**Windows, no Python install:** get the ZIP from
+[the latest release](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/latest),
+extract the **entire folder**, and open `EasyApplyAutomaton.exe`. Keep `lea.exe` and `_internal`
+beside it. Use installed Edge/Chrome; browser binaries are not included. First launch creates
+private example configs in `%LOCALAPPDATA%\EasyApplyAutomaton`, separate from any source checkout.
+See [the executable setup and limitations](docs/gui.md#windows-executable).
 
 ```powershell
 .\.venv\Scripts\python.exe apply.py gui            # drive it from a window
@@ -66,8 +74,17 @@ Both palettes come from the [DeepSeaFoam](https://github.com/Zanark/DeepSeaFoam)
 
 ### Run — scan, apply, reapply, connect
 
-Pick an action, set a limit, hit Start. The log streams live and colours each line by severity; Stop
-terminates the run cleanly. **Copy command** puts the exact terminal equivalent on your clipboard.
+Pick an action and target, then tune saved searches/exact job URLs, limits, browser, resume and
+behavior settings without editing the saved YAML. **Start** and **Copy command** create a validated,
+private preset when needed. The wrapped console shows live prompts; answer them in the input row,
+or enable approval before each submission. Live Apply, Reapply and Connect ask before starting.
+
+**Stop** forcibly terminates the child and may leave browser processes or unfinished cleanup;
+it is not graceful Ctrl+C. **Copy command** copies the exact PowerShell equivalent.
+
+For a bounded CLI batch, configure `search.job_urls` with exact LinkedIn job URLs.
+`apply` processes that list instead of crawling, preserving normal checks and limits;
+use `--dry-run` to rehearse it first.
 
 ### Configuration — edit and validate before you run
 
@@ -76,6 +93,8 @@ is caught here instead of halfway through a crawl. Save refuses to write a file 
 
 <img src="docs/images/gui-config-deepseafoam.png" alt="Configuration page editing config.yaml with Validate, Save and Reload" width="900">
 
+<sub>The saved configuration editor validates through the CLI's own configuration model.</sub>
+
 ### Answers — the file that fills the forms
 
 The same editor for `answers.yaml`, whose path is read from your config. **Run sync-answers** grades
@@ -83,11 +102,15 @@ every recorded answer against your résumé and reports the drift.
 
 <img src="docs/images/gui-answers-harbor-daylight.png" alt="Answers page editing answers.yaml in the Harbor Daylight theme" width="900">
 
+<sub>Harbor Daylight answers editor, using fictional example values only.</sub>
+
 ### Data — statistics, export, dashboard
 
 A live snapshot of the database, CSV/XLSX export, and the dashboard launcher.
 
 <img src="docs/images/gui-data-deepseafoam.png" alt="Data page showing database statistics, export controls and the dashboard launcher" width="900">
+
+<sub>Local statistics and CSV/XLSX export. The dashboard launcher is source-install only.</sub>
 
 ### Tools — sign in, verify, inspect
 
@@ -96,19 +119,26 @@ search diagnostics — one click from Explorer.
 
 <img src="docs/images/gui-tools-deepseafoam.png" alt="Tools page with one-shot commands and runtime folder shortcuts" width="900">
 
+<sub>One-shot tools and explicit workspace paths, separate from run setup.</sub>
+
 ---
 
 ## The analytics dashboard
 
-A separate read-only Streamlit surface, opened from the GUI's Data page or `apply.py dashboard`.
+A separate read-only Streamlit surface in the source installation, opened from the GUI's Data
+page or `apply.py dashboard`. It is not included in the portable Windows download.
 Clickable KPI cards drill into any category; seven tabs cover submitted applications (expand any one
 to replay what was asked, what was answered and which résumé went out), the questions that blocked an
 application, **why** every skipped job was skipped, how well your answers match your résumé, and
 drafted hiring-team outreach.
 
-<img src="docs/images/dashboard.png" alt="The Streamlit dashboard with KPI cards and seven analysis tabs" width="900">
+The dashboard defaults to **DeepSeaFoam**: deep teal surfaces, seafoam controls and charts,
+warm headings, and distinct success/warning/error colors. Launch from the repository root;
+restart an already-running dashboard once to load the new native theme.
 
-<sub>Shown on a fresh, empty database — the zeros are real, not a redaction.</sub>
+<img src="docs/images/dashboard.png" alt="The DeepSeaFoam Streamlit dashboard with KPI cards and seven analysis tabs" width="900">
+
+<sub>DeepSeaFoam on a fresh, empty preview database — the zeros are real, not a redaction.</sub>
 
 ---
 
@@ -132,17 +162,21 @@ and unit-test without a browser.
 - **Questions answered dynamically.** A hybrid keyword + fuzzy parser maps free-form Easy Apply
   questions onto your answer file. Unknown questions pause for input and are **remembered**; a
   `custom_questions` map pre-answers bespoke screening questions for unattended runs.
+  Missing skill-specific experience is never replaced with total career years; hybrid and
+  commuting questions require their own approved answers, not a remote preference or city.
 - **Weighted scoring you control.** Whole-word matching (so `go` ≠ `google`) and punctuation keywords
   (`c++`, `.net`), negative weights as vetoes, and an explainable per-job breakdown stored in the
   database. Set `scoring.enforce: false` or pass `--ignore-score` to keep the score as a signal
   without letting it skip anything.
-- **Résumés that fit the job.** Picks the best PDF from `generated/resume/`, reuses an existing
-  LinkedIn résumé card when present, or uploads. Opt into per-job **dynamic résumés** and the
+- **Résumés that fit the job.** Picks the best PDF from `generated/resume/`, checks LinkedIn's
+  existing filename-labelled resume radios/cards first, and verifies the selection after any picker rebuild. Uploads once
+  only if the active resume step has no matching document. Opt into per-job **dynamic résumés** and the
   standalone [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder) re-emphasises
   your `master.yaml` for each posting — it never fabricates.
 - **Safety rails.** Per-run, per-company and daily caps; blacklist/whitelist; include/exclude
   keywords; URL and company-role dedupe; LinkedIn's own daily cap detected and respected; graceful
-  Ctrl+C.
+  Ctrl+C. A submission counts only after visible LinkedIn confirmation. An uncertain Submit
+  is recorded as `unconfirmed`, stops the run, and is excluded from automatic retries.
 - **Hiring-team outreach.** After a successful application, read each recruiter's name and profile
   URL, draft a full message **and** a ≤300-char connection note, and write a report for you to send
   by hand. Never clicks anything unless you opt into `mode: send`.
@@ -156,7 +190,7 @@ and unit-test without a browser.
 
 ---
 
-## Quick start
+## Quick start from source
 
 ```powershell
 python -m venv .venv
@@ -180,6 +214,7 @@ python -m venv .venv
 | [Run Guide (INIT.MD)](INIT.MD) | Narrative walkthrough with copy-paste examples. |
 | [Desktop GUI](docs/gui.md) | The window, its five pages, the themes, and how it maps onto the CLI. |
 | [Configuration](docs/configuration.md) | Every file and key explained. |
+| [Contributor tracking](docs/github-tracking.md) | Numbered workstreams, GitHub Project, safe preview/apply and recovery. |
 | [Troubleshooting](docs/troubleshooting.md) | Fixes for common problems. |
 | [FAQ](docs/faq.md) | Safety, AI, résumés, data storage. |
 | [Résumé generation](generated/resume/README.md) | How the automaton gets the PDF it submits. |

@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "account": "Zanark",
+  "repository": "Zanark/LinkedIn-EasyApply-Automaton",
+  "repository_id": "R_kgDOTXAU3w",
+  "repository_numeric_id": 1299191007,
+  "repository_aliases": [],
+  "private": false,
+  "branch": "main",
+  "todo_dir": "todo",
+  "project": {
+    "id": "PVT_kwHOAe2wCs4BqfEB",
+    "number": 10,
+    "url": "https://github.com/users/Zanark/projects/10",
+    "public": false,
+    "status_field_id": "PVTSSF_lAHOAe2wCs4BqfEBzho1_j8",
+    "options": {
+      "Backlog": "c95c2e06",
+      "Ready": "b3987357",
+      "In progress": "47fc9ee4",
+      "In review": "c29b798f",
+      "Done": "98236657"
+    },
+    "option_names": {
+      "Backlog": "Backlog",
+      "Ready": "Ready",
+      "In progress": "In Progress",
+      "In review": "In review",
+      "Done": "Done"
+    }
+  },
+  "state_file": ".github\\todo-sync-state.json",
+  "exclude": {
+    "00_INDEX.todo": "Navigation, not an actual workstream",
+    "99_DEVELOPMENT_LEDGER.todo": "Perpetual engineering history, not bounded feature work",
+    "TODO.md": "Original mixed historical record contains applicant-specific data; preserved, never mirrored",
+    "dashboard.todo": "Original historical source; projected once as lea-09, not a second issue",
+    "resume.todo": "Empty placeholder with no defined workstream"
+  },
+  "workstreams": {
+    "lea-01": "01_AUTOMATION_IMPROVEMENTS.todo",
+    "lea-02": "02_COVER_LETTER_DELIVERY.todo",
+    "lea-03": "03_SUBMIT_DEFAULTS.todo",
+    "lea-04": "04_NUMERIC_ANSWERS_AND_RESUME_LOG.todo",
+    "lea-05": "05_SENIORITY_SALARY_TIERS.todo",
+    "lea-06": "06_CONFIGURED_MONTHLY_TIERS.todo",
+    "lea-07": "07_NUMERIC_NOTICE_ANSWERS.todo",
+    "lea-08": "08_HIRING_TEAM_OUTREACH.todo",
+    "lea-09": "09_DASHBOARD_SKIP_ANALYTICS.todo",
+    "lea-10": "10_TRACKING_ADOPTION.todo",
+    "lea-11": "11_DESKTOP_RUN_CONTROLS.todo",
+    "lea-12": "12_WINDOWS_RELEASE.todo"
+  }
+}

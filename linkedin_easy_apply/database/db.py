@@ -190,6 +190,16 @@ class Database:
             ).fetchone()
             return row is not None
 
+    def has_unconfirmed_application(self, url: str) -> bool:
+        """Block a repeat submit until a previous uncertain outcome is reviewed."""
+        with self.connect() as conn:
+            row = conn.execute(
+                """SELECT 1 FROM applications a JOIN jobs j ON a.job_id=j.id
+                   WHERE j.url=? AND a.status='unconfirmed' LIMIT 1""",
+                (url,),
+            ).fetchone()
+            return row is not None
+
     # -- scores ---------------------------------------------------------------
     def record_score(
         self, job_id: int, score: int, threshold: int, passed: bool, breakdown: dict[str, int]
@@ -506,8 +516,8 @@ class Database:
         command. A job is returned once (deduplicated by ``jobs.url``) even if it
         failed on several attempts; ``attempts`` counts those failures and
         ``last_status`` / ``last_attempt`` describe the most recent one. Jobs
-        that eventually succeeded (a ``submitted`` application exists) are
-        excluded so we never re-apply to something already done.
+        that eventually succeeded or have an unconfirmed submit are excluded,
+        so an uncertain outcome cannot trigger an automatic duplicate.
         """
         sql = """
             SELECT j.id AS job_id, j.url, j.title, j.company,
@@ -521,7 +531,7 @@ class Database:
             WHERE a.status IN ('failed', 'aborted')
               AND NOT EXISTS (
                   SELECT 1 FROM applications s
-                  WHERE s.job_id = j.id AND s.status = 'submitted'
+                  WHERE s.job_id = j.id AND s.status IN ('submitted', 'unconfirmed')
               )
               AND j.url IS NOT NULL AND trim(j.url) <> ''
             GROUP BY j.id, j.url, j.title, j.company

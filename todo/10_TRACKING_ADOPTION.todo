@@ -1,0 +1,73 @@
+# Repository-local workstream and GitHub tracking adoption
+Workstream-ID: lea-10
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/10
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Authorized 2026-11-06 adoption; not a raw conversation export
+Status: DONE
+Milestone: Reliable one-workstream, one-issue, one-Project-item tracking
+Dependencies: None
+
+## Purpose
+Adopt the development/documentation workflow for this repository only. Preserve
+legacy records and unrelated product changes, publish only reviewed safe
+projections, and make synchronization explicit rather than an activated service.
+
+## Tasks
+- [x] Inventory local workstreams, repository identity, owner Projects and visibility.
+- [x] Set and verify repository-local Zanark author/committer identity.
+- [x] Create and link an appropriate private owner Project; preserve Status options.
+- [x] Implement a preview-first local synchronizer with durable identity/recovery.
+- [x] Create reviewed numbered projections, an index and a separate perpetual ledger.
+- [x] Complete focused checks, full preview and an unambiguous pilot.
+- [x] Verify a no-churn pilot rerun before historical backfill.
+- [x] Reconcile all issues, lifecycle reasons, Project items/statuses and backlinks.
+- [x] Document future-agent invocation, privacy, conflict, recovery and attribution rules.
+- [x] Persist the verified outcome and perform final idempotent reconciliation.
+
+## Acceptance criteria
+- [x] Each included workstream has exactly one owning-repository issue and issue-backed item.
+- [x] Completion, review gaps, cancellation and reopening have deliberate exact mappings.
+- [x] Managed changes preserve human text and detect conflicts; partial failures are recoverable.
+- [x] Tests cover the introduced behavior using fixtures, never real credentials.
+- [x] Counts, membership/status and backlinks are read back rather than inferred from creates.
+- [x] Public records contain no applicant values, private continuity or credential contents.
+- [x] No commit, push, workflow activation, deployment or application is performed by this adoption.
+
+## Completion evidence
+Bounded tracking setup and historical backfill are technically complete.
+Focused checks: 57 isolated tracking fixtures passed; Ruff, Black and targeted
+utility mypy are clean. This is not product/browser or hosted Actions validation.
+Project created: https://github.com/users/Zanark/projects/10.
+Full preview verified ten proposed workstreams and five explicit exclusions.
+Pilot lea-09 is https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/1:
+exact managed content, CLOSED/COMPLETED, issue-backed Done membership and
+persistent local identity/backlink independently read back. Its settled rerun
+created nothing and made no remote or local persistence changes, including
+unchanged issue/item timestamps.
+Backfill created the other nine issues and items with no blocked/partial results.
+Independent pre-closure reconciliation verified ten issues, ten issue-backed
+items and ten persistent backlinks: seven historical CLOSED/COMPLETED/Done,
+two original qualification gaps OPEN/In review, and this adoption OPEN/In Progress.
+The full settled rerun reused ten, reported ten no-ops and created nothing.
+Separate before/after API receipts matched identities, managed content, remote
+timestamps and local mapping/workstream bytes and modification times.
+These counts explicitly describe the checkpoint before this record's completion
+transition. Final closure/read-back results belong to the excluded index/ledger
+and adoption guide, avoiding repeated managed-body edits solely to describe reruns.
+Public projections were reviewed; credential exclusion was checked through Git
+metadata only. Local source/mappings/backlinks are uncommitted; no unattended
+service, hosted workflow, product application, deployment, commit or push was run.
+
+## Completion log
+- 2026-11-06: Discovery confirmed a public canonical repository, zero issues and
+  no matching owner Project. Created private Project 10 and linked the repository.
+- 2026-11-06: `gh project create` failed its owner-type lookup without creating
+  a Project; a fresh inventory confirmed absence before the explicit owner-node
+  GraphQL creation. The API's two-type introspection limit was handled with
+  smaller read-only queries. No account switch or permission workaround occurred.
+- 2026-11-06: Reviewed stable identities, public projections and the initial offline fixtures.
+- 2026-11-06: All 57 focused fixtures and code-quality checks passed. Full preview
+  completed without conflicts. Pilot lea-09 and its exact no-churn rerun verified.
+- 2026-11-06: Historical backfill and independent ten-workstream reconciliation
+  passed. The full rerun was a no-op with unchanged remote/local persistence.
+  Recorded the verified pre-closure checkpoint and completed this bounded adoption.

@@ -1,0 +1,20 @@
+# DeepSeaFoam v0.7.0; semantic roles match gui/theme.py.
+[theme]
+base = "dark"
+primaryColor = "#00A591"
+backgroundColor = "#000F13"
+secondaryBackgroundColor = "#001E26"
+textColor = "#93A1A1"
+borderColor = "#586E75"
+dataframeBorderColor = "#586E75"
+dataframeHeaderBackgroundColor = "#001E26"
+codeBackgroundColor = "#001E26"
+codeTextColor = "#EEE8D5"
+linkColor = "#00A591"
+# Native informational notices use Streamlit's blue semantic slot.
+blueColor = "#00A591"
+greenColor = "#45D072"
+yellowColor = "#EBE565"
+redColor = "#E84A5F"
+grayColor = "#839496"
+chartCategoricalColors = ["#00A591", "#45D072", "#EBE565", "#E84A5F", "#93A1A1"]

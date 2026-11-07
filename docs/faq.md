@@ -16,18 +16,25 @@ own risk**. Start with `scan` and `--dry-run`. See the disclaimer in the README.
 
 ### I got "We limit daily submissions ... Save this job and apply tomorrow" — what happened?
 
-That's **LinkedIn's own daily Easy Apply cap** — a platform-side throttle, not a
-ban, and separate from this tool's `jobs.max_daily`. LinkedIn shows it *instead
-of* the "application sent" confirmation once your account has submitted enough
-Easy Applies for the day (the exact number varies by account age/activity).
+That's **LinkedIn's own daily Easy Apply cap**, separate from this tool's
+`jobs.max_daily`. The notice rejects the current submit; it does not establish
+anything else about the account's status or the exact threshold.
 
 The tool **detects this notice and stops the run immediately** rather than
 recording a false submit and re-trying it on the next job (retrying into the cap
 is exactly what looks bot-like). The blocked job is recorded with status
 `limit_reached` — **not** counted as applied, failed, or skipped — and the CLI
-prints a yellow "daily Easy Apply cap was reached" note. Just **try again
-tomorrow**; LinkedIn's cap resets on a rolling ~24-hour basis. To stay under it,
-keep `--limit`/`max_daily` modest and spread runs across the day.
+prints a yellow "daily Easy Apply cap was reached" note. Stop and follow
+LinkedIn's guidance; the exact reset time is not verified. Do not raise limits
+or repeatedly retry to get around the notice.
+
+### Why did a run stop with an unconfirmed submission?
+
+The tool clicked Submit but saw neither positive LinkedIn confirmation nor a
+recognized rejection within 20 seconds. It records `unconfirmed`, stops with
+exit code 2, and excludes that job from automatic retry to avoid a duplicate.
+It is not counted as applied or failed. Check the job/application on LinkedIn
+before deciding what to do next; a button click alone is not proof of success.
 
 ### How do I try it safely first?
 
@@ -79,6 +86,13 @@ fallbacks. Custom answers are a **fallback only** — built-in handling for sala
 notice period, contact fields and yes/no questions always takes priority. See
 [`configuration.md`](configuration.md#answersyaml) for the full reference.
 
+### Will it guess missing skill experience or work preferences?
+
+No. Missing skill years are not replaced with total experience, and unrecognized
+technology-specific questions remain unresolved. Hybrid and commuting need their own
+approved answers. A nonempty city, degree or other unrelated text does not imply Yes.
+Under `-y`, missing required facts can prevent completion rather than being invented.
+
 ### How does it answer salary and notice-period questions?
 
 Store `current_ctc` as an **annual** plain integer (e.g. `3000000` for 30 LPA).
@@ -94,6 +108,7 @@ recomputed per job; a computed current-salary value is saved so it is reused. Fo
 notice period, the answer is **always a plain number** (e.g. `45`, never
 `45 days`): `notice_period_days` supplies it for every notice question, falling
 back to the first integer inside the free-text `notice_period`.
+"Financial expectations (monthly gross)" uses the expected monthly salary configuration too.
 
 ### How do I see exactly what the tool is doing (and why)?
 
@@ -115,11 +130,13 @@ In order: an explicit `resume.mapping` match (role/keyword → filename), then
 filename-keyword overlap with the job text, then `resume.default`. See
 `docs/configuration.md`.
 
-When the modal asks for a resume, the tool first reads the resume cards LinkedIn
-already shows. If one matches the chosen filename, it selects that card and does
-not upload again. If it is missing, it uploads the PDF through the file input and
-then selects it. Manual upload is only requested when LinkedIn exposes no usable
-file input — the goal is zero manual clicks.
+When the active form step asks for a resume, the tool first reads LinkedIn's
+filename-labelled radios and legacy cards. It preserves an already-selected
+match or selects a matching upload and verifies the checked state using fresh controls,
+not the old IDs that LinkedIn can replace during selection. Matching is
+case-insensitive and accepts numbered copies, but never a different variant
+sharing a filename prefix. Only if none matches does it upload once and verify
+the new attachment. A failed selection never triggers a duplicate upload.
 
 If you enable `resume.builder`, a resume is **generated per job** first (see the
 next question); the static order above is the fallback.

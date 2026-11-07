@@ -1,0 +1,60 @@
+# Portable Windows release and publication pipeline
+Workstream-ID: lea-12
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed Windows packaging and release engineering scope
+Status: IN_PROGRESS
+Milestone: Downloadable Windows desktop application with repeatable releases
+Dependencies: lea-11
+
+## Purpose
+Deliver a versioned Windows x64 desktop distribution that starts from an EXE
+without requiring a Python installation. Publish reviewed application assets
+through a trusted-ref, least-permission GitHub Actions release pipeline.
+
+## Tasks
+- [x] Separate bundled read-only resources from private writable runtime data.
+- [x] Add windowed and console entrypoints sharing one bundled runtime.
+- [x] Package explicit public resources, licenses, checksums and usage instructions.
+- [x] Keep installed Edge/Chrome external; disclose Chromium and optional-feature requirements.
+- [x] Add validation and Windows release jobs without workstation credentials or recurring tracking.
+- [x] Audit the publication tree and assets for private/runtime material.
+- [x] Exercise the packaged GUI and CLI locally without submitting applications.
+- [ ] Publish a version tag and release; verify the exact hosted run and downloaded asset.
+- [ ] Record measured download/extracted sizes and remaining qualification limits.
+
+## Acceptance criteria
+- [x] A real Windows EXE opens the desktop app and can invoke bundled CLI commands.
+- [x] First launch creates only missing example files in a writable per-user workspace.
+- [x] Upgrades do not overwrite existing configuration, answers, databases or browser profiles.
+- [x] The downloadable payload excludes private context, real configurations and runtime artifacts.
+- [x] Release jobs use reviewed immutable action revisions and only necessary token permissions.
+- [ ] Published checksums match the actual downloadable Windows artifact.
+- [ ] Release publication is verified separately from tests and local package generation.
+
+## Completion evidence
+Local dual-EXE packaging and frozen offline smoke passed: version/help/init,
+statistics, CSV/XLSX export, existing-config preservation, GUI rendering,
+Playwright driver startup and GUI-to-console child execution. The measured
+working-tree build was 106.0 MiB compressed and 245.5 MiB extracted; it is not
+the exact-commit public release.
+
+Ruff, scoped Black, product mypy and 678 offline tests pass for the current
+source. Official actionlint 1.7.12 validates the workflow. Supplemental original
+Qt, Loguru and et-xmlfile notices are enforced by packaging regression tests.
+Tracked private continuity, mixed legacy notes and answer-quality runtime
+reports are removed from the proposed public tip without deleting local files.
+Hosted qualification, release publication and downloaded-asset read-back remain
+pending. Code signing, fresh-machine execution and live LinkedIn submission
+are separate, unperformed qualifications.
+
+## Completion log
+- 2026-11-08: Verified repository owner access and workflow scope without printing
+  credentials. No prior release or tag was present. Selected a portable folder
+  rather than a self-extracting one-file binary; browser binaries stay external.
+- 2026-11-08: Added exact-commit manifests, SHA256SUMS, pinned Actions and
+  tag-only publication with job-scoped permissions. Local frozen smoke exposed
+  and resolved embedded-interpreter encoding and SQLite cleanup defects.
+- 2026-11-08: Completed notice provenance and public-tree review. Original
+  et-xmlfile MIT and Python-derived-code licenses were copied byte-for-byte
+  from the SHA256-verified official source archive; missing notices fail the build.

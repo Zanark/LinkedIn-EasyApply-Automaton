@@ -23,9 +23,9 @@ reasoned about) without PySide6 installed.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Mapping
 
 __all__ = [
     "DEEP_SEA_FOAM",
@@ -205,6 +205,14 @@ QLabel[role="muted"] {{ color: {muted}; }}
 QLabel[role="document"] {{ color: {document}; }}
 QLabel[role="warning"] {{ color: {warning}; }}
 QLabel[role="error"] {{ color: {error}; }}
+QLabel[role="badge"] {{
+    color: {accent};
+    background-color: {selection};
+    border: 1px solid {separator};
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-weight: 600;
+}}
 
 /* Sidebar ------------------------------------------------------------- */
 QFrame#Sidebar {{
@@ -235,6 +243,21 @@ QFrame#Card {{
     background-color: {raised};
     border: 1px solid {separator};
     border-radius: 8px;
+}}
+QTabWidget::pane {{
+    background-color: {raised};
+    border: 1px solid {separator};
+    border-radius: 6px;
+}}
+QTabBar::tab {{
+    background-color: {surface};
+    color: {muted};
+    padding: 7px 9px;
+    border-bottom: 2px solid transparent;
+}}
+QTabBar::tab:selected {{
+    color: {heading};
+    border-bottom: 2px solid {accent};
 }}
 QGroupBox {{
     background-color: {raised};
@@ -282,7 +305,7 @@ QPushButton[role="danger"] {{ border-color: {error}; color: {error}; }}
 QPushButton[role="danger"]:hover {{ background-color: {hover}; color: {error}; }}
 
 /* Inputs --------------------------------------------------------------- */
-QLineEdit, QSpinBox, QComboBox, QPlainTextEdit, QTextEdit {{
+QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPlainTextEdit, QTextEdit {{
     background-color: {raised};
     border: 1px solid {border};
     border-radius: 6px;
@@ -291,7 +314,7 @@ QLineEdit, QSpinBox, QComboBox, QPlainTextEdit, QTextEdit {{
     selection-background-color: {selection};
     selection-color: {heading};
 }}
-QLineEdit:focus, QSpinBox:focus, QComboBox:focus, QPlainTextEdit:focus, QTextEdit:focus {{
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QPlainTextEdit:focus, QTextEdit:focus {{
     border: 1px solid {accent};
 }}
 QLineEdit:disabled, QSpinBox:disabled, QComboBox:disabled {{ color: {muted}; }}
@@ -326,6 +349,13 @@ QPlainTextEdit#Console {{
     color: {text};
     font-family: "Cascadia Mono", "Consolas", "DejaVu Sans Mono", monospace;
     font-size: 12px;
+}}
+QPlainTextEdit#CommandPreview {{
+    background-color: {surface};
+    border-color: {separator};
+    color: {muted};
+    font-family: "Cascadia Mono", "Consolas", monospace;
+    font-size: 11px;
 }}
 
 /* Tables and lists ----------------------------------------------------- */

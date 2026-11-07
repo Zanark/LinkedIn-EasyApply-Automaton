@@ -1,0 +1,66 @@
+# Workstream index
+
+Status: ACTIVE_NAVIGATION
+Milestone: Repository-local development and GitHub tracking adoption
+Dependencies: None
+
+## Purpose
+Navigate actual bounded workstreams while preserving the original lowercase `todo`
+directory and its historical records. This index is not itself a workstream.
+
+## Tasks
+- Use the numbered files below as reviewed public-safe projections.
+- Keep each file's stable identity, issue backlink and eight required fields.
+- Synchronize only explicitly allowlisted workstreams.
+
+## Acceptance criteria
+- One actual workstream maps to one repository issue and one issue-backed Project item.
+- Evidence, target qualification, human acceptance and publication remain separate.
+
+## Completion evidence
+Original adoption is technically complete and independently reconciled: ten issues,
+ten issue-backed Project items and ten persistent backlinks. Eight are
+CLOSED/COMPLETED in Done; two original qualification gaps remain OPEN/In review.
+No blocked, conflicting or partial items remain.
+Canonical configuration: `.github/todo-sync.json`.
+Project: https://github.com/users/Zanark/projects/10 (private owner Project).
+Repository issues and these numbered projections are public.
+Desktop and release workstreams were subsequently added as lea-11 and lea-12;
+their implementation, qualification and publication evidence is recorded separately.
+
+| Stable ID | File | Status | Issue |
+| --- | --- | --- | --- |
+| lea-01 | 01_AUTOMATION_IMPROVEMENTS.todo | IN_REVIEW | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/2 |
+| lea-02 | 02_COVER_LETTER_DELIVERY.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/3 |
+| lea-03 | 03_SUBMIT_DEFAULTS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/4 |
+| lea-04 | 04_NUMERIC_ANSWERS_AND_RESUME_LOG.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/5 |
+| lea-05 | 05_SENIORITY_SALARY_TIERS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/6 |
+| lea-06 | 06_CONFIGURED_MONTHLY_TIERS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/7 |
+| lea-07 | 07_NUMERIC_NOTICE_ANSWERS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/8 |
+| lea-08 | 08_HIRING_TEAM_OUTREACH.todo | IN_REVIEW | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/9 |
+| lea-09 | 09_DASHBOARD_SKIP_ANALYTICS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/1 |
+| lea-10 | 10_TRACKING_ADOPTION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/10 |
+| lea-11 | 11_DESKTOP_RUN_CONTROLS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/11 |
+| lea-12 | 12_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12 |
+
+## Completion log
+- 2026-11-06: Inventoried three legacy files. Kept `TODO.md` unchanged as mixed
+  historical provenance, projected `dashboard.todo` once, and excluded empty
+  `resume.todo`. The index and perpetual `99_DEVELOPMENT_LEDGER.todo` never become issues.
+- Original applicant values, raw requests, private runtime artifacts and continuity
+  are not sync inputs. Projection approval here applies only to the reviewed
+  numbered content, not future unreviewed additions or the raw legacy record.
+- 2026-11-06: Pilot lea-09 is issue #1 with one Done item and a verified backlink.
+  Its identical rerun preserved both remote timestamps and local mapping/file bytes.
+- 2026-11-06: Backfilled the other nine workstreams. Independent reconciliation
+  verified ten issues, ten issue-backed items and ten persistent backlinks.
+  The pre-closure checkpoint was seven closed/Done and three open; the full
+  rerun reused ten, made ten no-ops and preserved remote timestamps/local files.
+- 2026-11-06: Adoption issue #10 is now CLOSED/COMPLETED with its item in Done.
+  Final reconciliation verified eight closed/Done and two open/In review.
+  The final full rerun reused ten, created zero and made ten no-ops; independent
+  before/after receipts verified unchanged content, timestamps and local files.
+  This is technical completion, not human acceptance or source publication.
+- 2026-11-08: Added desktop controls (#11) and portable Windows release (#12)
+  under separate stable identities. Desktop offline implementation is complete;
+  exact hosted release and downloaded-asset verification remain in progress.

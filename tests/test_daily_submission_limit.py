@@ -13,7 +13,13 @@ Two layers:
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
+import pytest
+import typer
+
 from linkedin_easy_apply.answers.store import AnswerStore
+from linkedin_easy_apply.cli import main as cli
 from linkedin_easy_apply.config.models import AppConfig
 from linkedin_easy_apply.database.db import Database
 from linkedin_easy_apply.forms import selectors
@@ -118,3 +124,40 @@ def test_persist_limit_reached_flags_run_and_counts_nothing(tmp_path):
     # The application row records the platform-cap status for history/dashboard.
     row = db.query("SELECT status FROM applications WHERE id = ?", (application_id,))[0]
     assert row["status"] == "limit_reached"
+
+
+def test_unconfirmed_outcome_is_not_a_success_failure_or_skip(tmp_path):
+    orch, db = _orchestrator(tmp_path)
+    run_id = db.start_run("apply")
+    job = Job(url="https://www.linkedin.com/jobs/view/10/", title="SWE", company="Acme")
+    job_id = db.upsert_job(job.to_db_dict(), run_id)
+    application_id = db.create_application(job_id, run_id, None, "pending")
+    summary = RunSummary(run_id=run_id, mode="apply")
+
+    orch._persist_result(
+        application_id,
+        ApplyResult(ApplyStatus.UNCONFIRMED, steps=4, reason="No confirmation"),
+        summary,
+        job,
+        job_id,
+    )
+
+    assert summary.unconfirmed == 1
+    assert (summary.applied, summary.failed, summary.skipped) == (0, 0, 0)
+    row = db.query("SELECT status FROM applications WHERE id = ?", (application_id,))[0]
+    assert row["status"] == "unconfirmed"
+
+
+def test_unconfirmed_cli_result_does_not_exit_successfully(monkeypatch, capsys):
+    summary = RunSummary(run_id=1, mode="apply", unconfirmed=1)
+    monkeypatch.setattr(Orchestrator, "run", lambda *args, **kwargs: summary)
+    monkeypatch.setattr(cli, "_load_answers", lambda config: AnswerStore({}))
+    monkeypatch.setattr(cli, "_database", lambda config: MagicMock())
+
+    with pytest.raises(typer.Exit) as result:
+        cli._run_orchestrator(
+            AppConfig(), mode="apply", dry_run=False, interactive=False, limit=1, yes=True
+        )
+
+    assert result.value.exit_code == 2
+    assert "excluded from automatic retries" in capsys.readouterr().out

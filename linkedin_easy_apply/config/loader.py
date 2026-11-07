@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from pydantic import ValidationError
 
 from linkedin_easy_apply.config.models import AppConfig
 
@@ -43,18 +44,37 @@ def _expand_tree(node: Any) -> Any:
     return node
 
 
+def parse_yaml(text: str, *, source: str = "configuration") -> dict[str, Any]:
+    """Parse YAML text with the same expansion and mapping contract as a file."""
+    try:
+        raw = yaml.safe_load(text)
+    except yaml.YAMLError as exc:  # pragma: no cover - passthrough
+        raise ConfigError(f"Failed to parse YAML {source}: {exc}") from exc
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise ConfigError(f"Top-level YAML in {source} must be a mapping")
+    return _expand_tree(raw)
+
+
 def load_yaml(path: str | Path) -> dict[str, Any]:
     """Load a YAML file into a dict, expanding environment variables."""
     file_path = Path(path)
     if not file_path.is_file():
         raise ConfigError(f"Configuration file not found: {file_path}")
+    return parse_yaml(file_path.read_text(encoding="utf-8"), source=str(file_path))
+
+
+def parse_config(text: str) -> AppConfig:
+    """Validate unsaved configuration text without changing its source file."""
+    return _validate_config(parse_yaml(text), "configuration text")
+
+
+def _validate_config(data: dict[str, Any], source: str) -> AppConfig:
     try:
-        raw = yaml.safe_load(file_path.read_text(encoding="utf-8")) or {}
-    except yaml.YAMLError as exc:  # pragma: no cover - passthrough
-        raise ConfigError(f"Failed to parse YAML {file_path}: {exc}") from exc
-    if not isinstance(raw, dict):
-        raise ConfigError(f"Top-level YAML in {file_path} must be a mapping")
-    return _expand_tree(raw)
+        return AppConfig.model_validate(data)
+    except ValidationError as exc:
+        raise ConfigError(f"Invalid configuration in {source}: {exc}") from exc
 
 
 def load_config(path: str | Path) -> AppConfig:
@@ -63,8 +83,4 @@ def load_config(path: str | Path) -> AppConfig:
     Raises :class:`ConfigError` for missing files, malformed YAML, or
     validation failures.
     """
-    data = load_yaml(path)
-    try:
-        return AppConfig.model_validate(data)
-    except Exception as exc:  # pydantic ValidationError and friends
-        raise ConfigError(f"Invalid configuration in {path}: {exc}") from exc
+    return _validate_config(load_yaml(path), str(path))

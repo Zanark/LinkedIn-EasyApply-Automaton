@@ -7,6 +7,7 @@ appears line by line instead of in one lump at the end.
 
 from __future__ import annotations
 
+import codecs
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Signal
@@ -23,6 +24,8 @@ def child_environment() -> QProcessEnvironment:
     """
     environment = QProcessEnvironment.systemEnvironment()
     environment.insert("PYTHONUNBUFFERED", "1")
+    environment.insert("PYTHONUTF8", "1")
+    environment.insert("PYTHONIOENCODING", "utf-8")
     environment.insert("NO_COLOR", "1")
     environment.insert("TERM", "dumb")
     return environment
@@ -51,11 +54,14 @@ class CommandRunner(QObject):
         self._cwd = Path(working_directory)
         self._process: QProcess | None = None
         self._stopping = False
+        self._decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
 
     # -- state ---------------------------------------------------------------
     @property
     def busy(self) -> bool:
-        return self._process is not None and self._process.state() != QProcess.NotRunning
+        return (
+            self._process is not None and self._process.state() != QProcess.ProcessState.NotRunning
+        )
 
     # -- control -------------------------------------------------------------
     def start(self, argv: list[str]) -> bool:
@@ -64,7 +70,7 @@ class CommandRunner(QObject):
             return False
         process = QProcess(self)
         process.setWorkingDirectory(str(self._cwd))
-        process.setProcessChannelMode(QProcess.MergedChannels)
+        process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
         process.setProcessEnvironment(child_environment())
 
         process.readyReadStandardOutput.connect(self._drain)
@@ -73,10 +79,9 @@ class CommandRunner(QObject):
 
         self._process = process
         self._stopping = False
+        self._decoder.reset()
         process.start(argv[0], argv[1:])
         if not process.waitForStarted(5000):
-            self._process = None
-            self.finished.emit(-1, f"Could not start: {argv[0]}")
             return False
         self.started_command.emit(" ".join(argv))
         return True
@@ -90,25 +95,35 @@ class CommandRunner(QObject):
         if not self._process.waitForFinished(4000):
             self._process.kill()
 
+    def send_input(self, text: str) -> bool:
+        """Deliver a line to the same stdin used by the terminal CLI."""
+        if not self.busy or self._process is None:
+            return False
+        return self._process.write((text + "\n").encode("utf-8")) >= 0
+
     # -- plumbing ------------------------------------------------------------
     def _drain(self) -> None:
         if self._process is None:
             return
-        raw = bytes(self._process.readAllStandardOutput())
+        raw = self._process.readAllStandardOutput().data()
         if raw:
-            self.output.emit(raw.decode("utf-8", errors="replace"))
+            self.output.emit(self._decoder.decode(raw))
 
     def _on_error(self, error: QProcess.ProcessError) -> None:
-        if error == QProcess.FailedToStart:
+        if error == QProcess.ProcessError.FailedToStart:
+            detail = self._process.errorString() if self._process is not None else ""
             self._process = None
-            self.finished.emit(-1, "The command failed to start.")
+            self.finished.emit(-1, f"The command failed to start: {detail}")
 
     def _on_finished(self, exit_code: int, status: QProcess.ExitStatus) -> None:
         self._drain()
+        tail = self._decoder.decode(b"", final=True)
+        if tail:
+            self.output.emit(tail)
         self._process = None
         if self._stopping:
             message = "Stopped."
-        elif status == QProcess.CrashExit:
+        elif status == QProcess.ExitStatus.CrashExit:
             message = "The command was terminated."
         elif exit_code == 0:
             message = "Finished successfully."

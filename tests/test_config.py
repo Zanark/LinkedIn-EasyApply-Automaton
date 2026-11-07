@@ -57,6 +57,37 @@ def test_invalid_search_url_raises(tmp_path):
         load_config(path)
 
 
+def test_exact_job_urls_normalized_and_deduplicated(tmp_path):
+    config = load_config(
+        _write(
+            tmp_path,
+            "search:\n  job_urls:\n"
+            "    - https://linkedin.com/jobs/view/123\n"
+            "    - https://www.linkedin.com/jobs/view/123/\n"
+            "    - https://www.linkedin.com/jobs/view/456/\n",
+        )
+    )
+    assert config.search.job_urls == [
+        "https://www.linkedin.com/jobs/view/123/",
+        "https://www.linkedin.com/jobs/view/456/",
+    ]
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.com/jobs/view/123/",
+        "https://www.linkedin.com.example.com/jobs/view/123/",
+        "http://www.linkedin.com/jobs/view/123/",
+        "https://www.linkedin.com/jobs/search/?keywords=dotnet",
+        "https://www.linkedin.com/jobs/view/not-an-id/",
+    ],
+)
+def test_exact_job_urls_reject_other_destinations(tmp_path, url):
+    with pytest.raises(ConfigError):
+        load_config(_write(tmp_path, f"search:\n  job_urls:\n    - {url}\n"))
+
+
 def test_missing_file_raises():
     with pytest.raises(ConfigError):
         load_config("does-not-exist.yaml")

@@ -19,12 +19,14 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 # Running a script inside tools/ puts tools/ on sys.path, not the repository
 # root, so the local package would lose to anything already installed.
 sys.path.insert(0, str(ROOT))
 
+from PySide6.QtCore import QSettings  # noqa: E402
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
@@ -45,10 +47,11 @@ FONT_FILES = (
 )
 
 SAMPLE_LOG = (
+    "ILLUSTRATIVE OFFLINE PREVIEW - no browser or application was started.\n"
     "2026-10-28 15:04:10 | DEBUG    | linkedin_easy_apply.logging.setup:setup_logging:61 - "
     "Logging initialised at level DEBUG\n"
     "2026-10-28 15:04:11 | INFO     | linkedin_easy_apply.orchestrator:run:201 - "
-    "Run starting: mode=apply dry_run=False interactive=False max_per_run=15\n"
+    "Run starting: mode=apply dry_run=True interactive=True max_per_run=5\n"
     "2026-10-28 15:04:11 | INFO     | linkedin_easy_apply.browser.manager:start:70 - "
     "Launching edge (headless=False) with profile .browser-profile\n"
     "2026-10-28 15:04:18 | INFO     | linkedin_easy_apply.jobs.search:iterate:58 - "
@@ -56,7 +59,7 @@ SAMPLE_LOG = (
     "2026-10-28 15:04:21 | INFO     | linkedin_easy_apply.orchestrator:_process_job:431 - "
     "[SCORE PASS] 42/20 | Senior Backend Engineer at Acme Cloud\n"
     "2026-10-28 15:04:26 | SUCCESS  | linkedin_easy_apply.forms.easy_apply:submit:241 - "
-    "Application sent - Senior Backend Engineer at Acme Cloud\n"
+    "Dry run reached Submit - Senior Backend Engineer at Acme Cloud (not sent)\n"
     "2026-10-28 15:04:29 | INFO     | linkedin_easy_apply.orchestrator:_process_job:452 - "
     "Skip (score 12 < 20) - Staff Rust Engineer at Globex\n"
     "2026-10-28 15:04:33 | WARNING  | linkedin_easy_apply.jobs.search:_report_empty_results:402 - "
@@ -71,6 +74,8 @@ SHOTS: list[tuple[int, str, str]] = [
     (2, "answers", "harbor-daylight"),
     (3, "data", "deepseafoam"),
     (4, "tools", "deepseafoam"),
+    (0, "settings", "deepseafoam"),
+    (0, "small", "harbor-daylight"),
 ]
 
 
@@ -140,31 +145,54 @@ def main() -> int:
         return 3
 
     OUT.mkdir(parents=True, exist_ok=True)
-    window = MainWindow(config_path="configs/config.yaml")
-    window.resize(1340, 860)
-    window.show()
-    application.processEvents()
-
-    window._action_box.setCurrentText("Apply")
-    window._limit_spin.setValue(15)
-    window._console.note(
-        "$ python apply.py apply --config configs/config.yaml --limit 15 "
-        "--no-confirm-submit --yes",
-        "accent",
-    )
-    window._console.append_text(SAMPLE_LOG)
-    application.processEvents()
-
-    for page, stem, theme in SHOTS:
-        window._apply_theme(THEMES[theme])
-        window._pages.setCurrentIndex(page)
-        window._nav_buttons[page].setChecked(True)
+    build = ROOT / "build"
+    build.mkdir(exist_ok=True)
+    with TemporaryDirectory(prefix="gui-demo-", dir=build) as temporary:
+        workspace = Path(temporary)
+        configs = workspace / "configs"
+        configs.mkdir()
+        (configs / "config.yaml").write_text(
+            "browser:\n  engine: edge\njobs:\n  max_daily: 25\n  pause_seconds: 10\n"
+            "search:\n  searches:\n    - name: Example backend search\n"
+            "      url: https://www.linkedin.com/jobs/search/?keywords=backend&f_AL=true\n"
+            "run:\n  dry_run: true\n",
+            encoding="utf-8",
+        )
+        (configs / "answers.yaml").write_text(
+            "# Fictional demonstration only. Replace with your own verified answers.\n"
+            "full_name: Example User\nemail: example@example.com\n"
+            "location: Example City\n",
+            encoding="utf-8",
+        )
+        QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+        QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(workspace))
+        window = MainWindow(config_path="configs\\config.yaml", workspace=workspace)
+        window.resize(1340, 860)
+        window.show()
         application.processEvents()
-        target = OUT / f"gui-{stem}-{theme}.png"
-        window.grab().save(str(target))
-        print(f"saved {target.relative_to(ROOT)}  ({target.stat().st_size // 1024} KB)")
-
-    window.close()
+        window._action_box.setCurrentText("Apply")
+        window._limit_spin.setValue(5)
+        window._console.append_text(SAMPLE_LOG)
+        window._console.flush()
+        for page, stem, theme in SHOTS:
+            window.resize(980, 680) if stem == "small" else window.resize(1340, 860)
+            window._run_settings.customize.setChecked(stem in {"settings", "small"})
+            window._run_settings.tabs.setCurrentIndex(1)
+            window._apply_theme(THEMES[theme])
+            window._pages.setCurrentIndex(page)
+            window._nav_buttons[page].setChecked(True)
+            application.processEvents()
+            scroll = window._run_splitter.widget(0)
+            scroll.verticalScrollBar().setValue(
+                scroll.verticalScrollBar().maximum() if stem == "settings" else 0
+            )
+            application.processEvents()
+            target = OUT / f"gui-{stem}-{theme}.png"
+            if not window.grab().save(str(target)):
+                raise OSError(f"Could not save {target}")
+            print(f"saved {target.relative_to(ROOT)}  ({target.stat().st_size // 1024} KB)")
+        window.close()
+        application.processEvents()
     print(f"\nDone. {len(SHOTS)} screenshots in {OUT.relative_to(ROOT)}")
     return 0
 

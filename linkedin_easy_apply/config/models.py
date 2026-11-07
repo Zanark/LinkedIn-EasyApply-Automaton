@@ -7,6 +7,7 @@ YAML file still produces a valid configuration.
 
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 from pathlib import Path
 
@@ -91,9 +92,25 @@ class SearchEntry(BaseModel):
 
 
 class SearchConfig(BaseModel):
-    """Collection of searches to iterate over."""
+    """Searches to crawl, or an optional exact job list for apply runs."""
 
     searches: list[SearchEntry] = Field(default_factory=list)
+    job_urls: list[str] = Field(default_factory=list)
+
+    @field_validator("job_urls")
+    @classmethod
+    def _valid_job_urls(cls, values: list[str]) -> list[str]:
+        urls: list[str] = []
+        for value in values:
+            match = re.fullmatch(
+                r"https://(?:www\.)?linkedin\.com/jobs/view/([0-9]+)/?", value.strip()
+            )
+            if not match:
+                raise ValueError(
+                    "job_urls must contain HTTPS LinkedIn /jobs/view/<numeric-id>/ URLs"
+                )
+            urls.append(f"https://www.linkedin.com/jobs/view/{match.group(1)}/")
+        return list(dict.fromkeys(urls))
 
     @property
     def enabled_searches(self) -> list[SearchEntry]:

@@ -1,0 +1,52 @@
+# Desktop run controls and layout
+Workstream-ID: lea-11
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/11
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed desktop usability and run-control implementation
+Status: DONE
+Milestone: A usable desktop front end with complete supported run controls
+Dependencies: None
+
+## Purpose
+Make the native desktop application usable without memorizing CLI switches or
+editing YAML for common run settings. Keep the existing automation engine and
+DeepSeaFoam/Harbor Daylight palettes, and do not submit applications during
+development or qualification.
+
+## Tasks
+- [x] Reconcile the GUI with the actual CLI and configuration contracts.
+- [x] Provide a scrollable setup panel, readable live output and command preview.
+- [x] Expose retry listing, connection-run filtering and interactive input.
+- [x] Expose common search, cap, browser and behavior settings as run-local overrides.
+- [x] Confirm every action capable of real submissions or invitations.
+- [x] Exercise widget signals and subprocess input/output with offline fixtures.
+- [x] Review rendered dark/light and smaller-window layouts with synthetic data.
+- [x] Update the user guide and safe screenshots.
+
+## Acceptance criteria
+- [x] Supported CLI run switches have usable GUI controls with action-specific states.
+- [x] Per-submit and unknown-question prompts can be answered without a terminal.
+- [x] Run-local settings preserve the saved configuration and other unedited values.
+- [x] Real Apply, Reapply and Connect actions require explicit confirmation.
+- [x] No personal configuration, browser session or live application is used for captures.
+- [x] Focused tests and required quality checks pass for the delivered source.
+
+## Completion evidence
+Implemented scrollable run setup, wrapped output, terminal input, safe command
+preview and action-specific Apply/Scan/Reapply/Connect controls. Search, limits,
+browser and behavior overrides are validated into private run presets without
+overwriting saved configuration. Configuration saves preserve unsaved Answers.
+Eight regenerated screenshots use isolated fictional data.
+
+Whole-repository Ruff, release-scoped Black, mypy over 69 product files and all
+678 offline tests passed. The previously built portable GUI/CLI also passed
+offline rendering, stream/input and child-command smoke checks. Human aesthetic
+acceptance and live LinkedIn qualification are not claimed. Release publication
+and exact downloaded-binary verification belong to lea-12.
+
+## Completion log
+- 2026-11-08: Compared the existing five-page GUI with actual CLI signatures.
+  Found missing controls and disabled per-submit confirmation with no input channel.
+- 2026-11-08: Completed the bounded desktop implementation and offline checks.
+  Corrected partial output handling, shared validation and unsaved-answer retention.
+  No live application, invitation or private browser session was used.

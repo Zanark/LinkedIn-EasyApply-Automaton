@@ -63,6 +63,7 @@ _MONTHS_PER_YEAR = 12
 # Monthly salary answers are rounded to a clean step. Expected salary (a
 # negotiation figure) rounds to the nearest 100,000 (five zeros); current salary
 # rounds to a finer 10,000 so it stays an accurate reflection of today's pay.
+_RUPEES_PER_LAKH = 100_000
 _EXPECTED_MONTHLY_STEP = 100_000
 _CURRENT_MONTHLY_STEP = 10_000
 
@@ -187,9 +188,6 @@ class AnswerResolver:
         if category is QuestionCategory.EXPERIENCE_SKILL and question.skill:
             years = self._store.get_skill_years(question.skill)
             source_key = f"skills.{question.skill}.years"
-            if years is None:
-                years = self._store.get("years_experience")
-                source_key = "years_experience (skill unknown - using fallback)"
             if years is not None:
                 logger.debug(
                     "Resolve EXPERIENCE_SKILL[{}] -> {} (from {})",
@@ -199,8 +197,7 @@ class AnswerResolver:
                 )
                 return AnswerResolution(True, _format_number(years), "yaml", AnswerType.NUMBER)
             logger.debug(
-                "Resolve EXPERIENCE_SKILL[{}] -> MISSING "
-                "(no per-skill years and no 'years_experience' fallback)",
+                "Resolve EXPERIENCE_SKILL[{}] -> MISSING (no configured per-skill years)",
                 question.skill,
             )
             return AnswerResolution.missing(AnswerType.NUMBER)
@@ -242,7 +239,12 @@ class AnswerResolver:
                     rendered,
                     key,
                 )
-                return AnswerResolution(True, rendered, "yaml", answer_type)
+                candidates: tuple[str, ...] = ()
+                if category is QuestionCategory.LOCATION_CITY:
+                    country = self._store.get_str("country", "")
+                    if country:
+                        candidates = (f"{rendered}, {country}",)
+                return AnswerResolution(True, rendered, "yaml", answer_type, candidates=candidates)
 
         if keys:
             logger.debug(
@@ -325,6 +327,18 @@ class AnswerResolver:
             # A monthly current salary is a stable derived fact -> "computed" so
             # it is learned; expected salary stays "tier" (job-specific).
             return AnswerResolution(True, str(monthly), monthly_source, AnswerType.NUMBER)
+
+        if "lakhs" in question.tags:
+            lakhs = _format_number(round(amount / _RUPEES_PER_LAKH, 2))
+            logger.debug(
+                "Resolve {} -> {} (lakhs = {}/{} from '{}')",
+                category.value,
+                lakhs,
+                _format_number(amount),
+                _RUPEES_PER_LAKH,
+                used_key,
+            )
+            return AnswerResolution(True, lakhs, annual_source, AnswerType.NUMBER)
 
         rendered = _format_number(amount)
         logger.debug(

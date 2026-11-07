@@ -7,12 +7,14 @@ The Playwright-coupled workflow branches are validated with lightweight stubs.
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from linkedin_easy_apply.answers.resolver import AnswerResolution, AnswerResolver
 from linkedin_easy_apply.answers.store import AnswerStore
 from linkedin_easy_apply.forms.detector import FormFieldDetector
-from linkedin_easy_apply.forms.easy_apply import _resume_matches
+from linkedin_easy_apply.forms.easy_apply import EasyApplyWorkflow, _resume_matches
 from linkedin_easy_apply.forms.field import FieldKind, FormField
 from linkedin_easy_apply.forms.filler import FormFiller, _infer_yes_no
 from linkedin_easy_apply.forms.matching import country_code_option, dial_code
@@ -56,7 +58,7 @@ def test_resolver_country_code_from_answers():
 # -- matching: dialling code ---------------------------------------------------
 @pytest.mark.parametrize(
     "value, code",
-    [("India (+91)", "+91"), ("+91", "+91"), ("+91 9873824499", "+91"), ("India", None)],
+    [("India (+91)", "+91"), ("+91", "+91"), ("+91 0000000000", "+91"), ("India", None)],
 )
 def test_dial_code(value: str, code: str | None):
     assert dial_code(value) == code
@@ -116,6 +118,102 @@ def test_matches_current_blank_is_false():
     assert filler.matches_current(_field(FieldKind.TEXT), res, "") is False
 
 
+def test_canonical_prefilled_location_is_preserved_instead_of_retyped():
+    control = MagicMock()
+    control.get_attribute.return_value = "list"
+    field = FormField("City", FieldKind.TEXT, control)
+    resolution = AnswerResolver(AnswerStore({"city": "Hyderabad", "country": "India"})).resolve(
+        QuestionParser().parse("Enter city or location")
+    )
+    filler = FormFiller()
+
+    assert filler.matches_current(field, resolution, "Hyderabad, Telangana, India")
+    assert not filler.matches_current(field, resolution, "Hyderabad")
+    assert not filler.matches_current(field, resolution, "Hyderabad, Sindh, Pakistan")
+    assert not filler.matches_current(field, resolution, "Mumbai, Maharashtra, India")
+
+
+def test_autocomplete_selects_the_configured_country_not_same_named_foreign_city():
+    control = MagicMock()
+    control.get_attribute.return_value = "list"
+    options = control.page.locator.return_value
+    options.all_inner_texts.return_value = [
+        "Hyderabad, Sindh, Pakistan",
+        "Hyderabad, Telangana, India",
+    ]
+    field = FormField("City", FieldKind.TEXT, control)
+    resolution = AnswerResolution(True, "Hyderabad", "yaml", candidates=("Hyderabad, India",))
+
+    assert FormFiller().fill(field, resolution)
+    options.nth.assert_called_once_with(1)
+    options.nth.return_value.click.assert_called_once()
+
+
+def test_autocomplete_does_not_claim_success_for_unselected_text():
+    control = MagicMock()
+    control.get_attribute.return_value = "list"
+    options = control.page.locator.return_value
+    options.all_inner_texts.return_value = ["Hyderabad, Sindh, Pakistan"]
+    field = FormField("City", FieldKind.TEXT, control)
+    resolution = AnswerResolution(True, "Hyderabad", "yaml", candidates=("Hyderabad, India",))
+
+    assert not FormFiller().fill(field, resolution)
+    options.nth.assert_not_called()
+
+
+def test_read_only_work_and_education_steps_have_distinct_signatures():
+    workflow = object.__new__(EasyApplyWorkflow)
+    workflow._detector = MagicMock()
+    workflow._detector.detect.return_value = []
+    work = MagicMock()
+    work.inner_text.return_value = "Work experience\nSoftware Engineer\nBack Next"
+    education = MagicMock()
+    education.inner_text.return_value = "Education\nBachelor of Technology\nBack Next"
+
+    assert workflow._step_signature(work) != workflow._step_signature(education)
+
+
+def test_step_transition_waits_for_delayed_content():
+    workflow = object.__new__(EasyApplyWorkflow)
+    workflow._page = MagicMock()
+    workflow._form_scope = MagicMock()
+    workflow._step_signature = MagicMock(side_effect=["work", "work", "education"])
+
+    assert workflow._wait_for_step_change("work")
+    assert workflow._page.wait_for_timeout.called
+
+
+def test_unchanged_step_does_not_become_a_successful_transition():
+    workflow = object.__new__(EasyApplyWorkflow)
+    workflow._page = MagicMock()
+    workflow._form_scope = MagicMock()
+    workflow._step_signature = MagicMock(return_value="unchanged")
+
+    assert not workflow._wait_for_step_change("unchanged")
+
+
+def test_hidden_radio_choice_uses_its_label_and_verifies_the_checked_state():
+    radio = MagicMock()
+    radio.is_checked.side_effect = [False, True]
+    field = FormField("Question", FieldKind.RADIO, options=["Yes"], option_controls=[radio])
+
+    assert FormFiller().fill(
+        field, AnswerResolution(True, "Yes", "custom", AnswerType.BOOLEAN, bool_value=True)
+    )
+    radio.evaluate_handle.return_value.as_element.return_value.click.assert_called_once()
+    radio.check.assert_not_called()
+
+
+def test_radio_click_without_checked_state_does_not_claim_success():
+    radio = MagicMock()
+    radio.is_checked.return_value = False
+    field = FormField("Question", FieldKind.RADIO, options=["Yes"], option_controls=[radio])
+
+    assert not FormFiller().fill(
+        field, AnswerResolution(True, "Yes", "custom", AnswerType.BOOLEAN, bool_value=True)
+    )
+
+
 # -- filler: Yes/No <select> coercion -----------------------------------------
 def test_pick_option_numeric_years_to_yes():
     filler = FormFiller()
@@ -131,11 +229,12 @@ def test_pick_option_zero_years_to_no():
     assert filler._pick_option(field, res) == "No"
 
 
-def test_pick_option_degree_string_to_yes():
+@pytest.mark.parametrize("value", ["Master's Degree", "Hyderabad", "Professional"])
+def test_pick_option_arbitrary_text_does_not_imply_yes(value):
     filler = FormFiller()
     field = _field(FieldKind.SELECT, ["Yes", "No"])
-    res = AnswerResolution(True, "Master's Degree", "yaml", AnswerType.TEXT)
-    assert filler._pick_option(field, res) == "Yes"
+    res = AnswerResolution(True, value, "yaml", AnswerType.TEXT)
+    assert filler._pick_option(field, res) is None
 
 
 def test_pick_option_negative_string_to_no():
@@ -165,7 +264,8 @@ def test_pick_option_direct_boolean_still_matches():
     [
         ("3", AnswerType.NUMBER, True),
         ("0", AnswerType.NUMBER, False),
-        ("Bachelor of Engineering", AnswerType.TEXT, True),
+        ("Bachelor of Engineering", AnswerType.TEXT, None),
+        ("Yes", AnswerType.TEXT, True),
         ("no", AnswerType.TEXT, False),
         ("never", AnswerType.TEXT, False),
         ("", AnswerType.TEXT, None),
@@ -181,11 +281,14 @@ def test_infer_yes_no(value, answer_type, expected):
 @pytest.mark.parametrize(
     "portal, stem, expected",
     [
-        ("Debashish_Mishra_SeafoamTide-Light.pdf", "Debashish_Mishra_SeafoamTide-Light", True),
-        ("Debashish_Mishra_SeafoamTide-Light", "Debashish_Mishra_SeafoamTide-Light", True),
-        ("Debashish_Mishra_SeafoamTide-Light (1).pdf", "Debashish_Mishra_SeafoamTide-Light", True),
-        ("Some_Other_Resume.pdf", "Debashish_Mishra_SeafoamTide-Light", False),
-        ("", "Debashish_Mishra_SeafoamTide-Light", False),
+        ("Example_SeafoamTide-Light.pdf", "Example_SeafoamTide-Light", True),
+        ("Example_SeafoamTide-Light", "Example_SeafoamTide-Light", True),
+        ("Example_SeafoamTide-Light (1).pdf", "Example_SeafoamTide-Light", True),
+        ("Some_Other_Resume.pdf", "Example_SeafoamTide-Light", False),
+        ("", "Example_SeafoamTide-Light", False),
+        ("Example.pdf", "Example_backend", False),
+        ("Example_backend.pdf", "Example", False),
+        ("Example_backend (2).pdf", "Example_backend", True),
     ],
 )
 def test_resume_matches(portal: str, stem: str, expected: bool):

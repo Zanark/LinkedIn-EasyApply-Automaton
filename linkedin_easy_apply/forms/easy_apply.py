@@ -21,7 +21,13 @@ from loguru import logger
 from linkedin_easy_apply.answers.resolver import AnswerResolution, AnswerResolver
 from linkedin_easy_apply.forms import selectors
 from linkedin_easy_apply.forms.detector import FormFieldDetector
-from linkedin_easy_apply.forms.dom_utils import first, first_group, is_visible, safe_text
+from linkedin_easy_apply.forms.dom_utils import (
+    first,
+    first_group,
+    force_close_dialogs,
+    is_visible,
+    safe_text,
+)
 from linkedin_easy_apply.forms.field import FieldKind, FormField
 from linkedin_easy_apply.forms.filler import FormFiller
 from linkedin_easy_apply.forms.matching import country_code_option, dial_code
@@ -29,6 +35,24 @@ from linkedin_easy_apply.forms.values import current_value_of
 from linkedin_easy_apply.parser.categories import AnswerType, QuestionCategory
 from linkedin_easy_apply.parser.question_parser import QuestionParser
 from linkedin_easy_apply.utils.screenshots import ScreenshotManager
+
+# Marks the application form's container so field detection can be scoped to it.
+_FORM_ATTR = "data-lea-form"
+_TAG_FORM_JS = f"""
+el => {{
+  document.querySelectorAll('[{_FORM_ATTR}]').forEach(n => n.removeAttribute('{_FORM_ATTR}'));
+  let node = el;
+  for (let i = 0; i < 12 && node; i++) {{
+    node = node.parentElement;
+    if (!node) break;
+    if (node.querySelector('[role="contentinfo"], footer')) {{
+      node.setAttribute('{_FORM_ATTR}', '1');
+      return true;
+    }}
+  }}
+  return false;
+}}
+"""
 
 # Callback types.
 UnknownHandler = Callable[[str, "Path | None"], "str | None"]
@@ -56,6 +80,7 @@ class ApplyStatus(StrEnum):
     FAILED = "failed"
     ABORTED = "aborted"
     LIMIT_REACHED = "limit_reached"
+    UNCONFIRMED = "unconfirmed"
 
 
 @dataclass(slots=True)
@@ -140,17 +165,13 @@ class EasyApplyWorkflow:
         if not self._open_modal():
             return ApplyResult(ApplyStatus.SKIPPED, reason="Easy Apply button not available")
 
-        # The rebuilt form has no dialog wrapper to scope to, so fall back to
-        # the page itself; field lookups are by role and still resolve.
-        modal = first(self._page, selectors.MODAL) or self._page
-        if modal is None:  # pragma: no cover - defensive
-            return ApplyResult(ApplyStatus.FAILED, reason="Easy Apply modal did not open")
-
-        last_signature: str | None = None
         for step in range(1, self._settings.max_steps + 1):
             self._page.wait_for_timeout(600)
             self._screenshot(f"step-{step}")
             logger.info("--- Easy Apply step {} ---", step)
+            # Re-scope every step: the rebuilt form replaces its container as
+            # it advances, so a locator captured up front goes stale.
+            modal = self._form_scope()
 
             self._fill_step(modal, answers, resume_path, cover_letter_path, cover_letter_text)
 
@@ -160,14 +181,17 @@ class EasyApplyWorkflow:
             if action == "submit":
                 return self._finalize_submit(answers, step)
             if action in {"next", "review"}:
-                signature = self._step_signature(modal)
-                self._click(
-                    modal, selectors.BTN_REVIEW if action == "review" else selectors.BTN_NEXT
+                # Measure the click's own effect: comparing this step to the
+                # previous one aborts whenever two steps merely look alike.
+                before = self._step_signature(modal)
+                self._click_action(
+                    modal,
+                    action,
+                    selectors.BTN_REVIEW if action == "review" else selectors.BTN_NEXT,
                 )
                 self._page.wait_for_timeout(800)
-                if signature == last_signature:
+                if not self._wait_for_step_change(before):
                     return self._abort(answers, step, "No progress between steps")
-                last_signature = signature
                 continue
             return self._abort(answers, step, "No actionable button found")
 
@@ -175,6 +199,12 @@ class EasyApplyWorkflow:
 
     # -- modal control --------------------------------------------------------
     def _open_modal(self) -> bool:
+        # A form left open by an earlier job would otherwise be mistaken for
+        # this job's, and we would "apply" to the wrong posting.
+        if self._modal_is_open():
+            logger.debug("A form was still open before starting - clearing it")
+            force_close_dialogs(self._page)
+            self._page.wait_for_timeout(400)
         button = first(self._page, selectors.EASY_APPLY_BUTTON)
         if button is None or not is_visible(button):
             logger.info("No Easy Apply button on this job (external application?) - skipping")
@@ -205,6 +235,28 @@ class EasyApplyWorkflow:
             return True
         return self._modal_heading() is not None
 
+    def _form_scope(self) -> Any:
+        """A locator covering just the application form.
+
+        Without a dialog wrapper the whole page is in scope, which would sweep
+        up the job-search box and the filter checkboxes as if they were form
+        questions. Tag the ancestor that holds the form's footer and scope to it.
+        """
+        legacy = first(self._page, selectors.MODAL)
+        if legacy is not None:
+            return legacy
+        heading = self._modal_heading()
+        if heading is None:
+            return self._page
+        try:
+            if heading.evaluate(_TAG_FORM_JS):
+                scoped = self._page.locator(f"[{_FORM_ATTR}]")
+                if scoped.count() > 0:
+                    return scoped.first
+        except Exception:  # pragma: no cover - defensive
+            pass
+        return self._page
+
     def _modal_heading(self) -> Any | None:
         try:
             heading = self._page.get_by_role(
@@ -221,7 +273,63 @@ class EasyApplyWorkflow:
             return "review"
         if is_visible(first(modal, selectors.BTN_NEXT)):
             return "next"
+        for action in ("submit", "review", "next"):
+            if self._action_button(action) is not None:
+                return action
         return "none"
+
+    def _action_button(self, action: str) -> Any | None:
+        """Find a step button by accessible name, preferring the form footer."""
+        pattern = selectors.STEP_BUTTON_NAMES.get(action)
+        if pattern is None:
+            return None
+        return self._named_button(pattern, self._action_scopes())
+
+    def _named_button(self, pattern: str, scopes: list[Any] | None = None) -> Any | None:
+        for scope in scopes or [self._page]:
+            try:
+                buttons = scope.get_by_role("button", name=re.compile(pattern, re.I))
+                for index in range(buttons.count()):
+                    button = buttons.nth(index)
+                    if button.is_visible():
+                        return button
+            except Exception:  # pragma: no cover - defensive
+                continue
+        return None
+
+    def _click_named_button(self, pattern: str) -> bool:
+        button = self._named_button(pattern)
+        if button is None:
+            return False
+        try:
+            button.click(timeout=3000)
+            return True
+        except Exception:  # pragma: no cover - defensive
+            try:
+                button.click(force=True, timeout=2000)
+                return True
+            except Exception:
+                return False
+
+    def _action_scopes(self) -> list[Any]:
+        scopes: list[Any] = []
+        try:
+            footer = self._page.get_by_role(selectors.MODAL_FOOTER_ROLE)
+            if footer.count() > 0:
+                scopes.append(footer.last)
+        except Exception:  # pragma: no cover - defensive
+            pass
+        scopes.append(self._page)
+        return scopes
+
+    def _click_action(self, scope: Any, action: str, selector_list: list[str]) -> bool:
+        if self._click(scope, selector_list):
+            return True
+        button = self._action_button(action)
+        if button is None:
+            return False
+        button.click()
+        return True
 
     def _click(self, scope: Any, selector_list: list[str]) -> bool:
         button = first(scope, selector_list)
@@ -232,7 +340,16 @@ class EasyApplyWorkflow:
 
     def _step_signature(self, modal: Any) -> str:
         fields = self._detector.detect(modal)
-        return "|".join(f"{f.label}:{f.kind.value}" for f in fields)
+        if fields:
+            return "|".join(f"{f.label}:{f.kind.value}" for f in fields)
+        return " ".join(safe_text(modal).split())
+
+    def _wait_for_step_change(self, before: str) -> bool:
+        for _ in range(20):
+            if self._step_signature(self._form_scope()) != before:
+                return True
+            self._page.wait_for_timeout(250)
+        return False
 
     # -- filling --------------------------------------------------------------
     def _fill_step(
@@ -265,6 +382,16 @@ class EasyApplyWorkflow:
     ) -> None:
         if field_.kind is FieldKind.FILE:
             self._fill_file_field(field_, resume_path, cover_letter_path, resume_handled)
+            return
+        if (
+            resume_handled
+            and field_.kind is FieldKind.RADIO
+            and field_.options
+            and all(
+                re.search(selectors.RESUME_RADIO_NAME, option, re.I) for option in field_.options
+            )
+        ):
+            logger.debug("Resume radio picker already handled - leaving the verified selection")
             return
 
         parsed = self._parser.parse(field_.label)
@@ -508,9 +635,8 @@ class EasyApplyWorkflow:
     def _ensure_resume_selected(self, modal: Any, resume_path: str | None) -> bool:
         """Select the target resume from the on-page list, or upload it.
 
-        Returns ``True`` when the resume was handled here (so the generic file
-        input is not uploaded to a second time). Any problem returns ``False``
-        so the plain file-input fallback still runs.
+        Only act on a visible resume step, never a page-wide hidden upload input.
+        Selection/upload must be verified before suppressing the file-field path.
         """
         if not resume_path:
             return False
@@ -520,57 +646,69 @@ class EasyApplyWorkflow:
         # to "upload" again. Once handled, skip on every subsequent step.
         if self._resume_selected_done:
             return True
-        try:
-            cards = self._resume_cards(modal)
-            target = Path(resume_path).name
-            target_stem = Path(resume_path).stem
-            for name, container in cards:
-                if _resume_matches(name, target_stem):
-                    if self._card_selected(container):
-                        logger.info(
-                            "Resume '{}' already uploaded and selected on LinkedIn - reusing it",
-                            name,
-                        )
-                    else:
-                        self._select_card(container)
-                        logger.info(
-                            "Resume '{}' already in your LinkedIn list - selected it (no upload)",
-                            name,
-                        )
+        cards = self._resume_cards(modal)
+        target = Path(resume_path).name
+        target_stem = Path(resume_path).stem
+        if self._reuse_resume(cards, target_stem):
+            self._resume_selected_done = True
+            return True
+
+        upload_button = first(modal, selectors.RESUME_UPLOAD_BUTTON)
+        if not cards and not is_visible(upload_button):
+            return False
+        logger.info(
+            "Resume step: '{}' not in {} uploaded resume(s) {} - uploading once",
+            target,
+            len(cards),
+            [name for name, _ in cards],
+        )
+        upload = first(modal, selectors.RESUME_UPLOAD_INPUT)
+        if upload is not None:
+            upload.set_input_files(resume_path)
+        elif not self._upload_via_file_chooser(modal, resume_path):
+            self._ask_manual_upload(target)
+
+        for _ in range(20):
+            uploaded_cards = self._resume_cards(modal)
+            if self._reuse_resume(uploaded_cards, target_stem):
+                self._resume_selected_done = True
+                return True
+            # A plain legacy file input can attach a document without cards.
+            if not cards and not uploaded_cards and upload is not None:
+                attached = upload.input_value().replace("\\", "/").rsplit("/", 1)[-1]
+                if _resume_matches(attached, target_stem):
+                    logger.info("Resume '{}' attached through the file input", target)
                     self._resume_selected_done = True
                     return True
-            if cards:
+            self._page.wait_for_timeout(500)
+        raise RuntimeError(
+            f"Could not verify that resume '{target}' was attached; not re-uploading"
+        )
+
+    def _reuse_resume(self, cards: list[tuple[str, Any]], target_stem: str) -> bool:
+        matching = [(name, node) for name, node in cards if _resume_matches(name, target_stem)]
+        for name, node in matching:
+            if self._card_selected(node):
                 logger.info(
-                    "Target resume '{}' not in your {} uploaded resume(s) {} - uploading it",
-                    target,
-                    len(cards),
-                    [n for n, _ in cards],
+                    "Resume '{}' already uploaded and selected - reusing it (no upload)", name
                 )
-            # The hidden <input type=file> is frequently rendered outside the
-            # modal locator (or in a portal), so search modal- then page-wide.
-            upload = first(modal, selectors.RESUME_UPLOAD_INPUT) or first(
-                self._page, selectors.RESUME_UPLOAD_INPUT
-            )
-            if upload is not None:
-                upload.set_input_files(resume_path)
-                self._page.wait_for_timeout(2000)
-                logger.info("Uploaded resume '{}' to LinkedIn", target)
-                self._resume_selected_done = True
                 return True
-            # No file input in the DOM yet: click the "Upload resume" control and
-            # feed our file to the chooser LinkedIn opens.
-            if self._upload_via_file_chooser(modal, resume_path):
-                logger.info("Uploaded resume '{}' to LinkedIn (file chooser)", target)
-                self._resume_selected_done = True
-                return True
-            if cards:
-                self._ask_manual_upload(target)
-                self._resume_selected_done = True
-                return True
+        if not matching:
             return False
-        except Exception as exc:  # pragma: no cover - defensive
-            logger.warning("Resume select/upload issue ({}); using the file-input fallback", exc)
-            return False
+        name, node = matching[0]
+        self._select_card(node)
+        # Selection remounts the picker, so verify freshly discovered controls.
+        for _ in range(10):
+            for selected_name, selected_node in self._resume_cards(self._form_scope()):
+                if _resume_matches(selected_name, target_stem) and self._card_selected(
+                    selected_node
+                ):
+                    logger.info(
+                        "Resume '{}' selected from your LinkedIn list (no upload)", selected_name
+                    )
+                    return True
+            self._page.wait_for_timeout(250)
+        raise RuntimeError(f"Could not select the already-uploaded resume '{name}'")
 
     def _upload_via_file_chooser(self, modal: Any, resume_path: str) -> bool:
         """Upload by clicking the "Upload resume" button and catching its chooser.
@@ -595,6 +733,12 @@ class EasyApplyWorkflow:
             return False
 
     def _resume_cards(self, modal: Any) -> list[tuple[str, Any]]:
+        radios = modal.get_by_role("radio", name=re.compile(selectors.RESUME_RADIO_NAME, re.I))
+        if radios.count():
+            return [
+                (radios.nth(index).get_attribute("aria-label") or "", radios.nth(index))
+                for index in range(radios.count())
+            ]
         group = first_group(modal, selectors.RESUME_CARD)
         if group is None:
             return []
@@ -605,6 +749,8 @@ class EasyApplyWorkflow:
             return []
         for index in range(total):
             container = group.nth(index)
+            if not is_visible(container):
+                continue
             name_node = first(container, selectors.RESUME_CARD_NAME)
             name = safe_text(name_node) if name_node is not None else ""
             if not name:
@@ -614,6 +760,11 @@ class EasyApplyWorkflow:
         return cards
 
     def _card_selected(self, container: Any) -> bool:
+        try:
+            if container.is_checked():
+                return True
+        except Exception:  # pragma: no cover - legacy cards are not inputs
+            pass
         try:
             classes = container.get_attribute("class") or ""
             if selectors.RESUME_CARD_SELECTED_FRAGMENT in classes:
@@ -626,17 +777,29 @@ class EasyApplyWorkflow:
         except Exception:  # pragma: no cover - defensive
             return False
 
-    def _select_card(self, container: Any) -> None:
+    def _select_card(self, container: Any) -> bool:
+        try:
+            label = container.evaluate_handle("el => el.labels?.[0] ?? null").as_element()
+            if label is not None:
+                label.click(timeout=3000)
+                return True
+        except Exception as exc:  # pragma: no cover - legacy cards or hidden labels
+            logger.debug("Resume label selection unavailable: {}", exc)
+        try:
+            container.check(force=True, timeout=2000)
+            return True
+        except Exception:  # pragma: no cover - legacy cards are not inputs
+            pass
         button = first(container, selectors.RESUME_SELECT_BUTTON)
         for target in (button, container):
             if target is None:
                 continue
             try:
                 target.click(force=True, timeout=2000)
-                self._page.wait_for_timeout(500)
-                return
+                return True
             except Exception:  # pragma: no cover - defensive
                 continue
+        return False
 
     def _ask_manual_upload(self, target: str) -> None:
         logger.warning("Could not upload '{}' automatically - please attach it on the page", target)
@@ -697,16 +860,16 @@ class EasyApplyWorkflow:
 
         logger.info("Submitting the application now ({} question(s) answered)", len(answers))
         modal = first(self._page, selectors.MODAL)
-        if not self._click(modal, selectors.BTN_SUBMIT):
+        if not self._click_action(modal, "submit", selectors.BTN_SUBMIT):
             return self._abort(answers, step, "Submit button vanished")
-        self._page.wait_for_timeout(1500)
-        if self._hit_daily_submission_limit():
+        status, evidence = self._submission_outcome()
+        if status is ApplyStatus.LIMIT_REACHED:
             shot = self._screenshot("daily-limit")
             logger.error(
                 "LinkedIn DAILY SUBMISSION LIMIT reached - it rejected this submit "
                 "('save this job and apply tomorrow'). This application was NOT "
                 "submitted; stopping the run so we don't hammer the cap. Try again "
-                "tomorrow (LinkedIn's cap resets ~24h)."
+                "later; the exact reset time is not known."
             )
             self._discard()  # clear the notice / 'save this application?' overlay
             return ApplyResult(
@@ -716,11 +879,34 @@ class EasyApplyWorkflow:
                 str(shot) if shot else None,
                 answers,
             )
+        if status is ApplyStatus.UNCONFIRMED:
+            shot = self._screenshot("submit-unconfirmed")
+            logger.error(
+                "Submit was clicked, but LinkedIn did not confirm or reject it. "
+                "Stopping for manual verification rather than counting a success/failure "
+                "or risking a duplicate submission."
+            )
+            return ApplyResult(status, step, evidence, str(shot) if shot else None, answers)
         shot = self._screenshot("after-submit")
-        logger.info("Application submitted successfully")
+        logger.info("Application submitted successfully - LinkedIn confirmation: {}", evidence)
         return ApplyResult(
-            ApplyStatus.SUBMITTED, step, screenshot=str(shot) if shot else None, answers=answers
+            ApplyStatus.SUBMITTED,
+            step,
+            reason=f"LinkedIn confirmation: {evidence}",
+            screenshot=str(shot) if shot else None,
+            answers=answers,
         )
+
+    def _submission_outcome(self) -> tuple[ApplyStatus, str]:
+        for _ in range(40):
+            if self._hit_daily_submission_limit():
+                return ApplyStatus.LIMIT_REACHED, "LinkedIn daily submission limit reached"
+            for selector in selectors.POST_SUBMIT_MARKERS:
+                marker = first(self._page, [selector])
+                if is_visible(marker):
+                    return ApplyStatus.SUBMITTED, safe_text(marker)
+            self._page.wait_for_timeout(500)
+        return ApplyStatus.UNCONFIRMED, "No LinkedIn submission confirmation within 20 seconds"
 
     def _hit_daily_submission_limit(self) -> bool:
         """True if LinkedIn rejected the submit with its daily-cap notice.
@@ -750,21 +936,24 @@ class EasyApplyWorkflow:
     def _discard(self) -> None:
         try:
             if not self._click(self._page, selectors.BTN_DISMISS):
-                return
+                self._click_named_button(selectors.DISMISS_BUTTON_NAME)
             # LinkedIn shows a "Save this application?" dialog whose *secondary*
             # button is "Discard" (the primary is "Save"). Force-click Discard -
             # an error toast may otherwise intercept the click - and verify the
             # dialog closes, else its overlay blocks the next job card.
             for _ in range(10):
                 self._page.wait_for_timeout(300)
-                if first(self._page, selectors.DISCARD_CONFIRMATION) is None:
+                if first(self._page, selectors.DISCARD_CONFIRMATION) is not None:
+                    self._force_click(selectors.BTN_DISCARD)
+                    continue
+                if self._click_named_button(selectors.DISCARD_BUTTON_NAME):
+                    continue
+                if not self._modal_is_open():
                     return
-                self._force_click(selectors.BTN_DISCARD)
-            # Last resort: clear any lingering overlay with Escape.
-            self._page.keyboard.press("Escape")
-            self._page.wait_for_timeout(300)
+                self._page.keyboard.press("Escape")
         except Exception as exc:  # pragma: no cover - defensive
             logger.debug("Discard flow error: {}", exc)
+        force_close_dialogs(self._page)
 
     def _force_click(self, selector_list: list[str]) -> bool:
         button = first(self._page, selector_list)
@@ -807,8 +996,9 @@ def _resume_matches(portal_name: str, target_stem: str) -> bool:
     """True when a resume card's filename refers to our target resume."""
     if not portal_name or not target_stem:
         return False
-    name = portal_name.strip().lower()
+    name = portal_name.strip().casefold()
     if name.endswith(".pdf") or name.endswith(".doc") or name.endswith(".docx"):
         name = name.rsplit(".", 1)[0]
-    target = target_stem.strip().lower()
-    return name == target or name.startswith(target) or target.startswith(name)
+    name = re.sub(r"\s*\(\d+\)$", "", name)
+    target = re.sub(r"\s*\(\d+\)$", "", target_stem.strip().casefold())
+    return name == target

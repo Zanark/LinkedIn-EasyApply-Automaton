@@ -1,5 +1,23 @@
 # Architecture & Design Patterns — a learning guide
 
+## Desktop delivery boundary
+
+The native GUI remains an imperative shell around CLI commands. Common run
+settings are collected by `gui/settings_panel.RunSettings`; the Qt-free
+`gui/settings.write_run_config` validates private run presets without changing
+saved YAML. `CommandRunner` owns a QProcess, streams output and forwards prompt
+input, rather than calling a second implementation of application logic.
+
+`runtime.py` distinguishes immutable packaged resources from writable user
+data. The Windows one-folder distribution has a windowed EXE and a console
+EXE sharing dependencies; GUI commands select the sibling CLI instead of
+trying to execute a Python script with the frozen GUI. Source mode still uses
+`apply.py`. `%LOCALAPPDATA%\EasyApplyAutomaton` is the frozen default workspace,
+overridable with `LEA_WORKSPACE`; example files never overwrite user files.
+Browser binaries and optional Streamlit/OpenAI features remain outside this
+delivery boundary. See [desktop usage](gui.md) and
+[release mechanics](developer_guide.md#desktop-and-windows-release).
+
 > Written for an SDE growing toward architect. Every claim below points at **real
 > code in this repo** (file · class · function) so you can open it and read.
 > Where a pattern is used in industry, that's called out so you can map it to
@@ -110,13 +128,14 @@ flowchart TD
 | **HiringTeamMessenger** | `answers/hiring_message.py` | Render a hiring-team outreach **message** *and* a ≤300-char **connection note** (Jinja2), both opening with a fixed signature greeting. | pure |
 | **render_outreach_report** | `answers/hiring_report.py` | Render the drafted-contacts run into a plain-text outreach report. | pure |
 | **BrowserManager** | `browser/manager.py` | Own the Playwright lifecycle; reuse your logged-in profile. | I/O |
-| **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator); also `open_job(url)` to navigate to one job directly (used by *reapply*). | I/O |
+| **JobSearch** | `jobs/search.py` | Drive a search URL, lazily *yield* jobs (generator); also `open_job(url)` for *reapply* and exact `search.job_urls` application batches. Both use the same gated per-job pipeline. | I/O |
 | **JobExtractor** | `jobs/extractor.py` | Read the detail pane → a `Job` value object. | I/O |
 | **EasyApplyWorkflow** | `forms/easy_apply.py` | Multi-step form state machine: detect→fill→next→submit/discard. | I/O |
 | **FormFieldDetector** | `forms/detector.py` | Discover fields + their options in the current step. | I/O |
 | **FormFiller** | `forms/filler.py` | Type/select/check a field using the pure matchers. | I/O |
 | **HiringTeamOutreach** | `forms/outreach.py` | Post-apply: detect "Meet the hiring team" cards; default `draft` mode reads name + profile URL and records a draft (no clicking), `send` mode drafts + (approved) messages on LinkedIn; dedupe + cap. | I/O |
 | **Database** | `database/db.py` | Repository over SQLite; intention-revealing methods. | I/O |
+| **Dashboard theme** | `.streamlit/config.toml` + `dashboard/theme.py` · `build_stylesheet` | Native DeepSeaFoam widget/chart/dataframe colors plus scoped CSS using the Qt-free GUI palettes; no database or automation changes. | pure |
 | **AIProvider / Factory** | `ai/*` | Optional advisor. Strategy chosen by a Factory; never submits. | I/O |
 
 The **dotted line between "pure core" and "imperative shell" is the most
@@ -153,14 +172,20 @@ sequenceDiagram
             else eligible
                 O->>O: select resume, (AI advise)
                 O->>W: apply(resume, cover)
-                W-->>O: ApplyResult (submitted/dry_run/failed)
+                W-->>O: ApplyResult (submitted/unconfirmed/dry_run/failed)
                 O->>DB: update_application(); record_answers()
             end
         end
     end
     O->>DB: finish_run()
-    O-->>U: RunSummary (scanned/applied/skipped/failed)
+    O-->>U: RunSummary (scanned/applied/skipped/failed/unconfirmed)
 ```
+
+`submitted` requires a visible LinkedIn acknowledgement. An uncertain Submit
+is persisted as `unconfirmed`; the orchestrator stops, marks the run `stopped`,
+skips the connection pass, and the CLI exits with code 2. Database guards exclude
+that job from automatic search/reapply so a lost acknowledgement cannot cause
+an automatic duplicate.
 
 Read `Orchestrator.run` → `_execute` → `_process_job` in `orchestrator.py` — the
 sequence above is literally those three methods.

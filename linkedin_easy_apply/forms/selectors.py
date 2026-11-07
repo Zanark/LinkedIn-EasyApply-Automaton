@@ -19,12 +19,23 @@ MODAL = [
     "div.jobs-easy-apply-modal",
     "div[data-test-modal][role='dialog']",
     "div[role='dialog']:has(.jobs-easy-apply-content)",
+    # The rebuilt form is a native <dialog>; data-testid survives rebuilds.
+    "dialog[data-testid='dialog'][open]",
 ]
+# Any open native dialog, used to clear a form that refuses to close.
+OPEN_DIALOG = "dialog[open]"
 # On the rebuilt UI the form is NOT a dialog - confirmed live, `role=dialog` and
 # `aria-modal` both return zero. What it does have is a level-2 heading reading
 # "Apply to <company>" and a `contentinfo` footer holding Next/Review/Submit.
 MODAL_HEADING_NAME = r"^Apply to "
 MODAL_FOOTER_ROLE = "contentinfo"
+
+# Accessible-name patterns for the step buttons in the rebuilt form's footer.
+STEP_BUTTON_NAMES: dict[str, str] = {
+    "submit": r"^submit\s+application\b|^submit$",
+    "review": r"^review\b",
+    "next": r"^(next|continue)\b",
+}
 # Controls that close the form without submitting.
 DISMISS_BUTTON_NAME = r"^Dismiss$"
 DISCARD_BUTTON_NAME = r"^Discard"
@@ -92,6 +103,7 @@ POST_SUBMIT_MARKERS = [
     "text=Your application was sent",
     "text=Application sent",
     "h3:has-text('Your application was sent')",
+    "text=/^Application submitted$/",
 ]
 
 # --- Resume step -------------------------------------------------------------
@@ -110,6 +122,7 @@ RESUME_CARD_NAME = [
     ".jobs-resume-picker__resume-name",
     "[class*='file-name']",
 ]
+RESUME_RADIO_NAME = r"\.(?:pdf|docx?)$"
 # Class fragment (not a full selector) marking a card as currently selected.
 RESUME_CARD_SELECTED_FRAGMENT = "--selected"
 # Control that selects a given resume card.

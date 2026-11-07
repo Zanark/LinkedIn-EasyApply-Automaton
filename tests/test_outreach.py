@@ -173,8 +173,8 @@ _CTX = {
 
 
 def test_message_render_personalises():
-    msg = HiringTeamMessenger().render({**_CTX, "recruiter_first_name": "Mrunal"})
-    assert msg.startswith("Hi Mrunal, I trust you are having an amazing day!")
+    msg = HiringTeamMessenger().render({**_CTX, "recruiter_first_name": "Alex"})
+    assert msg.startswith("Hi Alex, I trust you are having an amazing day!")
     assert "Backend Engineer" in msg
     assert "Acme" in msg
     assert "Jane Doe" in msg
@@ -191,9 +191,9 @@ def test_message_and_note_open_with_signature_greeting():
     # The user's signature greeting must lead BOTH the full message and the
     # short connection-invite note.
     greeting = "I trust you are having an amazing day!"
-    msg = HiringTeamMessenger().render({**_CTX, "recruiter_first_name": "Mrunal"})
+    msg = HiringTeamMessenger().render({**_CTX, "recruiter_first_name": "Alex"})
     note = HiringTeamMessenger().render_note({**_NOTE_CTX, "recruiter_first_name": "Ria"})
-    assert msg.startswith(f"Hi Mrunal, {greeting}")
+    assert msg.startswith(f"Hi Alex, {greeting}")
     assert note.startswith(f"Hi Ria, {greeting}")
     assert len(note) <= 300
 
@@ -260,9 +260,9 @@ def test_note_respects_custom_limit():
 def test_db_records_and_dedups_outreach(tmp_path):
     db = Database(tmp_path / "t.db")
     db.initialize()
-    assert db.has_messaged_person("in/mrunal") is False
-    db.record_outreach(person_key="in/mrunal", person_name="Mrunal B.", status="sent")
-    assert db.has_messaged_person("in/mrunal") is True
+    assert db.has_messaged_person("in/example-recruiter") is False
+    db.record_outreach(person_key="in/example-recruiter", person_name="Alex R.", status="sent")
+    assert db.has_messaged_person("in/example-recruiter") is True
     # A different person is unaffected; a declined record does not count as messaged.
     assert db.has_messaged_person("in/other") is False
     db.record_outreach(person_key="in/declined", status="declined")
@@ -459,16 +459,16 @@ def test_mark_outreach_note_sent_empty_is_noop(tmp_path):
 def test_outreach_draft_collects_without_clicking():
     records: list[dict] = []
     flow = _outreach(records=records)
-    page = _page([_card("Mrunal B.")], upsell=True)
+    page = _page([_card("Alex R.")], upsell=True)
 
     collected = flow.reach_out(page, _CTX, run_id=1, job_id=2)
 
     assert collected == 1
     rec = records[-1]
     assert rec["status"] == "drafted"
-    assert rec["person_name"] == "Mrunal B."
+    assert rec["person_name"] == "Alex R."
     assert rec["profile_url"] == "https://www.linkedin.com/in/foo"
-    assert rec["message"].startswith("Hi Mrunal,")
+    assert rec["message"].startswith("Hi Alex,")
     # Nothing was clicked or typed - not even the upsell "Not now".
     assert page.compose is not None and page.compose.filled is None
     assert page.send is not None and page.send.clicks == 0
@@ -478,12 +478,12 @@ def test_outreach_draft_collects_without_clicking():
 def test_outreach_draft_records_connection_note():
     records: list[dict] = []
     flow = _outreach(records=records)
-    page = _page([_card("Mrunal B.")])
+    page = _page([_card("Alex R.")])
 
     assert flow.reach_out(page, {**_CTX, "portfolio_url": "https://jane.dev"}) == 1
     rec = records[-1]
     assert rec["note"] and len(rec["note"]) <= 300
-    assert rec["note"].startswith("Hi Mrunal,")
+    assert rec["note"].startswith("Hi Alex,")
     assert rec["note"] != rec["message"]  # the note is the shorter invite variant
 
 
@@ -516,7 +516,7 @@ def test_outreach_draft_dedups_same_person_across_cards():
 def test_outreach_draft_skips_previously_messaged():
     records: list[dict] = []
     flow = _outreach(records=records, has_messaged=lambda k: True)
-    page = _page([_card("Mrunal B.")])
+    page = _page([_card("Alex R.")])
 
     assert flow.reach_out(page, _CTX) == 0
     assert records == []
@@ -548,7 +548,7 @@ def test_outreach_sends_when_approved():
 
     records: list[dict] = []
     flow = _outreach(approve, mode="send", records=records)
-    page = _page([_card("Mrunal B.")])
+    page = _page([_card("Alex R.")])
 
     sent = flow.reach_out(page, _CTX, run_id=1, job_id=2)
 
@@ -556,14 +556,14 @@ def test_outreach_sends_when_approved():
     assert page.compose is not None and page.compose.filled == seen[0]
     assert page.send is not None and page.send.clicks == 1
     assert records[-1]["status"] == "sent"
-    assert records[-1]["person_name"] == "Mrunal B."
+    assert records[-1]["person_name"] == "Alex R."
 
 
 def test_outreach_send_dismisses_post_apply_upsell():
     # The "Turn your resume into a profile" upsell modal overlays the page and
     # blocks the Message button; send mode must click its "Not now" and still send.
     flow = _outreach(lambda n, m: m, mode="send")
-    page = _page([_card("Mrunal B.")], upsell=True)
+    page = _page([_card("Alex R.")], upsell=True)
 
     sent = flow.reach_out(page, _CTX)
 
@@ -575,7 +575,7 @@ def test_outreach_send_dismisses_post_apply_upsell():
 def test_outreach_declined_is_not_sent():
     records: list[dict] = []
     flow = _outreach(lambda n, m: None, mode="send", records=records)
-    page = _page([_card("Mrunal B.")])
+    page = _page([_card("Alex R.")])
 
     sent = flow.reach_out(page, _CTX)
 
@@ -589,7 +589,7 @@ def test_outreach_send_skips_already_messaged():
     flow = _outreach(
         lambda n, m: approvals.append(n) or m, mode="send", has_messaged=lambda k: True
     )
-    page = _page([_card("Mrunal B.")])
+    page = _page([_card("Alex R.")])
 
     assert flow.reach_out(page, _CTX) == 0
     assert approvals == []  # never even drafted/approved
@@ -625,7 +625,7 @@ def test_outreach_send_without_handler_degrades_to_draft():
     # it collects a draft instead so the report is still produced.
     records: list[dict] = []
     flow = _outreach(None, mode="send", records=records)
-    page = _page([_card("Mrunal B.")])
+    page = _page([_card("Alex R.")])
 
     assert flow.reach_out(page, _CTX) == 1
     assert records[-1]["status"] == "drafted"
@@ -648,8 +648,8 @@ def test_render_outreach_report_lists_contacts():
             "message": "Hi Ada,\nGreat to connect.",
             "job_title": "Backend Engineer",
             "job_company": "Acme",
-            "resume_name": "Debashish_FullStack",
-            "resume_path": "generated/resume/Debashish_FullStack.pdf",
+            "resume_name": "Example_FullStack",
+            "resume_path": "generated/resume/Example_FullStack.pdf",
         },
         {
             "person_name": "Bob",
@@ -668,8 +668,8 @@ def test_render_outreach_report_lists_contacts():
     assert "Backend Engineer @ Acme" in text
     assert "Great to connect." in text
     # The résumé that was submitted is named so the user knows what to attach.
-    assert "Debashish_FullStack" in text
-    assert "generated/resume/Debashish_FullStack.pdf" in text
+    assert "Example_FullStack" in text
+    assert "generated/resume/Example_FullStack.pdf" in text
     # A missing profile URL is called out rather than left blank.
     assert "(profile URL not found)" in text
     assert "Globex" in text

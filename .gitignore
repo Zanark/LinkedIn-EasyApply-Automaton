@@ -54,6 +54,7 @@ generated/outreach/*
 # Exported application data (may contain personal data)
 applications.csv
 exports/
+reports/answer_quality_report.*
 
 # Real secrets (personal config, never commit)
 configs/config.yaml
@@ -61,6 +62,11 @@ configs/answers.yaml
 configs/searches.yaml
 configs/question_bank.yaml
 .env
+.env.*
+
+# Private continuity and the mixed historical source are never release inputs.
+.agent-context/
+todo/TODO.md
 
 # Browser profile - contains your logged-in LinkedIn session (NEVER commit)
 .browser-profile/
@@ -69,3 +75,8 @@ configs/question_bank.yaml
 .idea/
 .vscode/
 *.swp
+
+# Local synchronizer writer lock and interrupted atomic-write temporaries
+.todo-sync.lock
+.github/todo-sync-state.json.*.tmp
+todo/*.todo.*.tmp

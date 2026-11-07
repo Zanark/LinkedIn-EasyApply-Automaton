@@ -1,0 +1,34 @@
+# Explicit monthly expected-compensation overrides
+Workstream-ID: lea-06
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/7
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-21 hand-set monthly-tier follow-up
+Status: DONE
+Milestone: Respect configured monthly policy independently of annual policy
+Dependencies: lea-05
+
+## Purpose
+Support exact configured monthly expected-compensation values per tier instead
+of forcing division/rounding when an explicit monthly value exists.
+
+## Tasks
+- [x] Extend the resolver override with an optional monthly amount.
+- [x] Look up configured monthly values with a documented fallback.
+- [x] Retain annual answers unchanged and keep expected monthly answers job-specific.
+- [x] Use the existing calculation only when an explicit monthly value is absent.
+- [x] Cover configured and fallback paths; update configuration documentation.
+
+## Acceptance criteria
+- [x] Historical coverage demonstrates configured monthly values win over calculation.
+- [x] Current-compensation behavior and annual expected answers remain distinct.
+
+## Completion evidence
+The 2026-07-21 source records updated `test_salary_notice.py` cases, a 164-test
+green suite, clean Ruff/Black/mypy checks and four parsed configuration files.
+This projection deliberately omits all applicant-specific amounts and examples.
+DONE is the recorded implementation/local-verification outcome, not fresh product
+validation, human acceptance, external qualification or publication.
+
+## Completion log
+- 2026-07-21: Explicit monthly-tier policy implemented and locally verified.
+- 2026-11-06: Imported as a distinct follow-up, not a duplicate tier-inference issue.

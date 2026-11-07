@@ -92,6 +92,12 @@ def _run_execute(
             summary.applied += 1
         elif outcome == "fail":
             summary.failed += 1
+        elif outcome == "dryrun":
+            # Mirrors the real handler: a completed-but-unsubmitted application.
+            summary.dry_runs += 1
+            summary.note_skip("dry_run")
+        elif outcome == "unconfirmed":
+            summary.unconfirmed += 1
         else:
             summary.note_skip("test")
 
@@ -148,6 +154,19 @@ def test_run_stops_when_jobs_exhausted_below_target(tmp_path, monkeypatch):
     assert summary.applied == 1
     assert summary.scanned == 2
     assert len(processed) == 2
+
+
+def test_unconfirmed_submit_stops_without_another_attempt(tmp_path, monkeypatch):
+    summary, processed = _run_execute(
+        tmp_path,
+        monkeypatch,
+        pages={0: [_job(0), _job(1)]},
+        outcomes=["unconfirmed", "submit"],
+        limit=5,
+    )
+    assert len(processed) == 1
+    assert summary.unconfirmed == 1
+    assert summary.applied == summary.failed == 0
 
 
 def test_seen_jobs_are_not_processed_twice(tmp_path, monkeypatch):
@@ -221,3 +240,52 @@ def test_scan_mode_stops_at_scanned_limit(tmp_path, monkeypatch):
 
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# --------------------------------------------------------------------------- #
+# a dry run is bounded by --limit too                                         #
+# --------------------------------------------------------------------------- #
+def test_dry_run_completions_consume_the_limit(tmp_path, monkeypatch):
+    """A dry run submits nothing, so counting only submissions would let it
+    crawl every page. Completed dry-run applications must stop it instead."""
+    pages = {
+        0: [_job(0), _job(1), _job(2)],
+        25: [_job(3), _job(4), _job(5)],
+    }
+    summary, processed = _run_execute(
+        tmp_path,
+        monkeypatch,
+        pages=pages,
+        outcomes=["dryrun", "dryrun", "dryrun", "dryrun"],
+        limit=2,
+    )
+    assert summary.dry_runs == 2
+    assert summary.applied == 0
+    assert len(processed) == 2
+
+
+def test_dry_run_skips_still_do_not_consume_the_limit(tmp_path, monkeypatch):
+    pages = {0: [_job(0), _job(1), _job(2), _job(3)]}
+    summary, processed = _run_execute(
+        tmp_path,
+        monkeypatch,
+        pages=pages,
+        outcomes=["skip", "fail", "dryrun", "dryrun"],
+        limit=2,
+    )
+    assert summary.dry_runs == 2
+    assert len(processed) == 4
+
+
+def test_real_run_is_unaffected_by_the_dry_run_counter(tmp_path, monkeypatch):
+    pages = {0: [_job(0), _job(1), _job(2)]}
+    summary, processed = _run_execute(
+        tmp_path,
+        monkeypatch,
+        pages=pages,
+        outcomes=["submit", "submit", "submit"],
+        limit=2,
+    )
+    assert summary.applied == 2
+    assert summary.dry_runs == 0
+    assert len(processed) == 2

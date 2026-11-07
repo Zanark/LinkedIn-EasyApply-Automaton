@@ -35,6 +35,7 @@ from linkedin_easy_apply.config import AppConfig, ConfigError, load_config
 from linkedin_easy_apply.config.models import SearchConfig, SearchEntry
 from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.logging import setup_logging
+from linkedin_easy_apply.runtime import is_frozen, resource_root
 
 if TYPE_CHECKING:
     from linkedin_easy_apply.connect.service import ConnectSummary
@@ -48,7 +49,7 @@ app = typer.Typer(
 console = Console()
 
 _DEFAULT_CONFIG = Path("configs/config.yaml")
-_EXAMPLES = Path(__file__).resolve().parents[2] / "configs"
+_EXAMPLES = resource_root() / "configs"
 
 # Set by the top-level --verbose/-v flag; forces DEBUG logging when true.
 _verbose = False
@@ -470,8 +471,14 @@ def _run_orchestrator(
     table.add_column("Value", justify="right")
     table.add_row("Scanned", str(summary.scanned))
     table.add_row("Applied", f"[green]{summary.applied}[/green]")
+    if summary.dry_runs:
+        # Otherwise a dry run reads as "Applied 0", hiding the fact that it
+        # drove these applications all the way to the Submit button.
+        table.add_row("Dry runs", f"[cyan]{summary.dry_runs}[/cyan]")
     table.add_row("Skipped", str(summary.skipped))
     table.add_row("Failed", f"[red]{summary.failed}[/red]")
+    if summary.unconfirmed:
+        table.add_row("Unconfirmed", f"[yellow]{summary.unconfirmed}[/yellow]")
     console.print(table)
     if summary.skip_reasons:
         console.print(
@@ -487,12 +494,20 @@ def _run_orchestrator(
         console.print(
             "[yellow]⚠ LinkedIn's daily Easy Apply cap was reached[/yellow] — it "
             'rejected a submit with "save this job and apply tomorrow". This is '
-            "LinkedIn's own throttle (not a ban, and separate from this tool's "
+            "LinkedIn's own throttle (separate from this tool's "
             "daily cap). The run stopped early so it wouldn't hammer the limit. "
-            "[bold]Try again tomorrow[/bold] (LinkedIn's cap resets ~24h)."
+            "[bold]Try again later[/bold]; the exact reset time is not known."
+        )
+    if summary.unconfirmed:
+        console.print(
+            "[yellow]A Submit click was not confirmed by LinkedIn.[/yellow] "
+            "The run stopped, and this job is excluded from automatic retries. "
+            "Verify it on LinkedIn before deciding whether to retry."
         )
     if summary.connect_summary is not None:
         console.print(_connect_table(summary.connect_summary))
+    if summary.unconfirmed:
+        raise typer.Exit(code=2)
 
 
 @app.command()
@@ -699,9 +714,7 @@ def gui(
     from linkedin_easy_apply.gui import THEMES, GuiUnavailableError, launch
 
     if theme and theme.strip().lower() not in THEMES:
-        console.print(
-            f"[red]Unknown theme '{theme}'.[/red] Choose one of: {', '.join(THEMES)}."
-        )
+        console.print(f"[red]Unknown theme '{theme}'.[/red] Choose one of: {', '.join(THEMES)}.")
         raise typer.Exit(code=2)
     try:
         exit_code = launch(config_path=str(config), theme=theme)
@@ -716,6 +729,13 @@ def gui(
 @app.command()
 def dashboard(config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c")) -> None:
     """Launch the Streamlit dashboard (also reachable from the GUI's Data page)."""
+    if is_frozen():
+        console.print(
+            "The portable desktop build does not bundle Streamlit. "
+            "Use its Data page, or install the source with the dashboard extra.",
+            style="yellow",
+        )
+        raise typer.Exit(code=2)
     import os
     import subprocess
 
@@ -731,6 +751,15 @@ def dashboard(config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c")) ->
             "[red]Streamlit not installed.[/red] Install with 'pip install .[dashboard]'."
         )
         raise typer.Exit(code=2) from None
+
+
+@app.command(name="install-browser")
+def install_browser() -> None:
+    """Download Playwright Chromium (not needed for installed Edge or Chrome)."""
+    from playwright.__main__ import main
+
+    sys.argv = ["playwright", "install", "chromium"]
+    main()
 
 
 @app.command(name="resume-test")

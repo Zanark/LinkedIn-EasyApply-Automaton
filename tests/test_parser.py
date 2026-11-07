@@ -50,6 +50,7 @@ def test_categories(parser: QuestionParser, text: str, category: QuestionCategor
         "What is your current company?",
         "What is your current role?",
         "Which location are you applying for?",
+        "Describe your financial reporting responsibilities",
     ],
 )
 def test_current_x_is_never_salary(parser: QuestionParser, text: str):
@@ -67,11 +68,33 @@ def test_location_preference_falls_through_to_unknown(parser: QuestionParser):
     assert parsed.category is QuestionCategory.UNKNOWN
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Are you comfortable working in a hybrid setting?",
+        "Are you comfortable commuting to this job's location?",
+    ],
+)
+def test_hybrid_and_commuting_need_their_own_preference(parser: QuestionParser, text: str):
+    assert parser.parse(text).category is QuestionCategory.UNKNOWN
+
+
 def test_skill_experience_extraction(parser: QuestionParser):
     parsed = parser.parse("How many years of experience do you have with Kubernetes?")
     assert parsed.category is QuestionCategory.EXPERIENCE_SKILL
     assert parsed.skill == "kubernetes"
     assert parsed.answer_type is AnswerType.NUMBER
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "How many years of work experience do you have with Zig?",
+        "How many years of experience do you have in Blazor?",
+    ],
+)
+def test_unrecognized_skill_experience_is_not_total_experience(parser: QuestionParser, text: str):
+    assert parser.parse(text).category is QuestionCategory.UNKNOWN
 
 
 def test_word_boundary_no_false_positive(parser: QuestionParser):
@@ -96,3 +119,31 @@ def test_fuzzy_fallback(parser: QuestionParser):
     parsed = parser.parse("How soon can you join the team?")
     assert parsed.category is QuestionCategory.NOTICE_PERIOD
     assert parsed.confidence > 0
+
+
+# -- a name question about someone else must not get the applicant's name ----
+
+
+def test_referral_name_is_not_the_applicants_own_name():
+    parsed = QuestionParser().parse(
+        "If you were referred by a current employee, please provide their full name."
+    )
+    assert parsed.category is QuestionCategory.UNKNOWN
+
+
+def test_reference_and_emergency_contact_names_are_unknown():
+    parser = QuestionParser()
+    for text in (
+        "Name of your reference",
+        "Emergency contact name",
+        "Your supervisor's name",
+        "Referrer name",
+    ):
+        assert parser.parse(text).category is QuestionCategory.UNKNOWN, text
+
+
+def test_own_name_questions_still_resolve():
+    parser = QuestionParser()
+    assert parser.parse("First name").category is QuestionCategory.FIRST_NAME
+    assert parser.parse("Last name").category is QuestionCategory.LAST_NAME
+    assert parser.parse("Full name").category is QuestionCategory.FULL_NAME

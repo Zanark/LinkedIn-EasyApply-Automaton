@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "repository_id": "R_kgDOTXAU3w",
+  "project_id": "PVT_kwHOAe2wCs4BqfEB",
+  "workstreams": {
+    "lea-09": {
+      "baseline": {
+        "title": "[lea-09] Dashboard skip analytics and KPI detail panels",
+        "managed": "14feff0073824c8b7a9549f067e04771191f15a8f9b0d0719022eedc98d1f449",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDBAiA",
+      "number": 1,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/1",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlV9c"
+    },
+    "lea-01": {
+      "baseline": {
+        "title": "[lea-01] Post-live-test automation improvements",
+        "managed": "a42c8db6582417fde4b24333bc6df4b6f68d71899de85078fc7cfd9a8e495c05",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "c29b798f"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDEo3A",
+      "number": 2,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/2",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlZ5A"
+    },
+    "lea-02": {
+      "baseline": {
+        "title": "[lea-02] Cover-letter PDF, inline delivery and decision logging",
+        "managed": "50a06ac9ff8c2ea2c7cf11cb9410f70de61d37cd49a9abad340faf561e9bd36b",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDEv_w",
+      "number": 3,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/3",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlaCE"
+    },
+    "lea-03": {
+      "baseline": {
+        "title": "[lea-03] Automatic submission defaults and explicit confirmation",
+        "managed": "862844bf63102965e2baea8e262b3c92b2c1899c020805f724824270f91e0b15",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDE3Kg",
+      "number": 4,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/4",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlaJM"
+    },
+    "lea-04": {
+      "baseline": {
+        "title": "[lea-04] Numeric compensation answers, notice parsing and resume-review logging",
+        "managed": "0095200ae0a9f76c78859b7e0443f3a28d5ebbcaaba2a1660b35a754b3afef5d",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDE-9A",
+      "number": 5,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/5",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlaQg"
+    },
+    "lea-05": {
+      "baseline": {
+        "title": "[lea-05] Job-seniority expected-compensation tiers",
+        "managed": "6b1fc243225e548abf8ce8c4a31b2b1d0847c86da50655cd48d390741905268f",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDFGQA",
+      "number": 6,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/6",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlaYM"
+    },
+    "lea-06": {
+      "baseline": {
+        "title": "[lea-06] Explicit monthly expected-compensation overrides",
+        "managed": "2fcb4604d8c36b6b73168a30a8a5c82f6475a2f099c50080f483e8d75b47d4bf",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDFO1Q",
+      "number": 7,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/7",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlah0"
+    },
+    "lea-07": {
+      "baseline": {
+        "title": "[lea-07] Plain-integer notice-period answers",
+        "managed": "586c6c79576b1c8761992bcf578fa274b5323b51be0cfba6bc7f091bbb1e9a1a",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDFW0g",
+      "number": 8,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/8",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlapg"
+    },
+    "lea-08": {
+      "baseline": {
+        "title": "[lea-08] Opt-in hiring-team outreach and post-submit timing fixes",
+        "managed": "4b75b06dd0b3fd25d493c3ee1d5ae752f118df05b5f96f7b28fbf7f789fb25bc",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "c29b798f"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDFfuA",
+      "number": 9,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/9",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGlaws"
+    },
+    "lea-10": {
+      "baseline": {
+        "title": "[lea-10] Repository-local workstream and GitHub tracking adoption",
+        "managed": "afcf1854a0045b5d246a8ff89f14160135d452d6a8fd302c4016cb78a741226d",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdDFmHw",
+      "number": 10,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/10",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhGla3Y"
+    },
+    "lea-11": {
+      "baseline": {
+        "title": "[lea-11] Desktop run controls and layout",
+        "managed": "27465b102ded0cf456c43f19735b9c2e07749d51dae226eda05e453ad363cef8",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdWbpTQ",
+      "number": 11,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/11",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG3LdM"
+    },
+    "lea-12": {
+      "baseline": {
+        "title": "[lea-12] Portable Windows release and publication pipeline",
+        "managed": "9c7b8bfe724a62edb511f27b6d838c1502b3fd272e78895e36907ec69021289a",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdWbtCg",
+      "number": 12,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG3Lgo"
+    }
+  }
+}

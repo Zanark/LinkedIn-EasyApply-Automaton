@@ -146,6 +146,14 @@ Answers learned interactively are reused on future runs.
 
 ## Development workflow
 
+Read [`../AGENTS.md`](../AGENTS.md) and the
+[repository tracking contract](github-tracking.md). Actual workstreams live in
+[`../todo/00_INDEX.todo`](../todo/00_INDEX.todo); preserve its numbered `.todo`
+files, eight-field schema and separate perpetual ledger. Review public-safe
+payloads, preview authorized tracking changes, then explicitly apply and read
+back issue/Project/backlink results. This is local invocation, not an activated
+workflow; commits, pushes and live applications require separate authority.
+
 ```powershell
 # Install with dev extras
 python -m venv .venv
@@ -153,13 +161,47 @@ python -m venv .venv
 
 # Quality gates (all must pass)
 .\.venv\Scripts\ruff.exe check .
-.\.venv\Scripts\black.exe --check .
+.\.venv\Scripts\black.exe --check linkedin_easy_apply tests tools\build_windows.py tools\smoke_windows.py tools\capture_screenshots.py tools\todo_sync.py packaging\windows
 .\.venv\Scripts\mypy.exe linkedin_easy_apply
 .\.venv\Scripts\python.exe -m pytest
 ```
 
 Optional extras: `.[ai]` (OpenAI), `.[dashboard]` (Streamlit), `.[export]`
 (XLSX export).
+
+## Desktop and Windows release
+
+The GUI builds CLI argv; it does not duplicate the automation engine.
+`gui/settings_panel.py` collects common run overrides and `gui/settings.py`
+merges only changed values, validates through `config/loader.parse_config`,
+and writes private presets. `gui/process.py` streams UTF-8 output through
+QProcess and forwards input. Stop terminates the child; it is not Ctrl+C.
+
+`runtime.py` separates source/frozen resources from writable workspace data.
+Frozen startup copies missing examples into `%LOCALAPPDATA%\EasyApplyAutomaton`
+(or `LEA_WORKSPACE`), without migrating personal source data. The shared
+`packaging/windows/entry.py` dispatches the GUI and `lea.exe`. The spec builds
+two executables sharing a one-folder runtime and explicitly excludes browsers,
+Streamlit/OpenAI, development helpers and unused Qt PDF/QML/WebEngine features.
+The Qt shared libraries remain replaceable; original notices and LGPL/GPL
+texts are shipped alongside dependency versions and integrity manifests.
+
+On Windows x64, with the existing environment:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r packaging\windows\requirements.txt
+.\.venv\Scripts\python.exe -B tools\build_windows.py
+.\.venv\Scripts\python.exe -B tools\smoke_windows.py dist\windows\EasyApplyAutomaton
+```
+
+`.github/workflows/windows-release.yml` qualifies PRs/main/manual builds.
+Only a pushed `v<pyproject-version>` tag publishes after qualification, using
+the job-scoped GitHub token. The pipeline checks Ruff, Black over product,
+tests and release/tracking tools, mypy, the full test suite and the actual
+frozen GUI/CLI offline. It produces a ZIP, SHA256SUMS and a per-file manifest
+with the exact source SHA. It is not a tracking daemon or a cloud deployment.
+Unsigned binaries, fresh-machine behavior and live browser/applications are
+separate qualification boundaries, not inferred from passing offline checks.
 
 ## Testing strategy
 

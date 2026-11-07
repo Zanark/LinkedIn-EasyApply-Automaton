@@ -1,0 +1,42 @@
+# Post-live-test automation improvements
+Workstream-ID: lea-01
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/2
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-20 original improvement batch
+Status: IN_REVIEW
+Milestone: Reliable form interactions and graceful run shutdown
+Dependencies: None
+
+## Purpose
+Reduce repeated manual interaction while retaining explicit, auditable form behavior.
+This projection omits original user quotations and applicant-specific values.
+
+## Tasks
+- [x] Handle Ctrl+C with modal cleanup, aborted-attempt persistence and a summary.
+- [x] Clean unreferenced screenshots without deleting retained application evidence.
+- [x] Reuse an existing matching resume before attempting programmatic upload.
+- [x] Log aligned score-pass and score-fail decisions.
+- [x] Handle the configured phone-country code independently of the phone number.
+- [x] Reuse learned answers from the database.
+- [x] Accept terminal input or read a manually completed portal field back.
+- [x] Leave already-correct prefilled controls unchanged.
+- [ ] Qualify the original resume-upload and country-code cases against the live target.
+
+## Acceptance criteria
+- [x] Original implementation and focused regression tests are recorded.
+- [x] Configuration and user-facing documentation are updated.
+- [ ] Required live upload/country-code qualification is evidenced, with any selector tuning.
+
+## Completion evidence
+The original 2026-07-20 record attributes implementation to commit `a60b1f9`,
+31 new regression cases and a 109-test green suite with Ruff/Black checks.
+These are historical source claims, not checks rerun by this tracking migration.
+The source explicitly leaves live qualification pending. Later resume-reuse
+success does not independently prove the missing upload path. Publication and
+human acceptance are separate; historical push statements are not current status.
+
+## Completion log
+- 2026-07-20: Original implementation and local verification recorded.
+- 2026-11-06: Public-safe projection created; status intentionally remains
+  IN_REVIEW rather than treating checked implementation tasks as completed live qualification.
+  No new applications or browser interactions are authorized by this migration.

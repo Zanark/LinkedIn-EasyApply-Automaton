@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
+
 import linkedin_easy_apply.forms.easy_apply as ea
 from linkedin_easy_apply.forms.easy_apply import (
     ApplyStatus,
@@ -89,3 +91,40 @@ def test_returns_limit_reached_when_linkedin_rejects_submit(monkeypatch):
     assert result.reason == "LinkedIn daily submission limit reached"
     wf._click.assert_called_once()  # we did click Submit
     wf._discard.assert_called_once()  # then cleaned up the notice
+
+
+@pytest.mark.parametrize("confirmation", ["Your application was sent", "Application submitted"])
+def test_positive_confirmation_is_required_and_preserved(monkeypatch, confirmation):
+    wf = _workflow(WorkflowSettings(), None)
+    marker = MagicMock()
+    marker.inner_text.return_value = confirmation
+    monkeypatch.setattr(ea, "first", lambda *a, **k: marker)
+
+    result = wf._finalize_submit([], 3)
+
+    assert result.status is ApplyStatus.SUBMITTED
+    assert result.reason == f"LinkedIn confirmation: {confirmation}"
+
+
+def test_absence_of_rejection_does_not_count_as_success(monkeypatch):
+    wf = _workflow(WorkflowSettings(), None)
+    monkeypatch.setattr(ea, "first", lambda *a, **k: None)
+    wf._click_action = MagicMock(return_value=True)
+
+    result = wf._finalize_submit([], 3)
+
+    assert result.status is ApplyStatus.UNCONFIRMED
+    assert "No LinkedIn submission confirmation" in result.reason
+    wf._click_action.assert_called_once()
+    wf._discard.assert_not_called()
+
+
+def test_delayed_confirmation_waits_instead_of_failing(monkeypatch):
+    wf = _workflow(WorkflowSettings(), None)
+    marker = MagicMock()
+    marker.inner_text.return_value = "Application submitted"
+    found = iter([None, None, None, None, marker])
+    monkeypatch.setattr(ea, "first", lambda *a, **k: next(found, marker))
+
+    assert wf._submission_outcome() == (ApplyStatus.SUBMITTED, "Application submitted")
+    wf._page.wait_for_timeout.assert_called_once_with(500)

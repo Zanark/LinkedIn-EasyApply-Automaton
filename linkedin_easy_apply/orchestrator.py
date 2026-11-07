@@ -63,8 +63,10 @@ class RunSummary:
     mode: str
     scanned: int = 0
     applied: int = 0
+    dry_runs: int = 0
     skipped: int = 0
     failed: int = 0
+    unconfirmed: int = 0
     skip_reasons: dict[str, int] = field(default_factory=dict)
     outreach_report: Path | None = None
     connection_notes_sent: int = 0
@@ -171,13 +173,19 @@ class Orchestrator:
         interactive = self._config.run.interactive if interactive is None else interactive
 
         reapply = mode == "reapply"
+        direct = mode == "apply" and bool(self._config.search.job_urls)
         targets: list[dict[str, Any]] = []
         searches: list[Any] = []
-        if reapply:
-            targets = self._db.reapply_targets()
-            max_per_run = limit or len(targets) or 1
-            search_names = ["reapply"]
-            run_mode = "dry_run" if dry_run else "reapply"
+        if reapply or direct:
+            targets = (
+                self._db.reapply_targets()
+                if reapply
+                else [{"url": url} for url in self._config.search.job_urls]
+            )
+            default_limit = (len(targets) or 1) if reapply else self._config.jobs.max_per_run
+            max_per_run = limit or default_limit
+            search_names = ["reapply" if reapply else "direct-jobs"]
+            run_mode = "dry_run" if dry_run else mode
         else:
             max_per_run = limit or self._config.jobs.max_per_run
             searches = self._config.search.enabled_searches
@@ -197,6 +205,15 @@ class Orchestrator:
                 interactive,
                 len(targets),
             )
+        elif direct:
+            logger.info(
+                "Targeted apply starting: dry_run={} interactive={} max_per_run={} | "
+                "{} exact job URL(s); no search crawl",
+                dry_run,
+                interactive,
+                max_per_run,
+                len(targets),
+            )
         else:
             logger.info(
                 "Run starting: mode={} dry_run={} interactive={} max_per_run={} | "
@@ -212,7 +229,7 @@ class Orchestrator:
         proceed_connect = True
         try:
             with BrowserManager(self._config.browser) as browser:
-                if reapply:
+                if reapply or direct:
                     self._execute_reapply(
                         browser, targets, summary, dry_run, interactive, max_per_run
                     )
@@ -222,12 +239,19 @@ class Orchestrator:
                     )
             self._db.finish_run(
                 run_id,
-                "completed",
+                "stopped" if summary.unconfirmed else "completed",
                 scanned=summary.scanned,
                 applied=summary.applied,
                 skipped=summary.skipped,
                 failed=summary.failed,
+                notes=(
+                    "Submission unconfirmed; verify LinkedIn before retrying"
+                    if summary.unconfirmed
+                    else None
+                ),
             )
+            if summary.unconfirmed:
+                proceed_connect = False
         except KeyboardInterrupt:
             proceed_connect = False
             logger.warning(
@@ -307,6 +331,9 @@ class Orchestrator:
                     new_jobs += 1
                     summary.scanned += 1
                     self._process_job(browser, job, summary, mode, settings, max_per_run)
+                    if summary.unconfirmed:
+                        logger.error("Stopping run: a submission needs verification on LinkedIn")
+                        return
                     if summary.platform_daily_limit_hit:
                         logger.warning(
                             "Stopping run: LinkedIn's daily submission cap was reached "
@@ -330,24 +357,33 @@ class Orchestrator:
                     )
                     break
 
-        if mode != "scan" and summary.applied < max_per_run:
+        if mode != "scan" and self._completed(summary) < max_per_run:
             logger.warning(
-                "Run ended with {}/{} submission(s): the searches ran out of new matching "
+                "Run ended with {}/{} application(s): the searches ran out of new matching "
                 "jobs{}. Broaden search.searches, raise jobs.max_search_pages, or lower "
                 "--limit to reach the target.",
-                summary.applied,
+                self._completed(summary),
                 max_per_run,
                 " or the daily cap was hit" if self._daily_limit_reached() else "",
             )
 
     def _reached_run_target(self, summary: RunSummary, mode: str, max_per_run: int) -> bool:
         """The crawl's stop condition. ``--limit`` (``max_per_run``) counts
-        *successful submissions* in apply/reapply mode, so skipped, failed and
+        *completed applications* in apply/reapply mode, so skipped, failed and
         aborted jobs never consume the budget; in scan mode there are no
-        submissions, so it counts jobs scanned instead."""
+        submissions, so it counts jobs scanned instead.
+
+        A dry run completes applications without submitting any, so its
+        completions count too - otherwise ``--limit`` would never fire and a
+        dry run would crawl every search page before stopping."""
         if mode == "scan":
             return summary.scanned >= max_per_run
-        return summary.applied >= max_per_run
+        return self._completed(summary) >= max_per_run
+
+    @staticmethod
+    def _completed(summary: RunSummary) -> int:
+        """Applications taken to the end, whether or not they were submitted."""
+        return summary.applied + summary.dry_runs
 
     def _daily_limit_reached(self) -> bool:
         """True when today's submissions have reached the configured ``max_daily`` cap."""
@@ -363,7 +399,7 @@ class Orchestrator:
         interactive: bool,
         max_per_run: int,
     ) -> None:
-        """Retry a fixed set of previously failed/aborted jobs.
+        """Process exact URLs from reapply or ``search.job_urls``.
 
         Unlike :meth:`_execute`, this does not crawl a search: it opens each
         target job by its stored URL and runs the very same per-job pipeline
@@ -381,14 +417,17 @@ class Orchestrator:
             pause_on_unknown=self._config.run.pause_on_unknown_question,
         )
         for target in targets:
-            if summary.applied >= max_per_run:
-                logger.info("Reached reapply limit ({})", max_per_run)
+            if self._daily_limit_reached():
+                logger.info("Reached daily application limit ({})", self._config.jobs.max_daily)
+                return
+            if self._completed(summary) >= max_per_run:
+                logger.info("Reached targeted application limit ({})", max_per_run)
                 return
             url = str(target.get("url") or "")
             label = target.get("title") or url
             if not url:
                 continue
-            logger.info("=== Reapply: {} ===", label)
+            logger.info("=== Target job: {} ===", label)
             job = search_driver.open_job(url)
             if job is None:
                 self._note_skip(summary, "reapply_open_failed", target.get("job_id"))
@@ -396,9 +435,12 @@ class Orchestrator:
                 continue
             summary.scanned += 1
             self._process_job(browser, job, summary, "apply", settings, max_per_run)
+            if summary.unconfirmed:
+                logger.error("Stopping targeted run: a submission needs verification on LinkedIn")
+                return
             if summary.platform_daily_limit_hit:
                 logger.warning(
-                    "Stopping reapply: LinkedIn's daily submission cap was reached "
+                    "Stopping targeted run: LinkedIn's daily submission cap was reached "
                     "(try again tomorrow)."
                 )
                 return
@@ -527,6 +569,8 @@ class Orchestrator:
             return "not_easy_apply"
         if job.already_applied or self._db.has_applied_to_url(job.url):
             return "already_applied"
+        if self._db.has_unconfirmed_application(job.url):
+            return "submission_unconfirmed"
         if (
             job.company
             and job.title
@@ -774,7 +818,16 @@ class Orchestrator:
             logger.warning("LinkedIn daily submission cap hit - ending the run early")
         elif result.status is ApplyStatus.FAILED:
             summary.failed += 1
+        elif result.status is ApplyStatus.UNCONFIRMED:
+            summary.unconfirmed += 1
+            logger.warning(
+                "Submission unconfirmed for {}; not counted as success or failure", job.summary
+            )
         else:
+            if result.status is ApplyStatus.DRY_RUN:
+                # A dry run reaching Submit is a completed application for
+                # budgeting purposes, so --limit bounds a dry run too.
+                summary.dry_runs += 1
             self._note_skip(summary, result.status.value, job_id)
 
     def _record_answers(self, application_id: int, answers: list[AnsweredQuestion]) -> None:

@@ -200,3 +200,14 @@ def test_every_generated_command_exists_in_the_cli():
         "gui",
     }
     assert generated <= _registered_commands()
+
+
+def test_optional_tool_flags():
+    from linkedin_easy_apply.gui.commands import tool_args
+
+    args = tool_args(
+        "Preview résumé choice", "config.yaml", "Engineer", option_value="Backend role"
+    )
+    assert args[-2:] == ["--description", "Backend role"]
+    args = tool_args("Verify browser session", "config.yaml", option_value="https://example.com/")
+    assert args[-2:] == ["--url", "https://example.com/"]

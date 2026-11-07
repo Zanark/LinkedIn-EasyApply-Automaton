@@ -1,0 +1,40 @@
+# Opt-in hiring-team outreach and post-submit timing fixes
+Workstream-ID: lea-08
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/9
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-21 outreach batch and first-live-test fixes
+Status: IN_REVIEW
+Milestone: Explicitly approved outreach with durable deduplication
+Dependencies: None
+
+## Purpose
+Track the historical opt-in outreach implementation and its original live
+selector-qualification gap. This is not authorization to send messages, and
+does not redefine the current product's later outreach/reporting modes.
+
+## Tasks
+- [x] Resolve opt-in configuration and CLI overrides.
+- [x] Render an approval draft and avoid unsolicited automatic sends.
+- [x] Detect recruiter cards, respect unsupported paid-message cases and cap sends.
+- [x] Persist draft outcomes and deduplicate by supported contact identity.
+- [x] Correct flag gating and preserve the post-submit modal until outreach inspection.
+- [x] Add fixture coverage, decision logs and affected documentation.
+- [ ] Qualify the source's remaining hiring-card and compose selectors against the target.
+
+## Acceptance criteria
+- [x] Local source records the implementation, fixes and regression results.
+- [ ] The explicitly pending live selector cases have evidence, not assumed fixture equivalence.
+
+## Completion evidence
+The source records nine outreach fixture cases with a 185-test suite, then
+two gating regressions and a 187-test green suite after the timing/flag fixes,
+with clean Ruff/Black/mypy checks. It explicitly leaves live selector validation
+open. Recorded outreach commits are historical provenance, not a current push
+claim. No recruiter names, profile links, message bodies or applicant data
+are included, and this migration sends no outreach.
+
+## Completion log
+- 2026-07-21: Original outreach implementation and local regression evidence recorded.
+- 2026-07-21: First-live-test gating and modal-order fixes recorded.
+- 2026-11-06: Kept IN_REVIEW because the original target-qualification gap lacks
+  independent closure evidence. Human acceptance and publication remain separate.

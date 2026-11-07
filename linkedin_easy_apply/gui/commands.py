@@ -8,10 +8,13 @@ testable and makes the exact command visible to the user before it runs.
 
 from __future__ import annotations
 
+import os
 import shlex
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from linkedin_easy_apply.runtime import is_frozen
 
 __all__ = [
     "RUN_ACTIONS",
@@ -40,6 +43,7 @@ RUN_ACTIONS: dict[str, str] = {
     "Connect (send pending invitations)": "connect",
 }
 
+
 @dataclass(frozen=True)
 class Tool:
     """A one-shot CLI command the Tools page can run."""
@@ -47,6 +51,8 @@ class Tool:
     command: str
     hint: str = ""  # placeholder text; empty means the tool takes no value
     accepts_config: bool = True
+    optional_flag: str = ""
+    optional_hint: str = ""
 
     @property
     def needs_value(self) -> bool:
@@ -57,11 +63,21 @@ class Tool:
 # make Typer exit with a usage error.
 TOOLS: dict[str, Tool] = {
     "Sign in to LinkedIn": Tool("login"),
-    "Verify browser session": Tool("test-browser"),
+    "Verify browser session": Tool(
+        "test-browser",
+        optional_flag="--url",
+        optional_hint="Optional URL (default: LinkedIn feed)",
+    ),
     "Database statistics": Tool("stats"),
     "Scaffold example configs": Tool("init", accepts_config=False),
     "Show version": Tool("version", accepts_config=False),
-    "Preview résumé choice": Tool("resume-test", "Job title, e.g. Senior Backend Engineer"),
+    "Install optional Chromium": Tool("install-browser", accepts_config=False),
+    "Preview résumé choice": Tool(
+        "resume-test",
+        "Job title, e.g. Senior Backend Engineer",
+        optional_flag="--description",
+        optional_hint="Optional job description",
+    ),
     "Recognise a question": Tool("test-form", "Question, e.g. Years of Java experience?"),
 }
 
@@ -143,7 +159,7 @@ def run_args(options: RunOptions) -> list[str]:
     return args + options.extra
 
 
-def tool_args(tool: str, config: str, value: str = "") -> list[str]:
+def tool_args(tool: str, config: str, value: str = "", *, option_value: str = "") -> list[str]:
     """Build the CLI arguments for a one-shot tool command."""
     if tool not in TOOLS:
         raise ValueError(f"Unknown tool: {tool!r}")
@@ -155,6 +171,10 @@ def tool_args(tool: str, config: str, value: str = "") -> list[str]:
         args.append(value.strip())
     if spec.accepts_config:
         args += ["--config", config]
+    if option_value.strip():
+        if not spec.optional_flag:
+            raise ValueError(f"'{tool}' does not accept an additional option")
+        args += [spec.optional_flag, option_value.strip()]
     return args
 
 
@@ -190,9 +210,13 @@ def full_argv(
     The GUI always runs the *current* interpreter so a virtual environment is
     inherited automatically.
     """
+    if is_frozen() and python is None and script is None:
+        return [str(Path(sys.executable).with_name("lea.exe")), *args]
     return [python or sys.executable, str(script or entry_script()), *args]
 
 
 def describe(argv: list[str]) -> str:
     """Render *argv* as a copy-pasteable command line."""
-    return " ".join(shlex.quote(part) for part in argv)
+    if os.name == "nt":
+        return "& " + " ".join("'" + part.replace("'", "''") + "'" for part in argv)
+    return shlex.join(argv)

@@ -175,7 +175,7 @@ _SALARY_WORDS = (
     "wage",
     "wages",
 )
-_SALARY_PHRASES = ("take home", "in hand", "cost to company")
+_SALARY_PHRASES = ("take home", "in hand", "cost to company", "financial expectations")
 _SALARY_CATEGORIES = frozenset({QuestionCategory.SALARY_EXPECTED, QuestionCategory.SALARY_CURRENT})
 
 
@@ -268,6 +268,10 @@ class QuestionParser:
                 tags.append("annual")
             if _word(norm, "inr", "rupee", "rupees", "rs", "lpa", "lakh", "lakhs", "lac", "lacs"):
                 tags.append("inr")
+            # "in LPA" / "in lakhs" asks for the figure in units of 100,000,
+            # so answering with the raw rupee amount is off by five digits.
+            if _word(norm, "lpa", "lakh", "lakhs", "lac", "lacs"):
+                tags.append("lakhs")
         elif category is QuestionCategory.NOTICE_PERIOD:
             if _word(norm, "day", "days"):
                 tags.append("days")
@@ -309,6 +313,10 @@ class QuestionParser:
         skill = self._find_skill(norm)
         if skill and _EXPERIENCE_HINT.search(norm):
             return QuestionCategory.EXPERIENCE_SKILL, skill, 0.95
+        if _EXPERIENCE_HINT.search(norm) and re.search(
+            r"\b(?:with|using|in|on)\s+(?!total\b|years?\b)\S+", norm
+        ):
+            return QuestionCategory.UNKNOWN, None, 0.9
 
         # Salary. Requires an explicit compensation token so non-salary
         # "current <X>" questions (location, designation, company) are never
@@ -330,6 +338,8 @@ class QuestionParser:
             return QuestionCategory.VISA_SPONSORSHIP, None, 0.92
         if "relocat" in norm:
             return QuestionCategory.RELOCATION, None, 0.92
+        if _word(norm, "hybrid", "commute", "commuting"):
+            return QuestionCategory.UNKNOWN, None, 0.9
         if _word(norm, "remote"):
             return QuestionCategory.REMOTE, None, 0.85
         if _word(norm, "onsite") or "on site" in norm or "from office" in norm:
@@ -346,6 +356,27 @@ class QuestionParser:
             return QuestionCategory.RACE, None, 0.9
 
         # Names / location.
+        # A name question about *someone else* - a referrer, a reference, a
+        # manager, an emergency contact - must never be answered with the
+        # applicant's own name, which would put a false claim on the
+        # application. Treat it as unknown so it is left blank or asked about.
+        if "name" in norm and (
+            _word(
+                norm,
+                "referred",
+                "referral",
+                "referrals",
+                "referrer",
+                "referee",
+                "reference",
+                "references",
+                "supervisor",
+                "manager",
+                "recruiter",
+            )
+            or "emergency contact" in norm
+        ):
+            return QuestionCategory.UNKNOWN, None, 0.9
         if "first name" in norm:
             return QuestionCategory.FIRST_NAME, None, 0.9
         if "last name" in norm or _word(norm, "surname"):

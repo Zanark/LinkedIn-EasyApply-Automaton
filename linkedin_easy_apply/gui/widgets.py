@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import override
 
 from PySide6.QtGui import QFont, QTextCursor
 from PySide6.QtWidgets import (
@@ -91,12 +92,13 @@ class Console(QPlainTextEdit):
         self.setObjectName("Console")
         self.setReadOnly(True)
         self.setMaximumBlockCount(self.MAX_BLOCKS)
-        self.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
         self.setFont(QFont("Cascadia Mono", 10))
         self._palette = palette
         self._levels = dict(log_palette(palette))
         self._lines: list[tuple[str, str | None]] = []
         self._pending = ""
+        self._pending_visible = False
 
     def apply_palette(self, palette: Palette) -> None:
         """Adopt *palette* and repaint every line already on screen."""
@@ -105,23 +107,29 @@ class Console(QPlainTextEdit):
         kept = list(self._lines)
         self._lines.clear()
         super().clear()
+        self._pending_visible = False
         for text, role in kept:
             self._append_line(text, role)
+        self._show_pending()
 
     def clear(self) -> None:
         self._lines.clear()
         self._pending = ""
+        self._pending_visible = False
         super().clear()
 
     def append_text(self, chunk: str) -> None:
-        """Buffer *chunk* and render every complete line it contains."""
+        """Show complete lines and unterminated prompts immediately."""
+        self._remove_pending()
         self._pending += chunk.replace("\r\n", "\n").replace("\r", "\n")
         *lines, self._pending = self._pending.split("\n")
         for line in lines:
             self._append_line(line)
+        self._show_pending()
 
     def flush(self) -> None:
         if self._pending:
+            self._remove_pending()
             self._append_line(self._pending)
             self._pending = ""
 
@@ -131,14 +139,36 @@ class Console(QPlainTextEdit):
         *role* is a palette role name, not a colour, so the line follows a
         later theme switch.
         """
+        self.flush()
         self._append_line(text, role)
+
+    def _remove_pending(self) -> None:
+        if not self._pending_visible:
+            return
+        cursor = self.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock, QTextCursor.MoveMode.KeepAnchor)
+        cursor.removeSelectedText()
+        if cursor.blockNumber():
+            cursor.deletePreviousChar()
+        self._pending_visible = False
+
+    def _show_pending(self) -> None:
+        if self._pending:
+            clean = _ANSI_RE.sub("", self._pending)
+            colour = self._colour_for(clean, None)
+            self.appendHtml(f'<span style="color:{colour}">{_escape(clean)}</span>')
+            self._pending_visible = True
+            self.moveCursor(QTextCursor.MoveOperation.End)
 
     def _colour_for(self, text: str, role: str | None) -> str:
         if role is not None:
             return self._palette[role]
         match = _LEVEL_RE.search(text)
-        return self._levels.get(match.group(1), self._palette["text"]) if match else (
-            self._palette["text"]
+        return (
+            self._levels.get(match.group(1), self._palette["text"])
+            if match
+            else (self._palette["text"])
         )
 
     def _append_line(self, line: str, role: str | None = None) -> None:
@@ -148,8 +178,9 @@ class Console(QPlainTextEdit):
             del self._lines[: len(self._lines) - self.MAX_BLOCKS]
         colour = self._colour_for(clean, role)
         self.appendHtml(f'<span style="color:{colour}; white-space:pre;">{_escape(clean)}</span>')
-        self.moveCursor(QTextCursor.End)
+        self.moveCursor(QTextCursor.MoveOperation.End)
 
+    @override
     def contextMenuEvent(self, event) -> None:  # noqa: ANN001 - Qt signature
         menu = self.createStandardContextMenu()
         menu.addSeparator()
@@ -159,10 +190,7 @@ class Console(QPlainTextEdit):
 
 def _escape(text: str) -> str:
     return (
-        text.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace(" ", "&nbsp;")
+        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace(" ", "&nbsp;")
     )
 
 
@@ -189,7 +217,7 @@ class PathRow(QWidget):
         value.setCursorPosition(0)
         value.setToolTip(str(path))
         value.setMinimumWidth(160)
-        value.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+        value.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         button = QPushButton("Open")
         button.clicked.connect(lambda: on_open(path))
         row.addWidget(name)

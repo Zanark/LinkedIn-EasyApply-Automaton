@@ -1,0 +1,39 @@
+# Dashboard skip analytics and KPI detail panels
+Workstream-ID: lea-09
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/1
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: dashboard.todo, completed feature bundle
+Status: DONE
+Milestone: Explain skipped jobs and drill into dashboard metrics
+Dependencies: None
+
+## Purpose
+Make skipped-job totals, reasons and metric-specific detail available without
+mixing skip events into the application-submission records.
+
+## Tasks
+- [x] Add the historical all-time skipped KPI.
+- [x] Persist individual skip events separately from applications.
+- [x] Show reason, time and job-metadata breakdowns and per-job details.
+- [x] Add KPI cards that open category-specific inline detail panels.
+- [x] Keep aggregation testable without importing Streamlit.
+- [x] Update affected user and learning documentation.
+
+## Acceptance criteria
+- [x] Skip persistence/aggregation and focus-view behavior have recorded tests.
+- [x] Navigation can dismiss the inline panel without changing application state.
+- [x] The historical completed bundle has no recorded pending in-scope criteria.
+
+## Completion evidence
+The completed legacy dashboard record attributes nine cases to `test_skips.py`
+and eight to `test_focus.py`. It identifies `Database.record_skip`,
+`Database.skip_events`, `Orchestrator._note_skip`, `build_focus_view` and
+the dashboard's skipped section/focus panel.
+No date is invented for that undated source. These are attributed historical
+implementation results, not tests rerun by this migration or human approval.
+No database rows, screenshots containing applicant data or exported records are mirrored.
+
+## Completion log
+- Undated legacy record: completed skip analytics and KPI drill-down documented.
+- 2026-11-06: Selected the unambiguous completed bundle for the tracking pilot.
+  GitHub creation/closure timestamps belong to the import, not the original work.

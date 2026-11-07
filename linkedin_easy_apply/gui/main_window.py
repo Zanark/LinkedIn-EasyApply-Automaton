@@ -9,12 +9,24 @@ simply launches it (as does ``apply.py dashboard``).
 from __future__ import annotations
 
 import webbrowser
+from dataclasses import replace
 from pathlib import Path
+from typing import override
 
 import yaml
 from PySide6.QtCore import QSettings, Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QDesktopServices, QIcon, QKeySequence
+from PySide6.QtGui import (
+    QAction,
+    QColor,
+    QDesktopServices,
+    QIcon,
+    QKeySequence,
+    QPainter,
+    QPen,
+    QPixmap,
+)
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QApplication,
     QButtonGroup,
     QCheckBox,
@@ -29,7 +41,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QScrollArea,
     QSpinBox,
+    QSplitter,
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
@@ -38,10 +52,15 @@ from PySide6.QtWidgets import (
 )
 
 from linkedin_easy_apply import __version__
+from linkedin_easy_apply.config import AppConfig, ConfigError, load_config
+from linkedin_easy_apply.config.loader import parse_config
 from linkedin_easy_apply.gui import commands
 from linkedin_easy_apply.gui.process import CommandRunner, start_detached
+from linkedin_easy_apply.gui.settings import write_run_config
+from linkedin_easy_apply.gui.settings_panel import RunSettings
 from linkedin_easy_apply.gui.theme import DEFAULT_THEME, THEMES, Palette, build_stylesheet, resolve
 from linkedin_easy_apply.gui.widgets import Card, Console, PathRow, heading, muted
+from linkedin_easy_apply.runtime import is_frozen, resource_root, workspace_root
 
 __all__ = ["MainWindow", "run"]
 
@@ -51,23 +70,27 @@ _DASHBOARD_URL = "http://localhost:8501"
 
 
 def project_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    return workspace_root()
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, config_path: str, theme: str | None = None) -> None:
+    def __init__(
+        self, config_path: str, theme: str | None = None, *, workspace: Path | None = None
+    ) -> None:
         super().__init__()
         self._settings = QSettings(_ORG, _APP)
         stored = str(self._settings.value("theme", DEFAULT_THEME))
         self._palette: Palette = resolve(theme or stored)
-        self._root = project_root()
+        self._root = workspace or project_root()
         self._config_path = config_path
         self._runner = CommandRunner(self._root, self)
         self._dashboard_started = False
+        self._loaded_config: AppConfig | None = None
 
         self.setWindowTitle(f"Easy Apply Automaton {__version__}")
         self.setWindowIcon(application_icon())
-        self.resize(1180, 780)
+        self.resize(1320, 860)
+        self.setMinimumSize(940, 640)
         self._build_ui()
         self._connect_runner()
         self._apply_theme(self._palette)
@@ -100,7 +123,7 @@ class MainWindow(QMainWindow):
     def _build_sidebar(self) -> QWidget:
         sidebar = QFrame()
         sidebar.setObjectName("Sidebar")
-        sidebar.setFixedWidth(208)
+        sidebar.setFixedWidth(180)
         column = QVBoxLayout(sidebar)
         column.setContentsMargins(12, 16, 12, 16)
         column.setSpacing(6)
@@ -108,7 +131,7 @@ class MainWindow(QMainWindow):
         title = QLabel("Easy Apply")
         title.setProperty("role", "heading")
         column.addWidget(title)
-        column.addWidget(muted("Automaton"))
+        column.addWidget(muted(f"AUTOMATON  /  {__version__}"))
         column.addSpacing(14)
 
         self._nav_buttons: list[QPushButton] = []
@@ -132,6 +155,8 @@ class MainWindow(QMainWindow):
             self._nav_buttons.append(button)
 
         column.addStretch(1)
+        column.addWidget(muted("Your browser.\nYour answers.\nOne automation engine."))
+        column.addSpacing(12)
         self._theme_button = QPushButton()
         self._theme_button.setToolTip("Switch between DeepSeaFoam and Harbor Daylight")
         self._theme_button.clicked.connect(self._toggle_theme)
@@ -159,9 +184,14 @@ class MainWindow(QMainWindow):
         dashboard_action.setShortcut(QKeySequence("Ctrl+D"))
         dashboard_action.triggered.connect(self._open_dashboard)
         bar.addAction(dashboard_action)
+        if is_frozen():
+            dashboard_action.setEnabled(False)
+            dashboard_action.setToolTip(
+                "Streamlit analytics is available in the source installation."
+            )
 
         quit_action = QAction("Quit", self)
-        quit_action.setShortcut(QKeySequence.Quit)
+        quit_action.setShortcut(QKeySequence.StandardKey.Quit)
         quit_action.triggered.connect(self.close)
         self.addAction(quit_action)
 
@@ -177,57 +207,113 @@ class MainWindow(QMainWindow):
 
     def _build_run_page(self) -> QWidget:
         page, column = self._page(
-            "Run",
-            "Every action here runs the same apply.py command the CLI does. "
-            "The exact command is echoed into the log before it starts.",
+            "Run workspace",
+            "Set up a run on the left. Follow every decision and answer prompts on the right.",
         )
+        self._run_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._run_splitter.setChildrenCollapsible(False)
+        setup_scroll = QScrollArea()
+        setup_scroll.setWidgetResizable(True)
+        setup_scroll.setMinimumWidth(330)
+        setup_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        setup = QWidget()
+        setup_layout = QVBoxLayout(setup)
+        setup_layout.setContentsMargins(0, 0, 8, 0)
+        setup_layout.setSpacing(12)
 
-        controls = Card("Action")
+        controls = Card("1  Choose an action")
         self._action_box = QComboBox()
         for label in commands.RUN_ACTIONS:
             self._action_box.addItem(label)
+        self._action_box.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
         self._action_box.currentTextChanged.connect(self._on_action_changed)
 
         self._limit_spin = QSpinBox()
-        self._limit_spin.setRange(0, 999)
-        self._limit_spin.setSpecialValueText("config default")
+        self._limit_spin.setRange(0, 100000)
+        self._limit_spin.setSpecialValueText("Command default")
         self._limit_spin.setToolTip(
-            "apply/reapply: successful submissions to target. scan: jobs to scan. 0 = use config."
+            "Apply: confirmed submissions. Scan: jobs. Reapply: retry cap. Connect: invitations. "
+            "Zero uses the command's default."
         )
         self._url_field = QLineEdit()
-        self._url_field.setPlaceholderText("Optional: override searches with one LinkedIn URL")
+        self._url_field.setPlaceholderText("Optional LinkedIn search URL")
+        self._connect_run = QSpinBox()
+        self._connect_run.setRange(0, 2147483647)
+        self._connect_run.setSpecialValueText("All pending runs")
+        self._connect_run.setToolTip("Only send connection notes drafted in this run ID.")
+        self._list_only = QCheckBox("List retry targets only (no browser)")
 
         form = QFormLayout()
-        form.setSpacing(8)
+        form.setSpacing(10)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         form.addRow("Action", self._action_box)
-        form.addRow("Limit", self._limit_spin)
+        form.addRow("Run target", self._limit_spin)
         form.addRow("Search URL", self._url_field)
+        form.addRow("Draft run ID", self._connect_run)
+        self._action_form = form
         controls.body().addLayout(form)
+        controls.add(self._list_only)
+        self._action_hint = muted("")
+        controls.add(self._action_hint)
+        setup_layout.addWidget(controls)
 
-        self._dry_run = QCheckBox("Dry run (fill everything, never submit)")
-        self._ignore_score = QCheckBox("Ignore score (apply regardless of scoring.threshold)")
-        self._confirm_submit = QCheckBox("Confirm each submit in the log window")
-        self._confirm_submit.setToolTip(
-            "Leave this off for GUI runs: confirmation prompts need a terminal to answer them."
+        safety = Card("2  Review run behavior")
+        self._dry_run = QCheckBox("Dry run - never submit or send")
+        self._dry_run.setChecked(True)
+        self._ignore_score = QCheckBox("Ignore the minimum score")
+        self._confirm_submit = QCheckBox("Confirm before every application")
+        self._interactive = QCheckBox("Answer unknown questions in this window")
+        self._interactive.setChecked(True)
+        self._interactive.setToolTip(
+            "Turn off to add --yes. Unresolved questions are not invented."
         )
-        self._confirm_submit.setEnabled(False)
-        self._outreach = QCheckBox("Draft hiring-team outreach after each apply")
+        self._outreach = QCheckBox("Hiring-team outreach (mixed = config)")
         self._outreach.setTristate(True)
-        self._outreach.setCheckState(Qt.PartiallyChecked)
+        self._outreach.setCheckState(Qt.CheckState.PartiallyChecked)
         self._outreach.setToolTip("Partially checked = use the outreach.enabled config value")
         self._verbose = QCheckBox("Verbose (DEBUG logging)")
         for box in (
             self._dry_run,
             self._ignore_score,
             self._confirm_submit,
+            self._interactive,
             self._outreach,
             self._verbose,
         ):
-            controls.add(box)
-        column.addWidget(controls)
+            safety.add(box)
+        safety.add(muted("Live Apply, Reapply and Connect always ask before starting."))
+        setup_layout.addWidget(safety)
+        advanced = Card("3  Tune this run")
+        self._run_settings = RunSettings()
+        advanced.add(self._run_settings)
+        setup_layout.addWidget(advanced)
+        setup_layout.addStretch(1)
+        setup_scroll.setWidget(setup)
+        self._run_splitter.addWidget(setup_scroll)
 
+        execution = QWidget()
+        execution.setMinimumWidth(300)
+        execution_layout = QVBoxLayout(execution)
+        execution_layout.setContentsMargins(8, 0, 0, 0)
+        execution_layout.setSpacing(10)
+        state_row = QHBoxLayout()
+        self._run_state = QLabel("READY")
+        self._run_state.setProperty("role", "badge")
+        state_row.addWidget(self._run_state)
+        state_row.addStretch(1)
+        clear_button = QPushButton("Clear log")
+        state_row.addWidget(clear_button)
+        execution_layout.addLayout(state_row)
+        self._command_preview = QPlainTextEdit()
+        self._command_preview.setReadOnly(True)
+        self._command_preview.setObjectName("CommandPreview")
+        self._command_preview.setMaximumHeight(76)
+        execution_layout.addWidget(self._command_preview)
         buttons = QHBoxLayout()
-        self._start_button = QPushButton("Start")
+        self._start_button = QPushButton("Start scan")
         self._start_button.setProperty("role", "primary")
         self._start_button.clicked.connect(self._start_run)
         self._stop_button = QPushButton("Stop")
@@ -236,17 +322,53 @@ class MainWindow(QMainWindow):
         self._stop_button.clicked.connect(self._runner.stop)
         copy_button = QPushButton("Copy command")
         copy_button.clicked.connect(self._copy_command)
-        clear_button = QPushButton("Clear log")
         buttons.addWidget(self._start_button)
         buttons.addWidget(self._stop_button)
         buttons.addWidget(copy_button)
-        buttons.addWidget(clear_button)
         buttons.addStretch(1)
-        column.addLayout(buttons)
+        execution_layout.addLayout(buttons)
 
         self._console = Console(self._palette)
         clear_button.clicked.connect(self._console.clear)
-        column.addWidget(self._console, 1)
+        execution_layout.addWidget(self._console, 1)
+        execution_layout.addWidget(
+            muted(
+                "Prompt input: type an answer, y or n. Send Enter accepts a prompt's displayed default."
+            )
+        )
+        input_row = QHBoxLayout()
+        self._input = QLineEdit()
+        self._input.setPlaceholderText("Answer the current CLI prompt...")
+        self._input.returnPressed.connect(self._send_input)
+        self._send_button = QPushButton("Send")
+        self._send_button.clicked.connect(self._send_input)
+        self._enter_button = QPushButton("Send Enter")
+        self._enter_button.clicked.connect(lambda: self._send_input(empty=True))
+        input_row.addWidget(self._input, 1)
+        input_row.addWidget(self._send_button)
+        input_row.addWidget(self._enter_button)
+        execution_layout.addLayout(input_row)
+        for field in (self._input, self._send_button, self._enter_button):
+            field.setEnabled(False)
+        self._run_splitter.addWidget(execution)
+        self._run_splitter.setSizes([410, 670])
+        self._run_splitter.setStretchFactor(0, 0)
+        self._run_splitter.setStretchFactor(1, 1)
+        column.addWidget(self._run_splitter, 1)
+        self._run_settings.changed.connect(self._update_command_preview)
+        for box in (
+            self._dry_run,
+            self._ignore_score,
+            self._confirm_submit,
+            self._interactive,
+            self._outreach,
+            self._verbose,
+            self._list_only,
+        ):
+            box.stateChanged.connect(self._update_command_preview)
+        self._limit_spin.valueChanged.connect(self._update_command_preview)
+        self._connect_run.valueChanged.connect(self._update_command_preview)
+        self._url_field.textChanged.connect(self._update_command_preview)
         self._on_action_changed(self._action_box.currentText())
         return page
 
@@ -257,7 +379,7 @@ class MainWindow(QMainWindow):
             "loader the CLI uses, so a mistake is caught here rather than mid-run.",
         )
         self._config_editor = QPlainTextEdit()
-        self._config_editor.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self._config_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         column.addWidget(self._config_editor, 1)
 
         row = QHBoxLayout()
@@ -284,7 +406,7 @@ class MainWindow(QMainWindow):
             "YAML syntax only; sync-answers on the Tools page checks the content.",
         )
         self._answers_editor = QPlainTextEdit()
-        self._answers_editor.setLineWrapMode(QPlainTextEdit.NoWrap)
+        self._answers_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         column.addWidget(self._answers_editor, 1)
 
         row = QHBoxLayout()
@@ -321,7 +443,7 @@ class MainWindow(QMainWindow):
         self._stats_table.horizontalHeader().setStretchLastSection(True)
         self._stats_table.verticalHeader().setVisible(False)
         self._stats_table.setAlternatingRowColors(True)
-        self._stats_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self._stats_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         stats_card = Card("Database")
         stats_card.add(self._stats_table)
@@ -340,6 +462,14 @@ class MainWindow(QMainWindow):
         open_dashboard = QPushButton("Open dashboard")
         open_dashboard.setProperty("role", "primary")
         open_dashboard.clicked.connect(self._open_dashboard)
+        if is_frozen():
+            open_dashboard.setEnabled(False)
+            dashboard_card.add(
+                muted(
+                    "The portable desktop build excludes Streamlit to keep the download smaller. "
+                    "Use the database snapshot/export here, or install the dashboard source extra."
+                )
+            )
         browser = QPushButton("Open in browser")
         browser.clicked.connect(lambda: webbrowser.open(_DASHBOARD_URL))
         dashboard_card.add_row(open_dashboard, browser)
@@ -364,10 +494,12 @@ class MainWindow(QMainWindow):
         self._tool_box.addItems(list(commands.TOOLS))
         self._tool_box.currentTextChanged.connect(self._on_tool_changed)
         self._tool_value = QLineEdit()
+        self._tool_option = QLineEdit()
 
         form = QFormLayout()
         form.addRow("Tool", self._tool_box)
         form.addRow("Value", self._tool_value)
+        form.addRow("Optional", self._tool_option)
         card.body().addLayout(form)
 
         run_button = QPushButton("Run")
@@ -378,6 +510,7 @@ class MainWindow(QMainWindow):
 
         paths = Card("Locations")
         for label, relative in (
+            ("Workspace", "."),
             ("Logs", "logs"),
             ("Screenshots", "screenshots"),
             ("Generated résumés", "generated/resume"),
@@ -394,11 +527,12 @@ class MainWindow(QMainWindow):
     def _apply_theme(self, palette: Palette) -> None:
         self._palette = palette
         application = QApplication.instance()
-        if application is not None:
+        if isinstance(application, QApplication):
             application.setStyleSheet(build_stylesheet(palette))
         self._console.apply_palette(palette)
         other = self._other_theme().label
-        self._theme_button.setText(f"Theme: {palette.label}")
+        self._theme_button.setText("Light mode" if palette.is_dark else "Dark mode")
+        self._theme_button.setIcon(theme_icon(palette))
         self._theme_button.setToolTip(f"Switch to {other}")
         self._settings.setValue("theme", palette.key)
 
@@ -419,16 +553,18 @@ class MainWindow(QMainWindow):
             config=self._config_path,
             limit=self._limit_spin.value() or None,
             url=self._url_field.text().strip() or None,
-            dry_run=self._dry_run.isChecked(),
+            dry_run=action != "scan" and self._dry_run.isChecked(),
             ignore_score=self._ignore_score.isChecked(),
-            confirm_submit=False,
+            confirm_submit=self._confirm_submit.isChecked(),
             message_hiring_team=(
                 None
-                if outreach_state == Qt.PartiallyChecked
-                else outreach_state == Qt.Checked
+                if outreach_state == Qt.CheckState.PartiallyChecked
+                else outreach_state == Qt.CheckState.Checked
             ),
-            assume_yes=True,
+            assume_yes=not self._interactive.isChecked(),
             verbose=self._verbose.isChecked(),
+            connect_run_id=self._connect_run.value() or None,
+            list_only=self._list_only.isChecked(),
         )
 
     def _on_action_changed(self, label: str) -> None:
@@ -436,35 +572,118 @@ class MainWindow(QMainWindow):
         self._url_field.setEnabled(action in {"scan", "apply"})
         self._ignore_score.setEnabled(action in {"apply", "reapply"})
         self._outreach.setEnabled(action in {"apply", "reapply"})
+        self._confirm_submit.setEnabled(action in {"apply", "reapply"})
+        self._interactive.setEnabled(action != "scan")
         self._dry_run.setEnabled(action != "scan")
-        if action == "scan":
-            self._dry_run.setChecked(False)
+        self._connect_run.setVisible(action == "connect")
+        self._action_form.labelForField(self._connect_run).setVisible(action == "connect")
+        self._list_only.setVisible(action == "reapply")
+        self._action_hint.setText(
+            {
+                "scan": "Discover and score jobs. Never fills or submits an application.",
+                "apply": "Target confirmed submissions; skips and failures do not count toward the target.",
+                "reapply": "Retry failed or aborted jobs. Already submitted and uncertain submits stay excluded.",
+                "connect": "Send pending free connection invitations. This does not apply to jobs.",
+            }[action]
+        )
+        self._update_command_preview()
+
+    def _update_command_preview(self) -> None:
+        if not hasattr(self, "_command_preview"):
+            return
+        options = self._current_options()
+        if self._run_settings.overrides():
+            options = replace(options, config="<private run preset created on Start or Copy>")
+        elif (
+            self._loaded_config is not None
+            and options.action in {"apply", "reapply"}
+            and options.dry_run != self._loaded_config.run.dry_run
+        ):
+            options = replace(options, config="<private run preset created on Start or Copy>")
+        argv = commands.full_argv(commands.run_args(options))
+        self._command_preview.setPlainText(commands.describe(argv))
+        labels = {
+            "scan": "scan",
+            "apply": "applications",
+            "reapply": "retry",
+            "connect": "connections",
+        }
+        self._start_button.setText(f"Start {labels[options.action]}")
+
+    def _prepared_options(self) -> commands.RunOptions:
+        if (
+            self._config_editor.document().isModified()
+            or self._answers_editor.document().isModified()
+        ):
+            raise ConfigError(
+                "Save or reload the edited Configuration/Answers before starting a run."
+            )
+        options = self._current_options()
+        config = load_config(self._config_file())
+        overrides = self._run_settings.overrides()
+        if options.action in {"apply", "reapply"} and config.run.dry_run != options.dry_run:
+            overrides["run.dry_run"] = options.dry_run
+        if overrides:
+            path = write_run_config(self._config_file(), overrides, self._root)
+            options = replace(options, config=str(path))
+            self._console.note(f"Private run settings saved to {path}", "muted")
+        return options
 
     def _start_run(self) -> None:
-        options = self._current_options()
-        if options.action == "apply" and not options.dry_run:
+        if self._runner.busy:
+            return
+        try:
+            options = self._prepared_options()
+        except (ConfigError, OSError) as exc:
+            QMessageBox.warning(self, "Run not started", str(exc))
+            return
+        live = options.action != "scan" and not options.dry_run
+        if options.action == "reapply" and options.list_only:
+            live = False
+        if live:
             confirmation = QMessageBox.question(
                 self,
-                "Submit real applications?",
-                "This submits real Easy Apply applications to LinkedIn.\n\nContinue?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
+                "Start a live LinkedIn action?",
+                f"Action: {options.action}\n\n"
+                "This can submit real applications or send real invitations/messages "
+                "according to the selected settings.\n"
+                "Review your answers, resume, limits and outreach settings first.\n\nContinue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
             )
-            if confirmation != QMessageBox.Yes:
+            if confirmation != QMessageBox.StandardButton.Yes:
                 return
         self._run(commands.run_args(options))
 
     def _copy_command(self) -> None:
-        argv = commands.full_argv(commands.run_args(self._current_options()))
+        try:
+            options = self._prepared_options()
+        except (ConfigError, OSError) as exc:
+            QMessageBox.warning(self, "Command not copied", str(exc))
+            return
+        argv = commands.full_argv(commands.run_args(options))
         clipboard = QApplication.clipboard()
         if clipboard is not None:
             clipboard.setText(commands.describe(argv))
         self.statusBar().showMessage("Command copied to the clipboard", 4000)
 
+    def _send_input(self, _checked: bool = False, *, empty: bool = False) -> None:
+        text = "" if empty else self._input.text()
+        if not self._runner.send_input(text):
+            self._console.note("No running command accepted this input.", "warning")
+            return
+        self._console.note("[input sent]" if text else "[Enter sent]", "muted")
+        self._input.clear()
+
     def _run_tool(self) -> None:
         tool = self._tool_box.currentText()
         try:
-            args = commands.tool_args(tool, self._config_path, self._tool_value.text())
+            args = commands.tool_args(
+                tool,
+                self._config_path,
+                self._tool_value.text(),
+                option_value=self._tool_option.text(),
+            )
         except ValueError as exc:
             QMessageBox.warning(self, "Missing value", str(exc))
             return
@@ -477,6 +696,9 @@ class MainWindow(QMainWindow):
         self._tool_value.setPlaceholderText(spec.hint if spec else "")
         if not needs_value:
             self._tool_value.clear()
+        self._tool_option.setEnabled(bool(spec and spec.optional_flag))
+        self._tool_option.setPlaceholderText(spec.optional_hint if spec else "")
+        self._tool_option.clear()
 
     def _run(self, args: list[str], page_index: int = 0) -> None:
         if self._runner.busy:
@@ -494,14 +716,15 @@ class MainWindow(QMainWindow):
     def _connect_runner(self) -> None:
         self._runner.output.connect(self._console.append_text)
         self._runner.finished.connect(self._on_finished)
-        self._runner.started_command.connect(
-            lambda _cmd: self._set_running(True)  # noqa: ARG005
-        )
+        self._runner.started_command.connect(lambda _cmd: self._set_running(True))  # noqa: ARG005
 
     def _set_running(self, running: bool) -> None:
         self._start_button.setEnabled(not running)
         self._stop_button.setEnabled(running)
         self.statusBar().showMessage("Running…" if running else "Ready")
+        self._run_state.setText("RUNNING" if running else "READY")
+        for field in (self._input, self._send_button, self._enter_button):
+            field.setEnabled(running)
 
     def _on_finished(self, exit_code: int, message: str) -> None:
         self._console.flush()
@@ -515,6 +738,7 @@ class MainWindow(QMainWindow):
         self._config_path = self._config_field.text().strip() or "configs/config.yaml"
         self._load_config_text()
         self._load_answers_text()
+        self._update_command_preview()
         self._refresh_stats()
 
     def _browse_config(self) -> None:
@@ -534,21 +758,22 @@ class MainWindow(QMainWindow):
         return path if path.is_absolute() else self._root / path
 
     def _answers_file(self) -> Path:
-        """Resolve answers.file from the config, falling back to the default."""
-        default = self._root / "configs" / "answers.yaml"
-        try:
-            data = yaml.safe_load(self._config_file().read_text(encoding="utf-8")) or {}
-            configured = (data.get("answers") or {}).get("file")
-        except Exception:
-            return default
-        if not configured:
-            return default
-        path = Path(str(configured))
+        """Resolve the same expanded answers path as the CLI."""
+        configured = (
+            self._loaded_config.answers.file
+            if self._loaded_config is not None
+            else Path("configs") / "answers.yaml"
+        )
+        path = Path(configured)
         return path if path.is_absolute() else self._root / path
 
     def _load_text(self, path: Path, editor: QPlainTextEdit, status: QLabel) -> None:
         if path.exists():
-            editor.setPlainText(path.read_text(encoding="utf-8"))
+            try:
+                editor.setPlainText(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError) as exc:
+                self._set_status(status, f"Could not read {path}: {exc}", "error")
+                return
             status.setText(f"Loaded {path.name}")
             status.setProperty("role", "muted")
         else:
@@ -559,6 +784,16 @@ class MainWindow(QMainWindow):
 
     def _load_config_text(self) -> None:
         self._load_text(self._config_file(), self._config_editor, self._config_status)
+        try:
+            self._loaded_config = load_config(self._config_file())
+        except (ConfigError, OSError, UnicodeError) as exc:
+            self._loaded_config = None
+            self._set_status(self._config_status, str(exc), "warning")
+            self._run_settings.setEnabled(False)
+        else:
+            self._run_settings.setEnabled(True)
+            self._run_settings.load(self._loaded_config)
+        self._update_command_preview()
 
     def _load_answers_text(self) -> None:
         self._load_text(self._answers_file(), self._answers_editor, self._answers_status)
@@ -568,18 +803,15 @@ class MainWindow(QMainWindow):
         text = editor.toPlainText()
         status = self._config_status if strict else self._answers_status
         try:
-            data = yaml.safe_load(text)
-        except yaml.YAMLError as exc:
-            self._set_status(status, f"YAML error: {exc}", "error")
+            if strict:
+                parse_config(text)
+            else:
+                data = yaml.safe_load(text)
+                if not isinstance(data, dict):
+                    raise ConfigError("Answers must be a YAML mapping.")
+        except (yaml.YAMLError, ConfigError) as exc:
+            self._set_status(status, str(exc), "error")
             return False
-        if strict:
-            try:
-                from linkedin_easy_apply.config.models import AppConfig
-
-                AppConfig.model_validate(data or {})
-            except Exception as exc:
-                self._set_status(status, f"Invalid configuration: {exc}", "error")
-                return False
         self._set_status(status, "Valid", "document")
         return True
 
@@ -595,23 +827,41 @@ class MainWindow(QMainWindow):
         style.polish(widget)
 
     def _save_config_text(self) -> None:
+        if self._answers_editor.document().isModified():
+            QMessageBox.warning(
+                self, "Not saved", "Save or reload your Answers edits before saving configuration."
+            )
+            return
         if not self._validate_yaml(self._config_editor, strict=True):
             QMessageBox.warning(
                 self, "Not saved", "Fix the reported problem before saving the configuration."
             )
             return
         path = self._config_file()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(self._config_editor.toPlainText(), encoding="utf-8")
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(self._config_editor.toPlainText(), encoding="utf-8")
+        except OSError as exc:
+            QMessageBox.warning(self, "Configuration not saved", str(exc))
+            return
+        self._config_editor.document().setModified(False)
         self._set_status(self._config_status, f"Saved {path.name}", "document")
+        self._loaded_config = load_config(path)
+        self._run_settings.load(self._loaded_config)
+        self._load_answers_text()
 
     def _save_answers_text(self) -> None:
         if not self._validate_yaml(self._answers_editor, strict=False):
             QMessageBox.warning(self, "Not saved", "Fix the YAML error before saving.")
             return
         path = self._answers_file()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(self._answers_editor.toPlainText(), encoding="utf-8")
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(self._answers_editor.toPlainText(), encoding="utf-8")
+        except OSError as exc:
+            QMessageBox.warning(self, "Answers not saved", str(exc))
+            return
+        self._answers_editor.document().setModified(False)
         self._set_status(self._answers_status, f"Saved {path.name}", "document")
 
     # -- data ----------------------------------------------------------------
@@ -622,7 +872,10 @@ class MainWindow(QMainWindow):
             from linkedin_easy_apply.database import Database
 
             config = load_config(self._config_file())
-            database = Database(config.database.path)
+            db_path = config.database.path
+            if not db_path.is_absolute():
+                db_path = self._root / db_path
+            database = Database(db_path)
             database.initialize()
             rows = [(k.replace("_", " ").capitalize(), str(v)) for k, v in database.stats().items()]
         except Exception as exc:
@@ -644,6 +897,14 @@ class MainWindow(QMainWindow):
 
     def _open_dashboard(self) -> None:
         """Start the Streamlit dashboard once, then open the browser."""
+        if is_frozen():
+            QMessageBox.information(
+                self,
+                "Optional analytics dashboard",
+                "Streamlit is not bundled in the portable desktop build. "
+                "Use the Data page or install the dashboard source extra.",
+            )
+            return
         if not self._dashboard_started:
             argv = commands.full_argv(commands.dashboard_args(self._config_path))
             if start_detached(argv, self._root):
@@ -665,16 +926,17 @@ class MainWindow(QMainWindow):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
     # -- lifecycle -----------------------------------------------------------
+    @override
     def closeEvent(self, event) -> None:  # noqa: ANN001 - Qt signature
         if self._runner.busy:
             answer = QMessageBox.question(
                 self,
                 "Command still running",
                 "A command is still running. Stop it and close?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
             )
-            if answer != QMessageBox.Yes:
+            if answer != QMessageBox.StandardButton.Yes:
                 event.ignore()
                 return
             self._runner.stop()
@@ -687,7 +949,7 @@ def application_icon() -> QIcon:
     Importing ``QtSvg`` is what registers Qt's SVG image handler; without it
     ``QIcon`` silently loads nothing and the window gets a blank icon.
     """
-    mark = project_root() / "docs" / "mark.svg"
+    mark = resource_root() / "docs" / "mark.svg"
     if not mark.is_file():
         return QIcon()
     try:
@@ -697,9 +959,41 @@ def application_icon() -> QIcon:
     return QIcon(str(mark))
 
 
+def theme_icon(palette: Palette) -> QIcon:
+    """Draw a sun/moon without relying on an installed symbol font."""
+    pixmap = QPixmap(22, 22)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    color = QColor(palette["heading"])
+    painter.setPen(QPen(color, 1.6))
+    painter.setBrush(color)
+    if palette.is_dark:
+        painter.drawEllipse(7, 7, 8, 8)
+        for x1, y1, x2, y2 in (
+            (11, 1, 11, 4),
+            (11, 18, 11, 21),
+            (1, 11, 4, 11),
+            (18, 11, 21, 11),
+            (4, 4, 6, 6),
+            (16, 16, 18, 18),
+            (4, 18, 6, 16),
+            (16, 6, 18, 4),
+        ):
+            painter.drawLine(x1, y1, x2, y2)
+    else:
+        painter.drawEllipse(3, 3, 16, 16)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
+        painter.drawEllipse(9, 0, 15, 15)
+    painter.end()
+    return QIcon(pixmap)
+
+
 def run(config_path: str = "configs/config.yaml", theme: str | None = None) -> int:
     """Create the application and show the window. Returns the Qt exit code."""
     application = QApplication.instance() or QApplication([])
+    if not isinstance(application, QApplication):
+        raise RuntimeError("The desktop requires a QApplication, not a QCoreApplication.")
     application.setApplicationName("Easy Apply Automaton")
     application.setApplicationDisplayName("Easy Apply Automaton")
     application.setWindowIcon(application_icon())

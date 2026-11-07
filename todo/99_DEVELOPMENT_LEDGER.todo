@@ -1,0 +1,120 @@
+# Development ledger
+
+Status: CONTINUOUS_LEDGER
+Milestone: Evidence-grounded repository engineering history
+Dependencies: None
+
+## Purpose
+Keep dated technical decisions and verification receipts without inventing user
+approval or publishing private continuity. This perpetual ledger is not an issue.
+
+## Tasks
+- Append meaningful engineering outcomes and actual failures.
+- Attribute old evidence without representing it as newly run validation.
+- Keep target qualification, human acceptance and publication distinct.
+
+## Acceptance criteria
+- Receipts describe observed outcomes and explicit remaining limitations.
+- Raw requests, applicant values, private artifacts and credentials stay outside this ledger.
+
+## Completion evidence
+Ongoing record; individual bounded outcomes belong to numbered workstreams.
+
+## Completion log
+
+### 2026-11-08 - Desktop implementation and pre-publication qualification
+- Added scrollable run controls, per-run validated settings, wrapped live output,
+  interactive input and confirmations for actions capable of real submissions.
+- Built and exercised shared-runtime Windows GUI/CLI executables offline.
+  Python is bundled; installed Edge/Chrome remain external. The measured local
+  build is 106.0 MiB compressed and 245.5 MiB extracted, not a hosted release.
+- Corrected frozen stream encoding and smoke-test SQLite connection cleanup.
+  Reduced unused Qt/optional dependency payloads without bundling a browser.
+- Current source passes whole-repository Ruff, release-scoped Black, product
+  mypy (69 files) and 678 offline tests. Official actionlint validates the
+  least-permission, immutable-action, tag-only publication workflow.
+- Added original redistribution notices, exact-source manifests and checksums.
+  Removed private continuity, mixed legacy TODO and runtime answer reports
+  from the proposed public tip while preserving their local bytes.
+- Hosted execution, publication and local installation of downloaded assets
+  remain pending. No new LinkedIn application or invitation was attempted;
+  human aesthetic acceptance and fresh-machine execution are not implied.
+
+### 2026-11-06 - Tracking adoption, discovery and integration checkpoint
+- Canonical public repository and actual Zanark issue/Project permissions verified.
+- Repository-local author and committer identity configured as Zanark with the
+  public no-reply address; no global identity/authentication changes.
+- Retained the existing lowercase `todo` directory and all three legacy sources
+  unchanged. Ten actual workstreams are explicit public-safe projections.
+- Repository issue inventory was empty. Existing owner Projects belonged to
+  other repositories. Created private owner Project 10, linked it, and retained
+  default Status option IDs while adding the missing Backlog/Ready/In review stages.
+- Implemented local Python/gh synchronization with configuration separate from
+  durable mappings, managed-body ownership, no-blind-retry intents and per-item
+  conflict isolation. No dependency or package-manager changes required.
+- First focused fixture run: 54 passed, Ruff passed; Black requested formatting.
+  No issue/item writes have happened at this checkpoint.
+- No commit, push, hosted automation, deployment or application authorized here.
+
+### 2026-11-06 - Pilot and no-churn gate passed
+- Black formatting completed; Ruff, Black check, scoped utility mypy and all
+  57 tracking fixtures passed. No dependency installation was needed.
+- Full runner-backed preview verified ten intended creates and five exclusions.
+  Original upload/country-code and outreach qualification gaps remain In review.
+- Pilot lea-09 created issue #1, CLOSED/COMPLETED, with exactly one issue-backed
+  Project item in Done and a persistent local backlink.
+- Separate read-only GraphQL reconciliation compared exact managed content,
+  lifecycle reason, issue/item identities and local mapping/backlink.
+- Identical pilot rerun created nothing, made no managed changes and preserved
+  issue/item updatedAt plus local mapping/workstream bytes and modification times.
+- Restored the original default Todo description after setup; all six option IDs,
+  names, colors and other descriptions were preserved. No unrelated board changed.
+
+### 2026-11-06 - Historical backfill and complete no-churn checkpoint
+- Backfilled the nine remaining reviewed projections after the pilot gate:
+  nine new issues/items, six closed/COMPLETED and three open; zero blocked results.
+- Independent API reconciliation verified all ten issues/items, exact managed
+  content, lifecycle reasons, Project stages, durable identities and backlinks.
+  Pre-closure totals: seven closed/Done, two open/In review and adoption open/In Progress.
+- The full apply rerun reused ten, created zero and made ten no-ops. Independent
+  before/after receipts matched issue/item updatedAt and local bytes/modification times.
+- Updated the index with actual issue URLs and completed the bounded adoption
+  record. Its meaningful completion transition is followed by final read-back.
+- Git metadata confirmed the shared credential file is ignored/untracked and the
+  durable mapping is not ignored. The credential contents were not inspected.
+- Legacy sources remain unchanged; unrelated dirty work is preserved. No commit,
+  push, activated automation, deployment or new application occurred.
+
+### 2026-11-06 - Adoption closed and final reconciliation passed
+- Previewed the meaningful lea-10 completion update, then reused issue #10 and
+  its existing Project item to set CLOSED/COMPLETED and Done.
+- Final independent API read verified ten unique issues, ten issue-backed items
+  and ten persistent backlinks: eight closed/COMPLETED in Done, two open/In review.
+- Initial import created ten issues and adopted zero pre-existing issues.
+  The final full rerun created zero, reused ten and reported ten no-ops.
+- Separate final before/after receipts matched issue/item IDs, exact managed
+  content, remote timestamps and local mapping/workstream bytes/modification times.
+  Zero blocked, conflicting, duplicate or partial results remained.
+- Open issue #2 retains the original upload/country-code qualification gap;
+  open issue #9 retains the outreach selector qualification gap. No fixture or
+  later resume-reuse success was substituted for those original checks.
+- Validation remains the 57 focused tracking fixtures, Ruff, Black and scoped
+  utility mypy; no new product/browser or hosted Actions claim is made.
+- Source, configuration, mappings, backlinks and guidance remain local/uncommitted.
+  Public source links may lag until separately authorized publication. No commit,
+  push, activated automation, deployment, remote secret or application was performed.
+
+### 2026-11-06 - Existing Project view converted to Kanban
+- At the user's request, changed only the existing first view's name and layout
+  from View 1 / TABLE_LAYOUT to Kanban / BOARD_LAYOUT.
+- Retained Project 10 and view `PVTV_lAHOAe2wCs4BqfEBzgMb6Sc`; created no
+  replacement Project, duplicate view, issue or item.
+- Separately verified the board's `verticalGroupByFields` resolves to the
+  original Status field; empty `groupByFields` is not a missing column field.
+- Independent API read-back verified the saved board, private Project and
+  unfiltered view. All ten items, exact issue content/lifecycle, issue/item
+  timestamps and Status options/order/descriptions matched the pre-change receipt.
+- Counts remain eight Done and two In review; original qualification gaps are
+  unchanged. No browser-rendering or new executable-test claim is made.
+- Synchronization code/configuration/mapping and managed workstreams were not
+  rewritten. No commit, push, workflow activation or new application occurred.

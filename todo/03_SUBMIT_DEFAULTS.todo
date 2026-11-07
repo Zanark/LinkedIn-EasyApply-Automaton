@@ -1,0 +1,35 @@
+# Automatic submission defaults and explicit confirmation
+Workstream-ID: lea-03
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/4
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-21 submit-default batch
+Status: DONE
+Milestone: Separate submission approval from unknown-answer prompting
+Dependencies: None
+
+## Purpose
+Track the completed change that made submission automatic by default while
+retaining an explicit default-Yes terminal confirmation option.
+
+## Tasks
+- [x] Submit unless an explicit confirmation callback declines.
+- [x] Provide `--confirm-submit` and `--no-confirm-submit`.
+- [x] Make Enter approve an explicitly requested confirmation.
+- [x] Keep unknown-question prompting independent from submission approval.
+- [x] Preserve dry-run behavior and update command documentation.
+
+## Acceptance criteria
+- [x] Historical tests cover automatic, approved, declined and dry-run paths.
+- [x] The old default-No prompt no longer silently discards on Enter.
+
+## Completion evidence
+The 2026-07-21 source records five submission-confirmation cases, a 169-test
+green suite and clean Ruff/Black/mypy checks. Relevant implementations are
+`EasyApplyWorkflow._finalize_submit` and CLI confirmation wiring.
+DONE refers to this technical batch, not a guarantee of external submission.
+User acceptance, external qualification and publication are not inferred.
+This migration did not submit any applications.
+
+## Completion log
+- 2026-07-21: Submission-default implementation and documentation recorded complete.
+- 2026-11-06: Imported without raw conversation excerpts or applicant details.

@@ -317,4 +317,3 @@ def test_paginated_url_round_trip():
     assert paginated_url(url, 0) == url
     assert paginated_url(url, 25).endswith("&start=25")
     assert paginated_url(paginated_url(url, 25), 50).endswith("&start=50")
-

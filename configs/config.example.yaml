@@ -37,6 +37,7 @@ jobs:
     - unpaid
 
 search:
+  job_urls: []                    # optional exact /jobs/view/<id>/ URLs for apply only
   searches:
     - name: backend
       url: "https://www.linkedin.com/jobs/search/?keywords=backend%20engineer&f_AL=true"

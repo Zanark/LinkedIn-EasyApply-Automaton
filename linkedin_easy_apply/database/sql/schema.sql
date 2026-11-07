@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS runs (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     mode          TEXT NOT NULL,                 -- apply | scan | dry_run
     searches      TEXT,                          -- JSON list of search names
-    status        TEXT NOT NULL DEFAULT 'running', -- running | completed | failed
+    status        TEXT NOT NULL DEFAULT 'running', -- running | completed | stopped | failed
     jobs_scanned  INTEGER NOT NULL DEFAULT 0,
     jobs_applied  INTEGER NOT NULL DEFAULT 0,
     jobs_skipped  INTEGER NOT NULL DEFAULT 0,
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS applications (
     job_id       INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     run_id       INTEGER REFERENCES runs(id) ON DELETE SET NULL,
     resume_id    INTEGER REFERENCES resumes(id) ON DELETE SET NULL,
-    status       TEXT NOT NULL DEFAULT 'pending', -- pending|submitted|skipped|failed|dry_run
+    status       TEXT NOT NULL DEFAULT 'pending', -- pending|submitted|skipped|failed|dry_run|unconfirmed
     reason       TEXT,
     steps        INTEGER NOT NULL DEFAULT 0,
     screenshot   TEXT,

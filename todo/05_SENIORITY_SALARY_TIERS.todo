@@ -1,0 +1,37 @@
+# Job-seniority expected-compensation tiers
+Workstream-ID: lea-05
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/6
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-21 tiered expected-compensation batch
+Status: DONE
+Milestone: Per-job compensation policy with explicit unknown-tier fallback
+Dependencies: lea-04
+
+## Purpose
+Choose configured expected compensation according to job seniority without
+learning a job-specific result as an applicant-wide answer. Actual tier values
+remain private and are absent from this projection.
+
+## Tasks
+- [x] Detect three seniority tiers from job titles with experience-level fallback.
+- [x] Use the configured lowest-tier fallback when seniority is unknown.
+- [x] Set a per-job resolver override and log its decision.
+- [x] Keep expected-compensation answers job-specific and out of learned global answers.
+- [x] Preserve current-compensation calculation separately.
+- [x] Add seniority and resolver coverage; synchronize affected documentation.
+
+## Acceptance criteria
+- [x] Historical tests cover title-level distinctions and unknown-title fallback.
+- [x] Job-specific expected values cannot become globally learned answers.
+
+## Completion evidence
+The 2026-07-21 source records 39 seniority cases, expanded salary/notice tests,
+a 163-test green suite, clean Ruff/Black/mypy checks and parsed configuration.
+Relevant symbols include `detect_seniority`, `_apply_expected_ctc_tier` and
+`set_expected_ctc`. Later explicit monthly overrides are tracked by lea-06.
+These are attributed historical results; this migration did not rerun product
+tests or establish human acceptance, target qualification or publication.
+
+## Completion log
+- 2026-07-21: Tier inference, resolver overrides and local verification recorded complete.
+- 2026-11-06: Imported as a public-safe technical workstream without personal amounts.

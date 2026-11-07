@@ -1,0 +1,33 @@
+# Plain-integer notice-period answers
+Workstream-ID: lea-07
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/8
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-21 plain-number notice follow-up
+Status: DONE
+Milestone: Consistent numeric notice answers across equivalent question phrasings
+Dependencies: lea-04
+
+## Purpose
+Prefer configured numeric notice days across equivalent notice-period questions
+without exposing the applicant's actual notice period.
+
+## Tasks
+- [x] Prefer the dedicated numeric value for every supported notice phrasing.
+- [x] Parse the first integer from a textual fallback.
+- [x] Retain genuinely nonnumeric fallback text only for compatible questions.
+- [x] Extend resolver tests and update example comments and user guidance.
+
+## Acceptance criteria
+- [x] Historical coverage includes numeric preference and textual/non-numeric fallbacks.
+- [x] Returned numeric answers have no appended day label.
+
+## Completion evidence
+The 2026-07-21 source attributes this change to commit `9635c68`, a 176-test
+green suite and clean Ruff/Black/mypy checks.
+No applicant value, raw request or private answer file is mirrored.
+DONE covers implementation/local verification; historical publication notes
+are not a current remote-state assertion or human acceptance.
+
+## Completion log
+- 2026-07-21: Plain-number notice behavior and tests recorded complete.
+- 2026-11-06: Imported as the specific follow-up to lea-04.

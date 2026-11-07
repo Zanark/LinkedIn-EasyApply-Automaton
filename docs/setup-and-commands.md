@@ -8,6 +8,13 @@ terminal or the desktop app. For a narrative, copy-paste run guide see
 
 ## 1. Requirements
 
+For the **portable Windows x64 release**, extract the entire release ZIP and
+open `EasyApplyAutomaton.exe`; Python is bundled, browser binaries are not.
+Use installed Edge/Chrome. Configs and runtime data go into
+`%LOCALAPPDATA%\EasyApplyAutomaton` (`LEA_WORKSPACE` can override it).
+See [executable first-run setup](gui.md#windows-executable). The requirements
+below apply to source installation.
+
 - Python **3.12+**
 - Microsoft Edge (default), Google Chrome, or bundled Chromium
 - A LinkedIn account you sign into **by hand**, once, inside the automation's
@@ -32,6 +39,7 @@ python -m venv .venv
 | `.[export]` | openpyxl | `export --format xlsx` |
 | `.[ai]` | openai | the optional AI advisor |
 | `.[dev]` | pytest, ruff, black, mypy | development |
+| `.[build]` | PyInstaller | Windows packaging; release builds use the pinned packaging requirements |
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[gui,dashboard,export]"
@@ -76,6 +84,10 @@ active `lea scan`, `lea apply --dry-run`, `lea gui` all work.
 
 ### Desktop app
 
+Portable distribution: double-click `EasyApplyAutomaton.exe`, or use
+`.\lea.exe --help` from the extracted folder. Keep the whole folder together.
+The native GUI includes prompt input and private per-run presets.
+
 ```powershell
 .\.venv\Scripts\python.exe apply.py gui
 .\.venv\Scripts\python.exe apply.py gui --theme harbor-daylight    # light theme
@@ -97,6 +109,7 @@ active `lea scan`, `lea apply --dry-run`, `lea gui` all work.
 
 Also reachable from the GUI's **Data → Open dashboard** button, or
 <kbd>Ctrl</kbd>+<kbd>D</kbd> anywhere in the window.
+This launcher is disabled in the portable build; Streamlit remains a source extra.
 
 ---
 

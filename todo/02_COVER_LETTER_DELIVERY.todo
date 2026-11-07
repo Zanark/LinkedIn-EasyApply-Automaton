@@ -1,0 +1,35 @@
+# Cover-letter PDF, inline delivery and decision logging
+Workstream-ID: lea-02
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/3
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: TODO.md, 2026-07-21 cover-letter batch
+Status: DONE
+Milestone: Deliver generated letters through supported form controls
+Dependencies: None
+
+## Purpose
+Represent the completed technical batch for PDF attachments, inline letter text
+and visible generation/fill/upload decisions. No generated personal letter is mirrored.
+
+## Tasks
+- [x] Render a PDF alongside the plain-text artifact.
+- [x] Normalize unsupported punctuation for the chosen core PDF font.
+- [x] Route inline textareas to letter text and file fields to the PDF.
+- [x] Log generation, inline fill and file upload decisions.
+- [x] Add focused routing, PDF and Unicode regression cases; update affected docs.
+
+## Acceptance criteria
+- [x] Historical evidence covers PDF output and both form-control delivery paths.
+- [x] A missing form field is not represented as a successful letter attachment.
+
+## Completion evidence
+The 2026-07-21 source records five additional cover-letter cases, a 174-test
+green suite and clean Ruff/Black/mypy checks. It identifies `RenderedCoverLetter`,
+`CoverLetterGenerator.render_all` and `EasyApplyWorkflow._fill_cover_textarea`.
+This DONE scope is the recorded implementation/local-verification batch, not
+qualification against every external form, human approval or a publication claim.
+No product or browser suite was rerun for this historical import.
+
+## Completion log
+- 2026-07-21: Implementation, focused coverage and documentation recorded complete.
+- 2026-11-06: Imported as an explicitly labelled public-safe historical projection.

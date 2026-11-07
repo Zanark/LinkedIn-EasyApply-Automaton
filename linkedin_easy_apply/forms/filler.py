@@ -69,6 +69,12 @@ class FormFiller:
                 return want is not None and normalize(want) == normalize(current)
             if resolution.value is None:
                 return False
+            if self._is_autocomplete(field):
+                candidates = resolution.candidates or (str(resolution.value),)
+                return any(
+                    set(normalize(candidate).split()) <= set(normalize(current).split())
+                    for candidate in candidates
+                )
             if normalize(current) == normalize(str(resolution.value)):
                 return True
             if resolution.answer_type is AnswerType.NUMBER:
@@ -82,8 +88,40 @@ class FormFiller:
         if resolution.value is None:
             return False
         field.control.fill(str(resolution.value))
+        if self._is_autocomplete(field):
+            options = field.control.page.locator('[role="option"]:visible, option:visible')
+            options.first.wait_for(state="visible", timeout=10000)
+            labels = options.all_inner_texts()
+            for candidate in resolution.candidates or (str(resolution.value),):
+                words = set(normalize(candidate).split())
+                match = next(
+                    (
+                        index
+                        for index, label in enumerate(labels)
+                        if words <= set(normalize(label).split())
+                    ),
+                    None,
+                )
+                if match is not None:
+                    options.nth(match).click()
+                    logger.debug(
+                        "Selected autocomplete option {!r} for '{}'", labels[match], field.label
+                    )
+                    return True
+            logger.warning(
+                "No autocomplete option matched '{}' for '{}' (options: {})",
+                resolution.candidates or resolution.value,
+                field.label,
+                labels,
+            )
+            return False
         logger.debug("Filled text field '{}' = {}", field.label, resolution.value)
         return True
+
+    @staticmethod
+    def _is_autocomplete(field: FormField) -> bool:
+        attribute = getattr(field.control, "get_attribute", None)
+        return callable(attribute) and attribute("aria-autocomplete") in {"list", "both"}
 
     def _fill_file(self, field: FormField, file_path: str | None) -> bool:
         if not file_path:
@@ -145,9 +183,9 @@ class FormFiller:
                 return match
         # LinkedIn often renders "How many years of experience do you have with
         # X?" or "Have you completed <degree>?" as a Yes/No <select>. When the
-        # resolved answer is a number (years) or a qualitative value (a degree,
-        # a proficiency) it won't match "Yes"/"No" above. Coerce it: a positive
-        # number -> Yes, zero -> No, any other non-empty answer -> Yes.
+        # resolved answer is a number (years), it won't match "Yes"/"No" above.
+        # Coerce positive years to Yes and zero to No, but do not turn an
+        # unrelated nonempty answer (such as a city or degree) into agreement.
         # boolean_option only returns a value when the options really are Yes/No,
         # so this is a no-op on genuine multi-option selects.
         inferred = _infer_yes_no(resolution)
@@ -181,8 +219,22 @@ class FormFiller:
         except ValueError:  # pragma: no cover - defensive
             return False
         if index < len(field.option_controls):
-            field.option_controls[index].check(force=True)
-            return True
+            control = field.option_controls[index]
+            if control.is_checked():
+                return True
+            label = None
+            try:
+                label = control.evaluate_handle("el => el.labels?.[0] ?? null").as_element()
+            except Exception as exc:  # pragma: no cover - non-native controls
+                logger.debug("Could not inspect radio label for '{}': {}", field.label, exc)
+            if label is not None:
+                label.click(timeout=3000)
+            else:
+                control.check(force=True, timeout=3000)
+            checked = control.is_checked()
+            if not checked:
+                logger.warning("Radio choice '{}' was not selected for '{}'", choice, field.label)
+            return bool(checked)
         return False
 
 
@@ -204,10 +256,9 @@ def _infer_yes_no(resolution: AnswerResolution) -> bool | None:
     """Best-effort Yes/No when a boolean dropdown receives a non-boolean answer.
 
     LinkedIn frequently renders "How many years of experience do you have with
-    X?" or "Have you completed <degree>?" as a Yes/No ``<select>``. Map a purely
-    numeric answer (years) to Yes when > 0 and No when 0; map any other non-empty,
-    non-negative answer (a degree, a proficiency level) to Yes. Returns ``None``
-    when there is nothing meaningful to coerce (the caller then leaves it blank).
+    X?" as a Yes/No ``<select>``. Map numeric years to Yes when > 0 and No when 0.
+    Explicit affirmative/negative tokens are also accepted, but arbitrary text
+    cannot establish consent, willingness or a particular qualification.
     """
     value = resolution.value
     if value is None:
@@ -222,4 +273,6 @@ def _infer_yes_no(resolution: AnswerResolution) -> bool | None:
         return num > 0
     if normalize(text) in _NEGATIVE_TEXT:
         return False
-    return True
+    if normalize(text) in _TRUTHY_TEXT:
+        return True
+    return None

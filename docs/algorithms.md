@@ -179,6 +179,12 @@ strategies from **most to least precise** and stop at the first success:
 last, with a **safe default of "no answer"**. Returning `None` instead of a bad
 guess is a deliberate correctness-over-coverage choice.
 
+For Yes/No controls, numeric experience may map to Yes when positive and No at zero,
+but arbitrary nonempty text is not agreement. Radio extraction also handles inputs whose
+accessible names repeat the question: recover each choice from its nearest one-radio
+ancestor's visible text, preserving control order. Hidden native inputs are selected through
+their associated label and their checked state is verified after the click.
+
 **Real world:** this "waterfall" is everywhere — payment routing (try primary
 processor → fallback), CDN/cache tiers (memory → disk → origin), address
 geocoding (exact → fuzzy), and de-dupe pipelines (deterministic key → fuzzy).
@@ -325,8 +331,26 @@ functions flat. Ordering cheap/likely rejections first is a performance idiom
 **What it does:** drive LinkedIn's multi-page modal as a **finite state
 machine**: on each step, detect fields → fill → decide the transition
 (**Next** → **Review** → **Submit**), looping until a terminal state
-(submitted / dry-run-discard / failed). Bounded step iteration prevents infinite
+(confirmed-submitted / unconfirmed / daily-limit / dry-run-discard / failed). Bounded step iteration prevents infinite
 loops if the DOM never advances.
+
+When no editable fields exist, the step signature includes the form's visible
+text: read-only work-history and education pages must not both look like an
+empty field list. A bounded transition wait tolerates delayed rendering without
+treating an unchanged page as progress.
+
+The resume sub-step discovers accessible filename radios before legacy cards,
+prefers an already-selected match, and verifies freshly discovered controls before setting its
+idempotency flag: selecting a document can remount the picker and change its generated IDs.
+Upload is allowed only on the active resume step and only
+when no match exists. Generic question filling does not overwrite that selection.
+City autocomplete preserves a canonical city/country or explicitly selects a matching
+visible suggestion; typing text is not enough.
+
+Submit uses a bounded positive-acknowledgement wait (`_submission_outcome`).
+Without confirmation it becomes `unconfirmed`, stops the run, and blocks automatic
+retry. This is the same ambiguity as a payment request whose response was lost:
+neither an assumed success nor an immediate retry is safe.
 
 **Real world:** **checkout funnels**, multi-step signup wizards, TCP's
 connection states, and workflow/orchestration engines are all FSMs. Modeling a

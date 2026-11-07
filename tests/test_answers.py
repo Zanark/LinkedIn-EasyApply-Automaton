@@ -74,3 +74,23 @@ def test_resolver_missing_answer(answers_store: AnswerStore):
     resolver = AnswerResolver(answers_store)
     result = _resolve(parser, resolver, "What is your gender?")
     assert result.found is False
+
+
+def test_missing_skill_never_inherits_total_experience():
+    parser = QuestionParser()
+    resolver = AnswerResolver(AnswerStore({"years_experience": 8}))
+
+    result = _resolve(parser, resolver, "How many years of experience do you have with Django?")
+
+    assert not result.found
+
+
+def test_explicit_zero_skill_experience_is_not_missing():
+    parser = QuestionParser()
+    resolver = AnswerResolver(
+        AnswerStore({"years_experience": 8, "skills": {"Django": {"years": 0}}})
+    )
+
+    result = _resolve(parser, resolver, "How many years of experience do you have with Django?")
+
+    assert result.found and result.value == "0"

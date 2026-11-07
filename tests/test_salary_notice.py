@@ -82,6 +82,17 @@ def test_expected_salary_uses_tier_override_annual_and_monthly():
     assert annual.source == "tier" and monthly.source == "tier"
 
 
+def test_financial_expectations_uses_the_configured_monthly_tier():
+    parser = QuestionParser()
+    resolver = AnswerResolver(_store())
+    resolver.set_expected_ctc(1200000, 100000)
+    parsed = parser.parse("What are your financial expectations (monthly gross)?")
+
+    assert parsed.category is QuestionCategory.SALARY_EXPECTED
+    assert "monthly" in parsed.tags
+    assert resolver.resolve(parsed).value == "100000"
+
+
 def test_expected_salary_configured_monthly_per_tier():
     resolver = AnswerResolver(_store())
     parser = QuestionParser()
@@ -165,3 +176,43 @@ def test_notice_period_days_missing_everything():
     store = AnswerStore({})
     _parsed, res = _resolve("Notice period in days", store)
     assert res.found is False
+
+
+# -- salary asked for in lakhs (LPA) -----------------------------------------
+
+
+def test_parser_tags_salary_in_lakhs():
+    parsed = QuestionParser().parse("What's your current salary package in LPA?")
+    assert parsed.category is QuestionCategory.SALARY_CURRENT
+    assert "lakhs" in parsed.tags
+
+
+def test_plain_salary_question_has_no_lakhs_tag():
+    assert "lakhs" not in QuestionParser().parse("Expected annual CTC").tags
+
+
+def test_current_salary_in_lpa_is_converted_to_lakhs():
+    _, resolution = _resolve("What's your current / last drawn salary package in LPA?")
+    assert resolution.value == "30"
+
+
+def test_expected_salary_in_lakhs_is_converted():
+    _, resolution = _resolve("Expected salary in lakhs")
+    assert resolution.value == "40"
+
+
+def test_lakhs_keeps_a_meaningful_fraction():
+    store = AnswerStore({"current_ctc": 3250000})
+    _, resolution = _resolve("Current CTC in lakhs", store)
+    assert resolution.value == "32.5"
+
+
+def test_salary_without_lakhs_stays_in_rupees():
+    _, resolution = _resolve("What is your current annual CTC?")
+    assert resolution.value == "3000000"
+
+
+def test_monthly_wins_over_lakhs_phrasing():
+    """ "per month" is the stronger instruction, so the monthly branch applies."""
+    _, resolution = _resolve("Current monthly salary in lakhs")
+    assert resolution.value != "30"

@@ -59,6 +59,20 @@ def test_reapply_targets_excludes_later_submitted(db: Database):
     assert all(t["url"] != url for t in db.reapply_targets())
 
 
+def test_unconfirmed_submit_blocks_both_search_and_retry(db: Database):
+    url = "https://www.linkedin.com/jobs/view/uncertain/"
+    job_id = _failed_job(db, url)
+    run2 = db.start_run("apply")
+    db.create_application(job_id, run2, None, "unconfirmed")
+
+    assert db.has_unconfirmed_application(url)
+    assert not db.has_applied_to_url(url)
+    assert db.reapply_targets() == []
+    job = Job(url=url, title="SWE", company="Acme", easy_apply=True)
+    orch = Orchestrator(AppConfig(), db, AnswerStore({}))
+    assert orch._pre_apply_checks(job) == "submission_unconfirmed"
+
+
 def test_reapply_targets_counts_multiple_attempts(db: Database):
     url = "https://www.linkedin.com/jobs/view/4/"
     job_id = _failed_job(db, url, status="failed")
@@ -197,6 +211,78 @@ def test_run_reapply_dry_run_records_dry_run_mode(tmp_path, monkeypatch):
     monkeypatch.setattr(Orchestrator, "_execute_reapply", lambda *a, **k: None)
     summary = orch.run(mode="reapply", dry_run=True)
     assert summary.mode == "dry_run"
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+@pytest.mark.parametrize("limit,expected_limit", [(None, 4), (1, 1)])
+def test_run_exact_jobs_without_search_crawl(tmp_path, monkeypatch, dry_run, limit, expected_limit):
+    orch, db = _orchestrator(tmp_path)
+    urls = [
+        "https://www.linkedin.com/jobs/view/123/",
+        "https://www.linkedin.com/jobs/view/456/",
+    ]
+    orch._config.search.job_urls = urls
+    orch._config.jobs.max_per_run = 4
+    monkeypatch.setattr(
+        "linkedin_easy_apply.orchestrator.BrowserManager", lambda _cfg: _FakeBrowser()
+    )
+    captured = {}
+
+    def fake_exec(self, _browser, targets, _summary, dry, _interactive, max_per_run):
+        captured.update(targets=targets, dry_run=dry, limit=max_per_run)
+
+    monkeypatch.setattr(Orchestrator, "_execute_reapply", fake_exec)
+    monkeypatch.setattr(
+        Orchestrator, "_execute", lambda *a, **k: pytest.fail("Must not crawl searches")
+    )
+    summary = orch.run(mode="apply", dry_run=dry_run, limit=limit)
+
+    assert captured == {
+        "targets": [{"url": url} for url in urls],
+        "dry_run": dry_run,
+        "limit": expected_limit,
+    }
+    assert summary.mode == ("dry_run" if dry_run else "apply")
+    assert db.query("SELECT mode FROM runs ORDER BY id DESC LIMIT 1")[0]["mode"] == summary.mode
+
+
+@pytest.mark.parametrize("status", ["submitted", "unconfirmed"])
+def test_exact_jobs_preserve_duplicate_and_uncertain_submission_gates(
+    tmp_path, monkeypatch, status
+):
+    orch, db = _orchestrator(tmp_path)
+    url = "https://www.linkedin.com/jobs/view/123/"
+    _failed_job(db, url, status=status)
+    orch._config.search.job_urls = [url]
+    monkeypatch.setattr(
+        "linkedin_easy_apply.orchestrator.BrowserManager", lambda _cfg: _FakeBrowser()
+    )
+    monkeypatch.setattr(
+        JobSearch,
+        "open_job",
+        lambda self, url: Job(url=url, title="SWE", company="Acme", easy_apply=True),
+    )
+    summary = orch.run(mode="apply")
+    assert summary.scanned == 1
+    assert summary.skipped == 1
+    assert summary.applied == summary.failed == 0
+    assert db.query("SELECT COUNT(*) AS n FROM applications")[0]["n"] == 1
+
+
+def test_exact_jobs_respect_daily_cap_before_first_job(tmp_path, monkeypatch):
+    orch, db = _orchestrator(tmp_path)
+    _failed_job(db, "https://www.linkedin.com/jobs/view/122/", status="submitted")
+    orch._config.jobs.max_daily = 1
+    orch._config.search.job_urls = ["https://www.linkedin.com/jobs/view/123/"]
+    monkeypatch.setattr(
+        "linkedin_easy_apply.orchestrator.BrowserManager", lambda _cfg: _FakeBrowser()
+    )
+    monkeypatch.setattr(
+        JobSearch, "open_job", lambda *a, **k: pytest.fail("Daily cap must stop navigation")
+    )
+    summary = orch.run(mode="apply")
+    assert summary.scanned == summary.applied == summary.failed == 0
+    assert db.query("SELECT COUNT(*) AS n FROM applications")[0]["n"] == 1
 
 
 # -- dashboard launch helpers ------------------------------------------------ #

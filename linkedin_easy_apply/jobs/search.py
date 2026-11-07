@@ -18,7 +18,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from loguru import logger
 
 from linkedin_easy_apply.forms import selectors
-from linkedin_easy_apply.forms.dom_utils import first, first_group
+from linkedin_easy_apply.forms.dom_utils import first, first_group, force_close_dialogs
 from linkedin_easy_apply.jobs.extractor import JobExtractor
 from linkedin_easy_apply.jobs.models import Job
 from linkedin_easy_apply.utils.paths import ensure_dir, timestamp_slug
@@ -171,9 +171,7 @@ class JobSearch:
                 indices.append(index)
         return indices
 
-    def _iterate_cards(
-        self, indices: list[int], search_name: str, max_jobs: int
-    ) -> Iterator[Job]:
+    def _iterate_cards(self, indices: list[int], search_name: str, max_jobs: int) -> Iterator[Job]:
         for index in indices[:max_jobs]:
             # Read the card before clicking: once selected it is relabelled
             # "Selected, ..." and carries the location we still need.
@@ -182,9 +180,7 @@ class JobSearch:
                 continue
             # The detail pane swaps in and the URL gains ?currentJobId=<id>.
             self._page.wait_for_timeout(1800)
-            yield self._extractor.extract(
-                self._page, search_name=search_name, card_text=card_text
-            )
+            yield self._extractor.extract(self._page, search_name=search_name, card_text=card_text)
 
     def _card_text(self, index: int) -> str | None:
         buttons = self._card_buttons()
@@ -214,9 +210,9 @@ class JobSearch:
     def open_job(self, url: str, search_name: str = "reapply") -> Job | None:
         """Navigate straight to a single job page and extract it.
 
-        Used by the *reapply* flow, which retries specific previously-failed
-        jobs by their stored ``/jobs/view/<id>/`` URL rather than crawling a
-        search. Any leftover modal is cleared first, and navigation failures
+        Used by *reapply* and configured exact-job application batches.
+        Opens a ``/jobs/view/<id>/`` URL rather than crawling a search.
+        Any leftover modal is cleared first, and navigation failures
         return ``None`` so the caller can skip that job.
         """
         self._clear_blocking_modal()
@@ -248,7 +244,9 @@ class JobSearch:
         logger.debug("No job cards appeared within {} ms", self._results_timeout_ms)
         return False
 
-    def _collect_ids(self, max_jobs: int, max_scrolls: int = 15, *, report: bool = True) -> list[str]:
+    def _collect_ids(
+        self, max_jobs: int, max_scrolls: int = 15, *, report: bool = True
+    ) -> list[str]:
         ordered: list[str] = []
         seen: set[str] = set()
         stagnant = 0
@@ -416,6 +414,10 @@ class JobSearch:
                 continue
             if not self._application_form_open():
                 return True
+        # The buttons are unreachable (a toast or a second overlay is on top),
+        # so close the dialog element itself rather than strand the whole run.
+        force_close_dialogs(self._page)
+        self._page.wait_for_timeout(400)
         return not self._application_form_open()
 
     def _application_form_open(self) -> bool:
