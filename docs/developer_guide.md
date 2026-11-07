@@ -155,9 +155,9 @@ back issue/Project/backlink results. This is local invocation, not an activated
 workflow; commits, pushes and live applications require separate authority.
 
 ```powershell
-# Install with dev extras
+# Install dependencies for the complete test suite
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,gui,dashboard,export]"
 
 # Quality gates (all must pass)
 .\.venv\Scripts\ruff.exe check .
@@ -167,7 +167,8 @@ python -m venv .venv
 ```
 
 Optional extras: `.[ai]` (OpenAI), `.[dashboard]` (Streamlit), `.[export]`
-(XLSX export).
+(XLSX export). The full suite imports dashboard helpers, so its environment
+needs the dashboard extra even though the portable build excludes it.
 
 ## Desktop and Windows release
 
