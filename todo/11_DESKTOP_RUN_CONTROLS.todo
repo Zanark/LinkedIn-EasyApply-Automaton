@@ -36,10 +36,12 @@ Implemented scrollable run setup, wrapped output, terminal input, safe command
 preview and action-specific Apply/Scan/Reapply/Connect controls. Search, limits,
 browser and behavior overrides are validated into private run presets without
 overwriting saved configuration. Configuration saves preserve unsaved Answers.
-Eight regenerated screenshots use isolated fictional data.
+Eight regenerated screenshots use isolated fictional data. The README embeds
+all eight desktop views with captions, including expanded run settings and
+the compact light-theme layout.
 
 Whole-repository Ruff, release-scoped Black, mypy over 69 product files and all
-678 offline tests passed. The previously built portable GUI/CLI also passed
+681 tests passed in the exact-source hosted Windows qualification. The portable GUI/CLI also passed
 offline rendering, stream/input and child-command smoke checks. Human aesthetic
 acceptance and live LinkedIn qualification are not claimed. Release publication
 and exact downloaded-binary verification belong to lea-12.
@@ -50,3 +52,6 @@ and exact downloaded-binary verification belong to lea-12.
 - 2026-11-08: Completed the bounded desktop implementation and offline checks.
   Corrected partial output handling, shared validation and unsaved-answer retention.
   No live application, invitation or private browser session was used.
+- 2026-11-08: Updated the README's v0.2.0 gallery with captioned expanded
+  run settings and the 980-by-680 layout, alongside both themes and all five
+  pages. Captures are explicitly fictional source-install previews.

@@ -156,7 +156,7 @@
     "lea-11": {
       "baseline": {
         "title": "[lea-11] Desktop run controls and layout",
-        "managed": "27465b102ded0cf456c43f19735b9c2e07749d51dae226eda05e453ad363cef8",
+        "managed": "d705cd6b8a8b6e0efdb90b6e0665feca02c9d08580a2bfe855018d13f4ef5acf",
         "lifecycle": [
           "CLOSED",
           "COMPLETED"
@@ -171,12 +171,12 @@
     "lea-12": {
       "baseline": {
         "title": "[lea-12] Portable Windows release and publication pipeline",
-        "managed": "9c7b8bfe724a62edb511f27b6d838c1502b3fd272e78895e36907ec69021289a",
+        "managed": "40a704af6fc31608b9c3b1a1754797d0d21990698c17ddd09e8fe617631fe061",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABdWbtCg",
       "number": 12,

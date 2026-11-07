@@ -27,6 +27,8 @@ Project: https://github.com/users/Zanark/projects/10 (private owner Project).
 Repository issues and these numbered projections are public.
 Desktop and release workstreams were subsequently added as lea-11 and lea-12;
 their implementation, qualification and publication evidence is recorded separately.
+The portable v0.2.0 release is published, downloaded, integrity-verified and
+installed; its normal native startup and bundled offline commands passed.
 
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
@@ -41,7 +43,7 @@ their implementation, qualification and publication evidence is recorded separat
 | lea-09 | 09_DASHBOARD_SKIP_ANALYTICS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/1 |
 | lea-10 | 10_TRACKING_ADOPTION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/10 |
 | lea-11 | 11_DESKTOP_RUN_CONTROLS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/11 |
-| lea-12 | 12_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12 |
+| lea-12 | 12_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12 |
 
 ## Completion log
 - 2026-11-06: Inventoried three legacy files. Kept `TODO.md` unchanged as mixed
@@ -63,4 +65,14 @@ their implementation, qualification and publication evidence is recorded separat
   This is technical completion, not human acceptance or source publication.
 - 2026-11-08: Added desktop controls (#11) and portable Windows release (#12)
   under separate stable identities. Desktop offline implementation is complete;
-  exact hosted release and downloaded-asset verification remain in progress.
+  exact hosted release and downloaded-asset verification were initially pending.
+- 2026-11-08: Published v0.2.0 from qualified source
+  4c1fcb00afc36915d89e1ac911e5240e92ce22c7 through successful tag run
+  42423476175. Verified the actual 109.2 MiB ZIP, 255.0 MiB installation and
+  normal desktop startup. Fresh-machine, live-site and human visual acceptance
+  remain separate from this bounded release completion.
+- 2026-11-08: Previewed and applied only lea-11/lea-12 completion evidence.
+  Independent read-back verified both CLOSED/COMPLETED and Done, with original
+  #2/#9 still OPEN/In review. The settled scoped apply reported two no-ops,
+  zero creates and zero blockers. Remote content/timestamps and local mapping
+  plus all four selected workstream bytes/mtimes remained unchanged.

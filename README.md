@@ -17,9 +17,9 @@
 **Discovers jobs from your searches, scores them against your criteria, picks the right résumé,
 answers every question from your own answer file, and applies — in a window or from the terminal.**
 
-<img src="docs/images/gui-run-deepseafoam.png" alt="The desktop app running an Easy Apply crawl, with a live colour-coded log" width="900">
+<img src="docs/images/gui-run-deepseafoam.png" alt="The v0.2.0 Run workspace with action controls, command preview, wrapped console and prompt input" width="900">
 
-<sub>Run controls, private overrides, wrapped logs and prompt input; fictional preview data.</sub>
+<sub>v0.2.0 source-install preview: run controls, private overrides, wrapped logs and prompt input. All desktop screenshots use isolated fictional data, not live applications.</sub>
 
 </div>
 
@@ -40,6 +40,10 @@ extract the **entire folder**, and open `EasyApplyAutomaton.exe`. Keep `lea.exe`
 beside it. Use installed Edge/Chrome; browser binaries are not included. First launch creates
 private example configs in `%LOCALAPPDATA%\EasyApplyAutomaton`, separate from any source checkout.
 See [the executable setup and limitations](docs/gui.md#windows-executable).
+
+The published [v0.2.0 package](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.0)
+is **109.2 MiB downloaded / 255.0 MiB extracted**. The executables are unsigned;
+Windows may show a SmartScreen warning. Configure your answers and sign in manually before your first run.
 
 ```powershell
 .\.venv\Scripts\python.exe apply.py gui            # drive it from a window
@@ -85,6 +89,19 @@ it is not graceful Ctrl+C. **Copy command** copies the exact PowerShell equivale
 For a bounded CLI batch, configure `search.job_urls` with exact LinkedIn job URLs.
 `apply` processes that list instead of crawling, preserving normal checks and limits;
 use `--dry-run` to rehearse it first.
+
+<img src="docs/images/gui-settings-deepseafoam.png" alt="Expanded v0.2.0 run settings showing the Limits tab and the Search, Browser and Behavior tabs" width="900">
+
+<sub>Expanded run settings: company/daily caps, search pages, page size, pauses and score threshold. Search, Browser and Behavior have their own tabs; overrides leave saved YAML unchanged.</sub>
+
+<details>
+<summary>Smaller window in Harbor Daylight</summary>
+
+<img src="docs/images/gui-small-harbor-daylight.png" alt="The v0.2.0 Run page at 980 by 680 pixels, with scrollable setup, wrapped output and visible prompt controls" width="900">
+
+<sub>At 980 × 680, setup scrolls independently while the wrapped console and prompt input remain accessible.</sub>
+
+</details>
 
 ### Configuration — edit and validate before you run
 

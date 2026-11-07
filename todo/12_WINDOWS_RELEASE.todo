@@ -3,7 +3,7 @@ Workstream-ID: lea-12
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed Windows packaging and release engineering scope
-Status: IN_PROGRESS
+Status: DONE
 Milestone: Downloadable Windows desktop application with repeatable releases
 Dependencies: lea-11
 
@@ -20,8 +20,8 @@ through a trusted-ref, least-permission GitHub Actions release pipeline.
 - [x] Add validation and Windows release jobs without workstation credentials or recurring tracking.
 - [x] Audit the publication tree and assets for private/runtime material.
 - [x] Exercise the packaged GUI and CLI locally without submitting applications.
-- [ ] Publish a version tag and release; verify the exact hosted run and downloaded asset.
-- [ ] Record measured download/extracted sizes and remaining qualification limits.
+- [x] Publish a version tag and release; verify the exact hosted run and downloaded asset.
+- [x] Record measured download/extracted sizes and remaining qualification limits.
 
 ## Acceptance criteria
 - [x] A real Windows EXE opens the desktop app and can invoke bundled CLI commands.
@@ -29,24 +29,43 @@ through a trusted-ref, least-permission GitHub Actions release pipeline.
 - [x] Upgrades do not overwrite existing configuration, answers, databases or browser profiles.
 - [x] The downloadable payload excludes private context, real configurations and runtime artifacts.
 - [x] Release jobs use reviewed immutable action revisions and only necessary token permissions.
-- [ ] Published checksums match the actual downloadable Windows artifact.
-- [ ] Release publication is verified separately from tests and local package generation.
+- [x] Published checksums match the actual downloadable Windows artifact.
+- [x] Release publication is verified separately from tests and local package generation.
 
 ## Completion evidence
-Local dual-EXE packaging and frozen offline smoke passed: version/help/init,
-statistics, CSV/XLSX export, existing-config preservation, GUI rendering,
-Playwright driver startup and GUI-to-console child execution. The measured
-working-tree build was 106.0 MiB compressed and 245.5 MiB extracted; it is not
-the exact-commit public release.
+Published Windows x64 release:
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.0
+The annotated tag and downloaded manifest identify exact built source
+4c1fcb00afc36915d89e1ac911e5240e92ce22c7.
+Main qualification succeeded:
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/actions/runs/42422898194
+Tag qualification and publication both succeeded:
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/actions/runs/42423476175
+Hosted checks passed Ruff, scoped Black (112 files), product mypy (69 files),
+681 tests, Windows packaging and frozen offline smoke. Official actionlint
+1.7.12 also validates the workflow.
 
-Ruff, scoped Black, product mypy and 678 offline tests pass for the current
-source. Official actionlint 1.7.12 validates the workflow. Supplemental original
-Qt, Loguru and et-xmlfile notices are enforced by packaging regression tests.
+The actual downloaded ZIP is 114488935 bytes (109.2 MiB); its 449 installed
+files total 267371296 bytes (255.0 MiB). ZIP SHA256:
+a07e7cfcdb0e14d907e9f9c16491af908708a2862bd1a8ba704e008e90cc7f8c
+All three downloaded assets match GitHub's published sizes and SHA256 digests.
+SHA256SUMS, the version/source manifest and all per-file hashes were verified
+before and after installation. The earlier 106.0/245.5 MiB working-tree build
+was not substituted for the hosted release.
+
+Offline smoke against the actual installed release passed version/help/init,
+test-form, statistics, CSV/XLSX export, existing-config preservation, GUI
+rendering, Playwright driver startup and GUI-to-console child execution.
+A normal native desktop launch opened a responsive window and closed cleanly;
+the example-only default workspace and non-overwriting shortcut were verified.
+Python is bundled; installed Edge/Chrome remain external.
+
+Original Qt, Loguru and et-xmlfile notices are enforced by regression tests.
 Tracked private continuity, mixed legacy notes and answer-quality runtime
-reports are removed from the proposed public tip without deleting local files.
-Hosted qualification, release publication and downloaded-asset read-back remain
-pending. Code signing, fresh-machine execution and live LinkedIn submission
-are separate, unperformed qualifications.
+reports were removed from the public tip without deleting local files.
+The release is unsigned. Fresh-machine execution, live LinkedIn submission
+and human aesthetic acceptance remain separate, unperformed qualifications.
+No private configuration or browser profile was migrated by installation.
 
 ## Completion log
 - 2026-11-08: Verified repository owner access and workflow scope without printing
@@ -58,3 +77,10 @@ are separate, unperformed qualifications.
 - 2026-11-08: Completed notice provenance and public-tree review. Original
   et-xmlfile MIT and Python-derived-code licenses were copied byte-for-byte
   from the SHA256-verified official source archive; missing notices fail the build.
+- 2026-11-08: Initial hosted run 42422527663 failed at test collection because
+  dashboard test dependencies were absent. Added the dashboard extra to CI;
+  corrected exact-source main and tag qualifications passed all 681 tests.
+- 2026-11-08: Published v0.2.0, downloaded all three actual assets, verified
+  checksums and all 449 files, and installed without overwriting an existing
+  version. The installed frozen smoke and normal native startup both passed.
+  No new LinkedIn application or invitation was attempted.

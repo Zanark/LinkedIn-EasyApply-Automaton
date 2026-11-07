@@ -22,6 +22,46 @@ Ongoing record; individual bounded outcomes belong to numbered workstreams.
 
 ## Completion log
 
+### 2026-11-08 - Hosted release, downloaded delivery and native startup
+- Initial hosted run 42422527663 failed during collection: dashboard tests
+  required dependencies not installed by the dev-only CI command. Corrected
+  the workflow to install the dashboard extra and documented full-suite extras.
+- Corrected source 4c1fcb00afc36915d89e1ac911e5240e92ce22c7 passed main
+  run 42422898194: Ruff, 112 scoped Black files, 69 mypy files, 681 tests,
+  Windows packaging and frozen offline smoke.
+- Created annotated v0.2.0 only after that exact-source qualification.
+  Tag run 42423476175 passed both qualification and publication:
+  https://github.com/Zanark/LinkedIn-EasyApply-Automaton/actions/runs/42423476175
+  The public, non-prerelease release is:
+  https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.0
+- Downloaded all three published assets and matched GitHub's SHA256 digests
+  and byte counts. Verified SHA256SUMS, exact version/source and all 449
+  per-file hashes before and after a non-overwriting versioned installation.
+  Final ZIP: 114488935 bytes (109.2 MiB); extracted: 267371296 bytes (255.0 MiB).
+  ZIP SHA256: a07e7cfcdb0e14d907e9f9c16491af908708a2862bd1a8ba704e008e90cc7f8c.
+- The actual installed release passed offline version/help/init/test-form,
+  statistics, CSV/XLSX, existing-config preservation, GUI render, Playwright
+  driver and real GUI-to-console child checks in an isolated temporary workspace.
+- Normal desktop launch then opened a responsive native application window
+  and closed normally with exit zero. Verified the example-only default
+  workspace and a versioned desktop shortcut without replacing an existing one.
+- Updated the README with the measured release size and all eight captioned
+  desktop previews, including expanded settings and the compact light layout.
+  Captures are explicitly fictional source-install previews, not live evidence.
+- Previewed and applied only lea-11/lea-12 evidence and completion changes.
+  Independent read-back verified both CLOSED/COMPLETED in Done and preserved
+  the original #2/#9 qualification gaps as OPEN/In review, with stable identities,
+  exact managed content, Project membership and persistent backlinks.
+- The settled scoped apply reused both items and reported two no-ops, zero
+  creates and zero blockers. Independent before/after comparison verified
+  unchanged remote content and timestamps plus local mapping and all four
+  selected workstream bytes/mtimes. This receipt is excluded from synchronization.
+- This later release request authorized source/pipeline publication and local
+  delivery; the November 6 no-publication checkpoints below remain historical.
+  No new applications, invitations, private-data migration or tracking daemon.
+  Unsigned distribution, fresh-machine execution, live qualification and human
+  aesthetic acceptance remain explicit boundaries.
+
 ### 2026-11-08 - Desktop implementation and pre-publication qualification
 - Added scrollable run controls, per-run validated settings, wrapped live output,
   interactive input and confirmations for actions capable of real submissions.
