@@ -43,8 +43,11 @@ private example configs in `%LOCALAPPDATA%\EasyApplyAutomaton`, separate from an
 See [the executable setup and limitations](docs/gui.md#windows-executable).
 
 The [v0.2.1 Windows package](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.1)
-includes the full offline tutorial. Exact download/extracted sizes and SHA-256
-checksums are recorded in the release's build manifest and `SHA256SUMS`.
+includes the full 21-topic offline tutorial: **109.2 MiB ZIP** (114,514,070 bytes),
+**255.0 MiB extracted** (267,411,166 bytes; 450 files). The downloaded package's
+checksums and every installed file were verified against the release's build
+manifest and `SHA256SUMS`. Offline GUI/CLI and native tutorial startup were
+checked separately; this is not fresh-machine, live-site or human visual qualification.
 The executables are unsigned; Windows may show a SmartScreen warning.
 Configure your answers and sign in manually before your first run.
 

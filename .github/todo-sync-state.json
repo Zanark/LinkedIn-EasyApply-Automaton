@@ -216,12 +216,12 @@
     "lea-15": {
       "baseline": {
         "title": "[lea-15] Tutorial-enabled Windows v0.2.1 release",
-        "managed": "e8999cc91ff9c6b055abe0696c21ccda0f896907a64e04686e027424f234ab97",
+        "managed": "ec100737c9d8818b52a52ea4add8329cbf6c6a715c402e45b31d20fd46034f38",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABdbPInA",
       "number": 15,

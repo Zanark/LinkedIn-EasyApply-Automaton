@@ -3,7 +3,7 @@ Workstream-ID: lea-15
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/15
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed tutorial packaging, release publication and documentation scope
-Status: IN_PROGRESS
+Status: DONE
 Milestone: Deliver the guided tutorial in a verified downloadable Windows release
 Dependencies: lea-12, lea-14
 
@@ -16,37 +16,35 @@ configuration and the immutable earlier release.
 - [x] Review the existing tag-gated pipeline, public source and release authority.
 - [x] Select an unused version and align package metadata, README and usage guides.
 - [x] Include the guide and first-run instructions in the explicit public bundle.
-- [ ] Qualify release source and the actual frozen GUI/CLI offline.
-- [ ] Commit and push only reviewed public changes with repository-local attribution.
-- [ ] Publish the matching version tag through the existing qualified pipeline.
-- [ ] Verify the exact hosted run, downloaded integrity files and all bundled files.
-- [ ] Exercise downloaded normal GUI and standalone tutorial startup natively.
-- [ ] Reconcile issue, Project and persistent backlink, then deliver the release URL.
+- [x] Qualify release source and the actual frozen GUI/CLI offline.
+- [x] Commit and push only reviewed public changes with repository-local attribution.
+- [x] Publish the matching version tag through the existing qualified pipeline.
+- [x] Verify the exact hosted run, downloaded integrity files and all bundled files.
+- [x] Exercise downloaded normal GUI and standalone tutorial startup natively.
+- [x] Reconcile issue, Project and persistent backlink, then deliver the release URL.
 
 ## Acceptance criteria
-- [ ] The version tag, package version and downloaded manifest identify one exact source.
-- [ ] Both Windows entrypoints can open the bundled tutorial without private setup.
-- [ ] The normal desktop, contextual guide and sibling CLI work from the real asset.
-- [ ] Standalone tutorial navigation does not initialize configuration/history or start automation.
-- [ ] README screenshots and setup commands match this release's capabilities.
-- [ ] Private inputs, authentication, runtime history and unrelated dirty work remain unpublished.
-- [ ] Existing settings are preserved and the prior version's assets are not replaced.
-- [ ] Hosted publication and downloaded verification are distinguished from human/live qualification.
-- [ ] The completed workstream has one issue, one Done Project item and a durable backlink.
+- [x] The version tag, package version and downloaded manifest identify one exact source.
+- [x] Both Windows entrypoints can open the bundled tutorial without private setup.
+- [x] The normal desktop, contextual guide and sibling CLI work from the real asset.
+- [x] Standalone tutorial navigation does not initialize configuration/history or start automation.
+- [x] README screenshots and setup commands match this release's capabilities.
+- [x] Private inputs, authentication, runtime history and unrelated dirty work remain unpublished.
+- [x] Existing settings are preserved and the prior version's assets are not replaced.
+- [x] Hosted publication and downloaded verification are distinguished from human/live qualification.
+- [x] The completed workstream has one issue, one Done Project item and a durable backlink.
 
 ## Completion evidence
-The existing release and tag inventory contains v0.2.0 only; selected patch
+The initial release and tag inventory contained v0.2.0 only; selected patch
 version 0.2.1 without overwriting the earlier release. Reviewed the trusted-ref
 pipeline, job-scoped publication token and explicit public packaging resources.
 Package versions, README captions, tutorial commands and bundled first-run
 instructions are aligned. Existing setup remains outside the downloadable app;
 no background tracking, new LinkedIn application or invitation is authorized.
-Hosted source/frozen qualification, publication and downloaded native verification
-are pending, not established by the earlier source tutorial checks.
 The first fresh full source gate passed lint, format and typing, then failed
 with a Windows access violation/native heap-corruption exit after test
-assertions. The non-GUI selection exits normally; GUI lifetime isolation and
-correction are required before source qualification or publication is claimed.
+assertions. The non-GUI selection exited normally; GUI lifetime isolation and
+correction preceded source qualification and publication.
 GUI diagnostics found retained closed windows. A focused shutdown regression
 failed before the correction: the standalone tutorial was not destroyed when
 its event loop returned. Desktop startup now explicitly delivers owned-window
@@ -54,7 +52,40 @@ deletion before application shutdown; Qt fixtures share one session application
 and clean up native widgets. The corrected full local gates passed Ruff,
 Black and product typing, then 698 tests with exit zero and no retained
 top-level Qt widgets. The unrelated untracked plugin was excluded from local
-lint and remains unpublished. Frozen and downloaded qualification is pending.
+lint and remains unpublished. The exact native heap-corruption stack is not
+claimed diagnosed.
+
+Reviewed source 0c8c502b33f0a871ab481ecc8d82ba04612547c4 is committed/pushed
+with repository-local attribution and required trailers. Exact-source main
+qualification 42469500764 and tag qualification/publication 42470184527 both
+succeeded, including source gates, Windows packaging and frozen offline smoke.
+The annotated v0.2.1 tag dereferences to that source; the stable hosted release is:
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.1
+
+Downloaded all three actual assets and verified hosted digests, SHA256SUMS,
+manifest source/platform, archive inventory and every file before and after
+non-overwriting versioned installation. ZIP: 114514070 bytes (109.2 MiB);
+extracted: 267411166 bytes (255.0 MiB), 450 files. ZIP SHA256:
+403c9c637edd6ba41dfb4872b1215c081d0089bbc3befece2f09f833eba54289.
+The bundled UTF-8 guide matches the source text and contains 21 topics;
+line-ending normalization applies only to that text comparison, not integrity hashes.
+
+The installed asset passed offline version/help/init/statistics/test-form,
+CSV/XLSX, existing-config preservation, GUI/contextual-guide rendering,
+Playwright driver and real sibling CLI child checks. Separate native Windows
+checks opened responsive standalone tutorials through both EXEs without
+creating their absent workspace. The normal GUI's targeted F1 guide opened
+and closed, its parent stayed responsive, and all native processes exited zero
+with no unexpected or automation child. Read-only navigation is additionally
+covered by source tests. Native checks preserved the captured post-error
+preference and exact timestamp; the immediately pre-error preference remains
+unknown. Earlier isolation failures are not erased.
+
+The prior v0.2.0 tag, release identity and all asset identities/sizes/digests
+remain unchanged. Private setup, authentication, runtime history and the
+unrelated plugin remain excluded. These are unsigned portable binaries using
+installed Edge/Chrome, not fresh-machine, live-site or human visual qualification.
+Scoped closure and settled tracking receipts belong in the excluded index/ledger.
 
 ## Completion log
 - 2026-11-08: Started the separately authorized release follow-through after
@@ -74,3 +105,15 @@ lint and remains unpublished. Frozen and downloaded qualification is pending.
   with no retained top-level Qt widgets. The subsequent complete local suite
   passed 698 tests and exited normally; original release lint/format/type
   gates passed without suppressing the prior native failure.
+- 2026-11-08: Published the reviewed source and ten fictional screenshots,
+  observed successful exact-source main/tag qualification and downloaded the
+  stable release's actual assets. Verified all integrity layers and installed
+  450 files without replacing the prior version.
+- 2026-11-08: The first verified local installation reached atomic directory
+  rename but failed with WinError 5. A bounded empty-directory rename probe
+  succeeded; the second complete integrity/install attempt succeeded without
+  permission or security-policy changes. The denial's exact cause is unknown.
+- 2026-11-08: Installed offline smoke and separate native GUI/CLI standalone
+  tutorials plus normal-window F1 checks passed. Temporary qualification state
+  was removed; private inputs and captured post-error preferences were preserved.
+  Complete this bounded release only; preserve the original live review gaps.

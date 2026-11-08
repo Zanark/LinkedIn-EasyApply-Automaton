@@ -22,6 +22,48 @@ Ongoing record; individual bounded outcomes belong to numbered workstreams.
 
 ## Completion log
 
+### 2026-11-08 - Tutorial release published and downloaded delivery qualified
+- Reviewed/pushed 43 public files as 0c8c502b33f0a871ab481ecc8d82ba04612547c4
+  under repository-local Zanark attribution with both required trailers.
+  Independent reads matched all changed blobs, ten fictional screenshots and
+  the main README; private continuity/setup/runtime and unrelated work stayed excluded.
+- Both exact-source Windows runs succeeded: main qualification 42469500764
+  and tag qualification/publication 42470184527. Verified actual job/step
+  conclusions and the annotated tag's exact source. Stable hosted release:
+  https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.1
+- Downloaded all three hosted assets. Verified GitHub digests, SHA256SUMS,
+  source/platform manifest, archive inventory and every extracted/installed file.
+  ZIP: 114514070 bytes (109.2 MiB); extracted: 267411166 bytes (255.0 MiB),
+  450 files. ZIP SHA256:
+  403c9c637edd6ba41dfb4872b1215c081d0089bbc3befece2f09f833eba54289.
+  The bundled guide matches source UTF-8 text and has 21 topics. Git line-ending
+  normalization affects only the guide comparison; manifest hashes remain strict.
+- The first local installer reached the final atomic directory rename, then
+  returned WinError 5. An empty-directory rename in the same parent worked.
+  Added bounded retries for rename denials only, preserving non-overwrite and
+  explicit terminal failure. The second full integrity/install attempt succeeded;
+  no permission/security-policy change and no claim about the denial's exact cause.
+- Installed offline smoke passed version/help/init/statistics/test-form,
+  CSV/XLSX, existing-config preservation, GUI/contextual tutorial rendering,
+  Playwright driver and real sibling CLI child checks. Every installed hash
+  remained unchanged afterward.
+- Separate native Windows checks opened responsive standalone tutorials through
+  both EXEs without creating absent workspaces. Targeted F1 opened/closed the
+  normal GUI's guide, the parent remained responsive and all exits were zero.
+  No unexpected/automation child, private input or global keyboard injection.
+  Temporary state was cleaned and captured post-error preferences/timestamp preserved.
+- Scoped preview/apply completed only lea-15, reusing its existing issue/item
+  with zero creates or blocks. Independent API reads matched exact managed
+  content, CLOSED/COMPLETED, one Done item and the persistent backlink.
+  All fourteen earlier mappings and original #2/#9 OPEN/In review gaps remain
+  unchanged. Settled scoped apply verified one no-op with unchanged remote
+  content/timestamps and local source/mapping bytes/mtimes. This settlement
+  receipt stays outside the managed body to avoid receipt-driven update churn.
+- Prior v0.2.0 tag/release/asset identities, byte counts and digests are unchanged.
+  Preserved initial Qt/native failures and unknown immediate pre-error preferences.
+  Unsigned binaries, installed browser dependencies, fresh-machine behavior,
+  live qualification and human visual acceptance remain explicit boundaries.
+
 ### 2026-11-08 - Tutorial-enabled release follow-through
 - The later request separately authorizes reviewed commits/pushes, a new
   Windows release and README publication. Selected unused patch version 0.2.1;
