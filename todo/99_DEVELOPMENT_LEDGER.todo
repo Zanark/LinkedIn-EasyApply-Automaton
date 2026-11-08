@@ -22,6 +22,75 @@ Ongoing record; individual bounded outcomes belong to numbered workstreams.
 
 ## Completion log
 
+### 2026-11-08 - README media source publication separately authorized
+- Reviewed the completed README media, capture tooling, focused regressions,
+  reproduction guides and durable tracking sources for a bounded commit/push.
+  Public examples are fictional; private setup and unrelated work stay excluded.
+- Rechecked unchanged capture/media hashes against the retained verification
+  receipt. Original native preferences, selected private metadata and fifteen
+  earlier mappings still match their baseline; source HEAD is unchanged before
+  staging. No new capture or product test run is implied by this recheck.
+- Verified the canonical public repository, origin/main, account push access
+  and effective repository-local Zanark author/committer. The commit retains
+  required co-author/session trailers; publication read-back follows the push.
+- Keep lea-16's settled managed evidence unchanged. This follow-through
+  authorizes source publication, not a new release, moved tag, replaced asset,
+  live application or tracking-service activation.
+
+### 2026-11-08 - Current desktop media and offline walkthroughs completed locally
+- Regenerated thirteen GUI PNGs, including all four customization tabs, both
+  themes and a smaller window. Tools now displays 0.2.1 and fictional demo
+  locations. The legacy analytics dashboard PNG is unchanged.
+- Added a nine-frame, 17.8-second run-control GIF (980709 bytes) and a seven-frame,
+  14.2-second tutorial GIF (364065 bytes). Decoded every frame; looping and
+  1.8-2.8 second holds are valid. UI-area comparisons excluding captions found
+  nine distinct run states and six guide states, not merely changed labels.
+- Visually inspected two sheets covering thirteen desktop views and eight
+  representative animation states, then full-size Tools, Configuration and
+  run Limits. This sampled review is not complete animation playback or
+  human aesthetic acceptance. All visible inputs/locations are fictional.
+- README embeds both GIFs and every GUI asset with captions, meaningful alt
+  text and static alternatives. All twenty-two README/GUI image references
+  resolve; no embedded author/source/EXIF metadata was found. GUI/developer
+  guides document reproduction, isolation and non-execution boundaries.
+- Thirty-five focused window/tutorial cases passed with process exit zero.
+  Scoped Ruff/Black passed. Tests cover real UI changes below the caption
+  strip, preserved unsaved parent state and cleanup after encoder failure.
+- Original native preferences and exact registry timestamp, selected private
+  input size/mtime metadata and HEAD are unchanged. This is not a full private
+  content hash audit. No command runner, browser/dashboard launch, clipboard
+  copy, run preset or live action was invoked by capture.
+- Pillow was already installed and is declared only in development extras.
+  Corrected the fictional threshold to match its explicitly illustrative
+  score line; removed an ineffective click on the disabled dry-run confirmation.
+- Initial lea-16/#16 synchronization verified OPEN/In Progress, exact managed
+  body, one issue-backed item and backlink. All fifteen prior issue/item
+  contents/timestamps, source files and mapping objects are unchanged, including
+  original #2/#9 OPEN/In review gaps.
+- The first completion preview rejected the absolute fictional demo location
+  in the issue description. Removed that unnecessary path from the reviewed
+  public projection; the path guard and synchronization code remain unchanged.
+- Corrected scoped completion reused #16 and its existing item. Independent
+  reconciliation verified exact managed content, CLOSED/COMPLETED, one Done
+  item and the backlink. Settled preview/apply reported one verified no-op;
+  separate comparison matched remote content/timestamps and local mapping/
+  workstream bytes/mtimes. All fifteen earlier records and review gaps remain
+  unchanged. This settlement receipt stays outside the managed workstream body.
+- Changes remain local. No commit, push, release, automation activation,
+  private-input loading or new installed/native/live qualification occurred.
+
+### 2026-11-08 - Current README media refresh started
+- Current source reports 0.2.1; the existing Tools PNG still shows 0.2.0 and
+  actual checkout-specific temporary paths. Regenerate from current source
+  rather than relabeling stale images or using private account/history data.
+- Reuse the existing owned-widget capture tool, isolated configuration and
+  font self-test. Add scripted run controls and read-only guide navigation,
+  explicit INI isolation, fictional display paths and deferred widget cleanup.
+- Pillow is already installed and is declared only in the development extra.
+  GIFs are documentation artifacts, not an added desktop dependency or live run.
+- Added bounded lea-16. Generation, visual inspection and focused verification
+  remain pending; no commit, push, retag, new release or live action occurred.
+
 ### 2026-11-08 - Tutorial release published and downloaded delivery qualified
 - Reviewed/pushed 43 public files as 0c8c502b33f0a871ab481ecc8d82ba04612547c4
   under repository-local Zanark attribution with both required trailers.

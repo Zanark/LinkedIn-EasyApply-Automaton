@@ -227,6 +227,21 @@
       "number": 15,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/15",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG71fA"
+    },
+    "lea-16": {
+      "baseline": {
+        "title": "[lea-16] Current desktop screenshots and README walkthrough GIFs",
+        "managed": "9a6fecd2524d7c6bf9da679a191fbeeae6000c473b71531c2b579e58bfeec605",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdcpuDQ",
+      "number": 16,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/16",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG9WwI"
     }
   }
 }

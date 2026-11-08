@@ -1,0 +1,79 @@
+# Current desktop screenshots and README walkthrough GIFs
+Workstream-ID: lea-16
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/16
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed current desktop documentation and offline media scope
+Status: DONE
+Milestone: Make current desktop controls understandable through safe visual examples
+Dependencies: lea-15
+
+## Purpose
+Refresh the README's desktop screenshots and add short run-setup and read-only
+tutorial GIFs from current source. Use independent fictional fixtures, not
+personal setup, browser authentication, runtime history or desktop recordings.
+This bounded documentation task does not authorize another source push or release.
+
+## Tasks
+- [x] Inspect current documentation, capture tooling, controls and private-state boundaries.
+- [x] Extend the existing capture tool with actual GUI transitions and explicit widget cleanup.
+- [x] Refresh desktop screenshots, including every customization tab.
+- [x] Generate and inspect run-control and tutorial walkthrough GIFs.
+- [x] Embed media with captions, static alternatives and reproducible prerequisites.
+- [x] Verify focused behavior, animation integrity and preservation of original inputs/preferences.
+- [x] Preview scoped tracking and verify the issue, Project status and durable backlink.
+
+## Acceptance criteria
+- [x] Desktop screenshots show the current version and readable text in both existing themes.
+- [x] Run GIF shows action-specific controls and all four customization tabs.
+- [x] Tutorial GIF shows Back/Next and direct topic selection without changing its parent.
+- [x] Animations contain real UI transitions, readable holds and a looping GIF encoding.
+- [x] Public images contain only fictional data and paths; original setup remains untouched.
+- [x] Captures execute no automation, copy no clipboard command and create no run presets.
+- [x] README retains static alternatives with meaningful captions and alt text.
+- [x] Capture tooling uses development-only dependencies and destroys its owned Qt widgets.
+- [x] Tracking preserves all earlier identities, baselines and original review gaps.
+- [x] Local technical completion is distinguished from publication and human/live qualification.
+
+## Completion evidence
+Regenerated thirteen current-source desktop PNGs, including Search, Limits,
+Browser and Behavior, both themes and the smaller window. Tools now displays
+0.2.1 and fictional demo locations rather than checkout-specific paths.
+The run walkthrough contains nine frames, lasts 17.8 seconds and is 980709 bytes;
+the tutorial contains seven frames, lasts 14.2 seconds and is 364065 bytes.
+Both loop, have 1.8-2.8 second holds and decode completely. Cropping away captions
+verified nine distinct run UI states and six tutorial UI states.
+
+Assistant visual review covered all thirteen PNGs and eight representative
+GIF states through two contact sheets, plus full-size Tools, Configuration and
+the run Limits frame. This is sampled visual inspection, not a claim of watching
+the complete animations or receiving human aesthetic acceptance.
+All twenty-two README/GUI image references resolve with nonempty alt text;
+all fifteen GUI assets appear in the README. Captions explain fictional state,
+non-execution boundaries and static alternatives. The legacy dashboard image
+is unchanged; no new dashboard or installed-release qualification is claimed.
+
+The thirty-five focused window/tutorial cases passed with process exit zero,
+including actual UI-area transitions, preserved parent state and injected GIF
+encoding failure cleanup. Scoped Ruff and Black passed. Current native preference
+values and registry timestamp, selected original-input size/mtime metadata,
+all fifteen earlier mapping objects and source HEAD were preserved. This is
+metadata preservation, not a full private-content hash comparison.
+Captures use temporary explicit UserScope/SystemScope INI paths and owned widgets,
+never Start, Copy command, Save or a launcher. Pillow is declared in development
+extras only and was already installed. No run preset, dependency installation,
+live action, source commit/push or new release occurred.
+
+Initial scoped synchronization independently verified issue #16, one In Progress
+Project item and the persistent backlink; all fifteen prior issues/items,
+timestamps, source files and original #2/#9 OPEN/In review gaps were unchanged.
+Completion reconciliation and settlement receipts belong in the excluded
+index/ledger rather than repeatedly changing this managed evidence.
+
+## Completion log
+- 2026-11-08: Completed the local media, focused checks and documentation review.
+  Both walkthroughs demonstrate real controls without executing automation.
+  Public-safe tracking is separate from source publication and human/live acceptance.
+- 2026-11-08: Started the bounded README media refresh after the separately
+  completed v0.2.1 release. Preserve unrelated work, private inputs, immutable
+  releases and original live/human review gaps. Use a new stable workstream,
+  not a reopening or evidence rewrite of the delivered release.

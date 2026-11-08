@@ -43,6 +43,7 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.10",
     "types-PyYAML>=6.0",
+    "pillow>=10.1",
 ]
 
 [project.scripts]

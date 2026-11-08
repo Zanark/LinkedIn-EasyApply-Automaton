@@ -39,6 +39,11 @@ The separate lea-15 follow-through packages that tutorial as Windows v0.2.1.
 Its exact-source main/tag pipeline, hosted publication, downloaded integrity,
 installed offline smoke and separate native tutorial/F1 checks are complete.
 Original live-site and human-acceptance boundaries remain unchanged.
+The subsequent lea-16 refreshes thirteen desktop PNGs and adds two offline
+README walkthrough GIFs with captions and static alternatives. Local media
+completion and tracking settlement are verified. Commit/push is separately
+authorized; source-publication verification is a post-push gate. The existing
+v0.2.1 release is not rebuilt or replaced.
 
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
@@ -57,8 +62,24 @@ Original live-site and human-acceptance boundaries remain unchanged.
 | lea-13 | 13_PRIVATE_SETUP_HANDOFF.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/13 |
 | lea-14 | 14_GUIDED_GUI_TUTORIAL.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/14 |
 | lea-15 | 15_TUTORIAL_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/15 |
+| lea-16 | 16_README_GUI_MEDIA.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/16 |
 
 ## Completion log
+- 2026-11-08: Separately authorized source publication for the completed
+  lea-16 media, capture tooling, focused tests, documentation and durable
+  tracking sources. Review and stage only this bounded public payload.
+  Preserve the settled managed body, all earlier mappings, private setup and
+  unrelated work. No new release, tag change or live qualification is included.
+- 2026-11-08: Locally completed lea-16's thirteen screenshots, two walkthrough
+  GIFs, media review and documentation. Scoped completion and independent
+  reconciliation verified #16 CLOSED/COMPLETED, exact managed content, one Done
+  item and the persistent backlink. The settled apply verified one no-op;
+  exact remote content/timestamps and local mapping/workstream bytes/mtimes
+  stayed unchanged. All fifteen prior records and original #2/#9 review gaps
+  are preserved. Media/source publication remains separately unauthorized.
+- 2026-11-08: Started lea-16 for current desktop screenshots and offline README
+  walkthrough GIFs. Source publication and another release are not requested;
+  preserve prior release evidence and all original qualification boundaries.
 - 2026-11-08: Independently verified lea-15/#15 CLOSED/COMPLETED with exact
   managed content, one Done Project item and persistent backlink. All fourteen
   earlier mappings and original #2/#9 OPEN/In review gaps remain unchanged.

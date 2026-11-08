@@ -20,7 +20,7 @@ answers every question from your own answer file, and applies — in a window or
 
 <img src="docs/images/gui-run-deepseafoam.png" alt="Run workspace with tutorial access, action controls, command preview and prompt input" width="900">
 
-<sub>Source-generated preview of the v0.2.1 desktop: run controls, private overrides, tutorial access, wrapped logs and prompt input. All desktop screenshots use isolated fictional data, not live applications.</sub>
+<sub>Current v0.2.1 desktop: run controls, private overrides, tutorial access, wrapped logs and prompt input. All desktop screenshots and GIFs are source-generated with isolated fictional data and example paths, not live applications.</sub>
 
 </div>
 
@@ -99,6 +99,10 @@ or files, and is blocked while a command runs so it cannot hide a live prompt.
 `gui --tutorial` opens only the guide, without loading configuration/history.
 Read [the same guide as Markdown](docs/gui-tutorial.md).
 
+<img src="docs/images/gui-tutorial-walkthrough.gif" alt="Animated read-only tutorial showing Next, Back, direct topic selection and per-run settings explanations" width="900">
+
+<sub>Scripted offline walkthrough: move forward, go back, jump to Customize this run and replay Search/Limits explanations. The parent window's controls and files are unchanged; no command executes. Static views in both themes follow below.</sub>
+
 From the extracted **v0.2.1** folder, open just the guide without initializing
 configuration, history or a browser:
 
@@ -128,9 +132,30 @@ For a bounded CLI batch, configure `search.job_urls` with exact LinkedIn job URL
 `apply` processes that list instead of crawling, preserving normal checks and limits;
 use `--dry-run` to rehearse it first.
 
+<img src="docs/images/gui-run-walkthrough.gif" alt="Animated run setup showing Scan, dry-run Apply, all four customization tabs, retry listing and a Connect run-ID filter without execution" width="900">
+
+<sub>Scripted offline walkthrough: choose an action, review the command preview, open Search/Limits/Browser/Behavior, and inspect retry and connection controls. The demo never presses Start or Copy command, creates no run preset and sends nothing. Prefer still images? The settings gallery below shows each tab.</sub>
+
 <img src="docs/images/gui-settings-deepseafoam.png" alt="Expanded source run settings showing contextual help, Limits and the other settings tabs" width="900">
 
 <sub>Expanded run settings: company/daily caps, search pages, page size, pauses and score threshold. Search, Browser and Behavior have their own tabs; overrides leave saved YAML unchanged.</sub>
+
+<details>
+<summary>Static settings gallery: Search, Browser and Behavior</summary>
+
+<img src="docs/images/gui-settings-search-deepseafoam.png" alt="Search settings with enabled saved searches and an exact-job URL input" width="900">
+
+<sub>Search: select saved searches or provide exact job URLs for Apply.</sub>
+
+<img src="docs/images/gui-settings-browser-deepseafoam.png" alt="Browser settings showing engine, profile folder, headless mode, timing and example resume paths" width="900">
+
+<sub>Browser: choose Edge/Chrome/Chromium and review profile, timing and static resume settings.</sub>
+
+<img src="docs/images/gui-settings-behavior-deepseafoam.png" alt="Behavior settings for prompts, resume review, screenshot cleanup, outreach and dynamic resume building" width="900">
+
+<sub>Behavior: tune question pauses, screenshot retention, outreach and dynamic-builder options. Displayed values are fictional demo configuration, not a recommendation to enable live actions.</sub>
+
+</details>
 
 <details>
 <summary>Smaller window in Harbor Daylight</summary>
@@ -174,7 +199,7 @@ search diagnostics — one click from Explorer.
 
 <img src="docs/images/gui-tools-deepseafoam.png" alt="Tools page with one-shot commands and runtime folder shortcuts" width="900">
 
-<sub>One-shot tools and explicit workspace paths, separate from run setup.</sub>
+<sub>One-shot tools and workspace shortcuts, separate from run setup. The displayed C:\EasyApplyDemo locations are fictional; no personal folders or browser profile are captured.</sub>
 
 ---
 

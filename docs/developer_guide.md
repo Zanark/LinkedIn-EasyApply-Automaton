@@ -192,6 +192,27 @@ renders the contextual guide alongside the normal window and sibling CLI;
 actual standalone native startup remains a separate qualification.
 Older v0.2.0 binaries are not retrofitted.
 
+### Refresh README media
+
+Use the existing `.[dev,gui]` environment; Pillow is a development-only encoder,
+not a new desktop/runtime dependency:
+
+```powershell
+$env:QT_QPA_PLATFORM = "offscreen"
+.\.venv\Scripts\python.exe -B tools\capture_screenshots.py
+```
+
+The tool writes thirteen desktop PNGs and two looping GIFs to `docs\images`.
+It renders only owned Qt widgets, exercises real action/settings controls and
+read-only tutorial navigation, and captions illustrative output explicitly.
+Configuration, database and INI preferences live in a temporary demo workspace;
+location labels and command executable paths are fictionalized before capture.
+Start, Copy command, Save, browser and dashboard launchers are not exercised.
+Font checks reject missing-glyph boxes. Owned windows are explicitly destroyed
+before temporary workspace cleanup, including when GIF encoding fails.
+Review the rendered media and captions before any separately authorized push;
+these captures do not qualify a live run, installed release or human acceptance.
+
 Desktop preferences use the explicit `QSettings.defaultFormat()` / UserScope
 constructor. The two-string constructor uses native storage on Windows even
 after setting IniFormat globally, which would bypass temporary test/capture

@@ -377,3 +377,120 @@ def test_small_window_keeps_console_and_controls_accessible(window, qapp):
     scroll = window._run_splitter.widget(0)
     assert scroll.verticalScrollBar().maximum() > 0
     assert not window._theme_button.icon().isNull()
+
+
+def test_readme_run_capture_uses_real_controls_without_execution(
+    window, qapp, tmp_path, monkeypatch
+):
+    from PIL import Image
+
+    from tools import capture_screenshots as capture
+
+    started = []
+    monkeypatch.setattr(window._runner, "start", lambda *args: started.append(args))
+    files = {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
+    observed = []
+    render = capture._walkthrough_frame
+
+    def observe(widget, caption):
+        options = widget._current_options()
+        observed.append(
+            (
+                options.action,
+                options.dry_run,
+                options.list_only,
+                options.connect_run_id,
+                widget._run_settings.customize.isChecked(),
+                widget._run_settings.tabs.currentIndex(),
+            )
+        )
+        return render(widget, caption)
+
+    monkeypatch.setattr(capture, "_walkthrough_frame", observe)
+    target = tmp_path / "run.gif"
+    capture._capture_run_walkthrough(window, qapp, target)
+    assert {state[0] for state in observed} == {"scan", "apply", "reapply", "connect"}
+    assert all(state[1] for state in observed if state[0] != "scan")
+    assert {state[5] for state in observed if state[4]} == {0, 1, 2, 3}
+    assert any(state[0] == "reapply" and state[2] for state in observed)
+    assert any(state[0] == "connect" and state[3] == 11 for state in observed)
+    assert started == [] and not window._runner.busy
+    assert files == {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
+    assert not (window._root / "logs" / "gui-runs").exists()
+    with Image.open(target) as animation:
+        assert animation.is_animated and animation.info["loop"] == 0
+        states = set()
+        for index in range(animation.n_frames):
+            animation.seek(index)
+            assert animation.info["duration"] >= 1000
+            states.add(
+                animation.convert("RGB")
+                .crop((0, capture.CAPTION_HEIGHT, animation.width, animation.height))
+                .tobytes()
+            )
+        assert len(states) >= 5, "The actual UI, not just captions, must change."
+
+
+@pytest.mark.parametrize("encoder_fails", [False, True])
+def test_readme_tutorial_capture_preserves_parent_and_disposes_dialog(
+    window, qapp, tmp_path, monkeypatch, encoder_fails
+):
+    from PIL import Image, ImageSequence
+    from shiboken6 import isValid
+
+    from tools import capture_screenshots as capture
+
+    window._config_editor.appendPlainText("# Unsaved example")
+    window._input.setText("Unsent example")
+    window._console.append_text("Existing example output\n")
+    window._console.flush()
+    window._settings.sync()
+    before = (
+        window._current_options(),
+        window._config_editor.toPlainText(),
+        window._input.text(),
+        window._console.toPlainText(),
+        Path(window._settings.fileName()).read_bytes(),
+    )
+    files = {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
+    created = []
+    dialog_type = capture.TutorialDialog
+
+    def track_dialog(*args, **kwargs):
+        guide = dialog_type(*args, **kwargs)
+        created.append(guide)
+        return guide
+
+    monkeypatch.setattr(capture, "TutorialDialog", track_dialog)
+    target = tmp_path / "tutorial.gif"
+    if encoder_fails:
+
+        def fail_encoder(*args):
+            raise OSError("Example GIF encoder failure")
+
+        monkeypatch.setattr(capture, "_save_gif", fail_encoder)
+        with pytest.raises(OSError, match="Example GIF encoder failure"):
+            capture._capture_tutorial_walkthrough(window, qapp, target)
+    else:
+        capture._capture_tutorial_walkthrough(window, qapp, target)
+        with Image.open(target) as animation:
+            assert animation.is_animated and animation.n_frames >= 5
+            states = {
+                frame.convert("RGB")
+                .crop((0, capture.CAPTION_HEIGHT, frame.width, frame.height))
+                .tobytes()
+                for frame in ImageSequence.Iterator(animation)
+            }
+            assert len(states) >= 4, "Tutorial navigation must change the actual guide."
+    assert len(created) == 1 and not isValid(created[0])
+    assert window.isVisible() and not window._runner.busy
+    window._settings.sync()
+    assert before == (
+        window._current_options(),
+        window._config_editor.toPlainText(),
+        window._input.text(),
+        window._console.toPlainText(),
+        Path(window._settings.fileName()).read_bytes(),
+    )
+    assert files == {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
+    assert not (window._root / "logs" / "gui-runs").exists()
