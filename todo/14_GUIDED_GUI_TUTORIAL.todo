@@ -1,0 +1,82 @@
+# Guided desktop tutorial
+Workstream-ID: lea-14
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/14
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed desktop option reference and read-only tutorial scope
+Status: DONE
+Milestone: Explain every desktop control without starting automation or changing private settings
+Dependencies: lea-11
+
+## Purpose
+Add a replayable in-app walkthrough and a standalone offline tutorial.
+Explain per-run customization, persistent configuration, commands, prompts,
+real-action boundaries and source-versus-packaged capabilities.
+
+## Tasks
+- [x] Trace every desktop control and its actual CLI or persistence behavior.
+- [x] Add topic navigation, Back/Next and a contextual per-run settings explanation.
+- [x] Provide a standalone tutorial that does not load configuration or initialize history.
+- [x] Bundle the public tutorial resource for future Windows builds.
+- [x] Update usage documentation and captioned fictional-data screenshots.
+- [x] Exercise navigation, replay, errors, keyboard access and state preservation.
+- [x] Verify protected native startup and local tutorial delivery.
+- [x] Reconcile the reviewed workstream with issue and Project tracking.
+
+## Acceptance criteria
+- [x] The tutorial covers all five pages and all four per-run settings tabs.
+- [x] Navigation never starts commands, sends input, saves editors or creates run presets.
+- [x] Opening and closing the tutorial preserves current controls and unsaved edits.
+- [x] The standalone entry works without configuration, browser authentication or a database.
+- [x] Real submissions/messages, forceful Stop and private preset creation are explained accurately.
+- [x] Current source delivery is distinguished from the unchanged published v0.2.0 package.
+- [x] Technical verification is not represented as live qualification or human approval.
+
+## Completion evidence
+The reviewed guide has 21 topics covering all desktop pages, per-run tabs,
+advanced configuration, safety boundaries and first-run steps. A read-only
+dialog supports topic selection, Back/Next, replay, toolbar/F1 and contextual
+help. Standalone source startup bypasses the normal window, configuration,
+database and command runner. An ignored local launcher opens that entry.
+
+Final GUI selection: 118 passing cases and exit zero. Separate tutorial and
+window/widget groups passed nine and 31 cases; existing Windows notice tests
+passed four cases. Scoped Ruff/Black and product mypy passed, checking 70 source
+files. Ten isolated fictional-data captures succeeded, with captioned usage
+documentation, contact-sheet inspection and a full tutorial screenshot review.
+The font self-test found 287 families and verified Segoe UI rendering.
+
+An initial Windows QSettings isolation error changed native desktop preference
+storage and failed four preservation assertions. Explicit default-format /
+UserScope constructors fixed isolation. Corrected captures and native checks
+preserved the captured post-error preferences and registry timestamp. The
+immediately preceding preference was not captured, so no older snapshot was
+restored. One corrected 118-case run passed assertions but exited with a Windows
+access violation; the separate groups and exact full-selection rerun exited
+zero. The cause remains unverified and was not reproduced.
+
+The launcher check and actual protected Windows standalone/normal-window
+interactions passed: responsive guide, 21 topics, zero automation children,
+normal exit zero and preserved current controls, unsaved edits and original
+inputs. Standalone startup did not load private configuration or initialize
+history. Temporary qualification state was cleaned.
+
+The Windows entry/spec and smoke source include the guide for future builds.
+No new frozen build or release was made; published v0.2.0 is unchanged.
+Independent initial API read-back verified exact managed content, one pinned
+issue-backed Project item and the persistent backlink. Final settlement
+receipts belong in the excluded index/ledger. Source changes remain local and
+uncommitted; no live application, invitation or human aesthetic acceptance
+is implied.
+
+## Completion log
+- 2026-11-08: Scoped a read-only, replayable desktop tutorial. Per-run
+  customization changes only selected overrides; Start and Copy command can
+  materialize a private preset. Persistent edits remain in Configuration.
+  Kept the published package and earlier qualification gaps separate.
+- 2026-11-08: Implemented and qualified the read-only source tutorial, contextual
+  help and standalone launcher. Documented every exposed option, regenerated
+  ten fictional-data previews and aligned the architecture/usage guides.
+  Fixed Windows preference isolation, retained the pre-error uncertainty and
+  recorded the nonreproduced access-violation exit rather than inventing a cause.
+  Existing issue and Project identities were independently verified before
+  the scoped completion transition; earlier mappings and review gaps remain.

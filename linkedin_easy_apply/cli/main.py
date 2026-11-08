@@ -709,6 +709,9 @@ def gui(
         "--theme",
         help="deepseafoam (dark) or harbor-daylight (light). Defaults to the last one used.",
     ),
+    tutorial: bool = typer.Option(
+        False, "--tutorial", help="Open only the offline tutorial, without loading private setup."
+    ),
 ) -> None:
     """Open the desktop app (the GUI front end for these same commands)."""
     from linkedin_easy_apply.gui import THEMES, GuiUnavailableError, launch
@@ -717,11 +720,14 @@ def gui(
         console.print(f"[red]Unknown theme '{theme}'.[/red] Choose one of: {', '.join(THEMES)}.")
         raise typer.Exit(code=2)
     try:
-        exit_code = launch(config_path=str(config), theme=theme)
+        exit_code = launch(config_path=str(config), theme=theme, tutorial=tutorial)
     except GuiUnavailableError as exc:
         # markup=False: the hint contains "pip install .[gui]", which Rich would
         # otherwise swallow as a style tag.
         console.print(str(exc), style="red", markup=False, highlight=False)
+        raise typer.Exit(code=2) from exc
+    except (OSError, UnicodeError, ValueError) as exc:
+        console.print(f"Desktop could not be opened: {exc}", style="red", markup=False)
         raise typer.Exit(code=2) from exc
     raise typer.Exit(code=exit_code)
 

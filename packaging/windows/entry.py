@@ -15,11 +15,12 @@ from linkedin_easy_apply.runtime import prepare_workspace
 
 def _smoke_gui(report: Path) -> int:
     from playwright.sync_api import sync_playwright
-    from PySide6.QtCore import QSettings, QTimer
+    from PySide6.QtCore import QCoreApplication, QEvent, QSettings, QTimer
     from PySide6.QtWidgets import QApplication
 
     from linkedin_easy_apply import __version__
     from linkedin_easy_apply.gui.main_window import MainWindow
+    from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog
 
     with sync_playwright() as playwright:
         driver_ready = playwright.chromium.name == "chromium"
@@ -36,13 +37,32 @@ def _smoke_gui(report: Path) -> int:
 
     def finished(code: int, status: str) -> None:
         rendered = not window.grab().isNull()
-        ok = code == 0 and __version__ in "".join(output) and rendered and driver_ready
+        try:
+            tutorial = TutorialDialog(window, start_topic=CUSTOMIZE_TOPIC)
+        except (OSError, UnicodeError, ValueError) as exc:
+            result["error"] = f"Tutorial unavailable: {exc}"
+            application.quit()
+            return
+        tutorial.show()
+        application.processEvents()
+        tutorial_rendered = not tutorial.grab().isNull()
+        tutorial_topics = len(tutorial._topics)
+        tutorial.close()
+        ok = (
+            code == 0
+            and __version__ in "".join(output)
+            and rendered
+            and driver_ready
+            and tutorial_rendered
+        )
         result.update(
             ok=ok,
             cli_exit_code=code,
             cli_status=status,
             playwright_driver=driver_ready,
             rendered=rendered,
+            tutorial_rendered=tutorial_rendered,
+            tutorial_topics=tutorial_topics,
             output="".join(output),
             version=__version__,
         )
@@ -57,6 +77,8 @@ def _smoke_gui(report: Path) -> int:
     if window._runner.busy:
         window._runner.stop()
     window.close()
+    window.deleteLater()
+    QCoreApplication.sendPostedEvents(window, QEvent.Type.DeferredDelete)
     report.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     return 0 if result["ok"] else 1
 
@@ -69,7 +91,8 @@ def main() -> int:
     if Path(sys.executable).stem.casefold() == "lea":
         from linkedin_easy_apply.cli.main import app
 
-        os.chdir(prepare_workspace())
+        if "--tutorial" not in sys.argv[1:]:
+            os.chdir(prepare_workspace())
         app()
         return 0
 
@@ -80,8 +103,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Easy Apply Automaton desktop")
     parser.add_argument("--config", default="configs\\config.yaml")
     parser.add_argument("--theme", choices=("deepseafoam", "harbor-daylight"))
+    parser.add_argument("--tutorial", action="store_true", help="Open only the offline tutorial")
     parser.add_argument("--smoke-report", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.tutorial:
+        try:
+            return run(theme=args.theme, tutorial=True)
+        except (OSError, UnicodeError, ValueError) as exc:
+            application = QApplication.instance() or QApplication([])
+            QMessageBox.critical(None, "Tutorial unavailable", str(exc))
+            application.quit()
+            return 1
     try:
         os.chdir(prepare_workspace())
     except OSError as exc:

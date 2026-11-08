@@ -18,6 +18,13 @@ Browser binaries and optional Streamlit/OpenAI features remain outside this
 delivery boundary. See [desktop usage](gui.md) and
 [release mechanics](developer_guide.md#desktop-and-windows-release).
 
+`gui/tutorial.py` displays the trusted [option reference](gui-tutorial.md) in
+a read-only topic dialog. Source `apply.py gui --tutorial` bypasses normal
+window construction, configuration loading, database initialization and the
+command runner. Windows v0.2.1 bundles the same guide and exposes standalone
+tutorial startup through both EXEs without first-run workspace preparation.
+The older v0.2.0 package is not retrofitted.
+
 > Written for an SDE growing toward architect. Every claim below points at **real
 > code in this repo** (file · class · function) so you can open it and read.
 > Where a pattern is used in industry, that's called out so you can map it to

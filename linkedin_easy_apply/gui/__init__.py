@@ -27,7 +27,9 @@ class GuiUnavailableError(RuntimeError):
     """Raised when the GUI is requested but its Qt dependency is missing."""
 
 
-def launch(config_path: str = "configs/config.yaml", theme: str | None = None) -> int:
+def launch(
+    config_path: str = "configs/config.yaml", theme: str | None = None, *, tutorial: bool = False
+) -> int:
     """Open the desktop window. Returns the Qt exit code.
 
     Imported lazily so that ``import linkedin_easy_apply.gui`` stays cheap and
@@ -37,4 +39,4 @@ def launch(config_path: str = "configs/config.yaml", theme: str | None = None) -
         from linkedin_easy_apply.gui.main_window import run
     except ImportError as exc:  # pragma: no cover - environment specific
         raise GuiUnavailableError(_INSTALL_HINT) from exc
-    return run(config_path=config_path, theme=theme)
+    return run(config_path=config_path, theme=theme, tutorial=tutorial)

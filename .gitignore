@@ -63,6 +63,7 @@ configs/searches.yaml
 configs/question_bank.yaml
 .env
 .env.*
+/private-setup/
 
 # Private continuity and the mixed historical source are never release inputs.
 .agent-context/

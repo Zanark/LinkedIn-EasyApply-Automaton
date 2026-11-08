@@ -22,6 +22,103 @@ Ongoing record; individual bounded outcomes belong to numbered workstreams.
 
 ## Completion log
 
+### 2026-11-08 - Tutorial-enabled release follow-through
+- The later request separately authorizes reviewed commits/pushes, a new
+  Windows release and README publication. Selected unused patch version 0.2.1;
+  the earlier v0.2.0 tag/assets remain immutable.
+- Read the existing trusted-ref workflow and packaging/smoke scripts. Reuse
+  its pinned Actions, exact-source manifests and tag-only publish job; do not
+  add a scheduler, tracking workflow or workstation credential to CI.
+- Aligned source/package versions, screenshot captions, standalone EXE guide
+  commands and bundled instructions. Existing setup remains private and is
+  not automatically migrated. Qualification and actual publication are pending.
+- Added bounded lea-15 with packaging/tutorial prerequisites. Preserve the
+  completed lea-13/lea-14 checkpoint evidence and original review gaps rather
+  than treating later publication as earlier local delivery.
+
+### 2026-11-08 - Read-only desktop tutorial and Windows preference isolation
+- Traced all desktop controls into actual CLI flags, preset creation, persistent
+  edits and startup database access. Added a reviewed 21-topic Markdown guide
+  and read-only dialog rather than a tour manipulating live controls.
+  Toolbar/F1 and contextual help share navigation; standalone source startup
+  avoids configuration, database initialization and the command runner.
+- Added an ignored local source launcher, Qt-free CLI forwarding and future
+  Windows resource/entry/smoke wiring. The published v0.2.0 package is unchanged;
+  no actual new frozen build, release or dependency installation occurred.
+- Initial Windows fixture/capture isolation failed four preservation assertions.
+  The two-string QSettings constructor still used native storage after selecting
+  IniFormat, bypassing temporary paths. Corrected both production constructors
+  and the standalone fixture to explicitly select default format and UserScope.
+  Normal native startup retains the existing preference backend.
+- Initial checks changed native desktop preference storage. The immediately
+  preceding preference was not captured; an older handoff snapshot was not
+  treated as proof or restored. Corrected captures and protected native checks
+  preserved the captured post-error preferences and exact registry timestamp.
+- One corrected 118-case run passed assertions but exited with a Windows access
+  violation. Its cause remains unverified. Separate nine-case tutorial and
+  31-case window/widget groups, then the exact 118-case selection, exited zero;
+  the access violation was not reproduced. Four existing redistribution-notice
+  cases also passed; they are not a new packaging build.
+- Scoped Ruff/Black and product mypy passed, checking 70 source files.
+  Regenerated ten isolated fictional-data screenshots. Font verification found
+  287 families and Segoe UI rendering; inspected the contact sheet and one full
+  tutorial image. README/usage/configuration/developer/architecture guidance
+  now explains the options, private presets, source entry and release boundary.
+- Actual protected Windows standalone and normal-window interactions passed
+  with responsive windows, 21 topics, zero automation children and normal exit
+  zero. Current controls, unsaved editor content and original inputs were
+  preserved. The standalone did not load private configuration or initialize
+  history; temporary qualification state was cleaned.
+- Created reviewed lea-14/#14 and independently verified exact managed content,
+  stable issue/item identity, one pinned issue-backed Project item and the local
+  backlink before completion. The first independent probe confused the local
+  stage spelling with the pinned In Progress option name; corrected the probe,
+  not remote metadata. All thirteen earlier mappings and original #2/#9
+  OPEN/In review qualification gaps remain unchanged.
+- Previewed and applied only lea-14's evidence and DONE transition, reusing
+  issue #14 and its existing item. Independent read-back verified exact managed
+  content, CLOSED/COMPLETED, one Done item and the persistent backlink.
+  The settled scoped apply reported one no-op, zero creates and zero blockers.
+  Separate before/after receipts matched remote content/timestamps and local
+  mapping/selected workstream bytes/mtimes; prior mappings and review gaps
+  stayed intact. Settlement is recorded here, not in the managed body.
+- These source/documentation/tracking changes remain local and uncommitted.
+  No new application, invitation, commit, push, publication, background tracking
+  activation or human aesthetic acceptance occurred for this tutorial.
+
+### 2026-11-08 - Existing configured setup and private handoff
+- Added the private-setup ignore rule before collecting required configuration,
+  static resume and external builder-master inputs, preference snapshots and
+  a consistent read-only-source SQLite backup. Input and snapshot hashes match;
+  all collected files are ignored. Authentication and environment values were
+  not copied.
+- The packaged-app launcher retains the original workspace, active history and
+  browser-profile references. Its persistent private main configuration changes
+  only the explicit external Python interpreter needed by the enabled builder.
+  The source launcher keeps the original main configuration and environment.
+- Both offline launcher checks passed. The actual installed GUI opened a
+  responsive native window and closed normally with exit zero against a
+  temporary database copy, with no automation child. Original input bytes,
+  snapshots and desktop preferences remained unchanged; temporary state was
+  cleaned. Builder dependency imports passed; no resume render or LinkedIn
+  session qualification was attempted.
+- Updated generic reuse/configuration documentation and private instructions.
+  These distinguish active originals, the EXE main configuration, backups and
+  external dependencies. This is not a standalone clean-machine migration.
+- The initial preview rejected an invalid nonempty placeholder backlink for the
+  new unmapped workstream. Removed only that placeholder, then previewed/applied
+  the reviewed lea-13 create. Independent read-back verified issue #13, one
+  pinned Project item and a persistent backlink. All twelve earlier mappings
+  and original #2/#9 OPEN/In review qualification gaps remained unchanged.
+- Previewed/applied only lea-13's completed evidence and DONE transition.
+  Independent exact read-back verified CLOSED/COMPLETED and one Done item.
+  The settled scoped apply reported one no-op, zero creates and zero blockers;
+  separate receipts matched remote content/timestamps and local mapping plus
+  selected workstream bytes/mtimes. Prior mappings and review gaps stayed intact.
+  New source documentation/tracking changes remain local and uncommitted.
+- No new live application, invitation, dependency installation, commit, push,
+  release or background tracking activation was performed for this handoff.
+
 ### 2026-11-08 - Hosted release, downloaded delivery and native startup
 - Initial hosted run 42422527663 failed during collection: dashboard tests
   required dependencies not installed by the dev-only CI command. Corrected

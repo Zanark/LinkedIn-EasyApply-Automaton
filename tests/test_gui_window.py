@@ -12,7 +12,7 @@ import yaml
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
-from PySide6.QtCore import QSettings, Qt  # noqa: E402
+from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
 
@@ -21,16 +21,18 @@ from linkedin_easy_apply.gui import commands  # noqa: E402
 from linkedin_easy_apply.gui.main_window import MainWindow  # noqa: E402
 from linkedin_easy_apply.gui.process import CommandRunner  # noqa: E402
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
+from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog  # noqa: E402
 from linkedin_easy_apply.gui.widgets import Console  # noqa: E402
 
 
 @pytest.fixture(scope="module")
-def qapp(tmp_path_factory):
+def qapp(qt_app, tmp_path_factory):
     settings = tmp_path_factory.mktemp("qt-settings")
+    previous_format = QSettings.defaultFormat()
     QSettings.setDefaultFormat(QSettings.IniFormat)
     QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings))
-    app = QApplication.instance() or QApplication([])
-    yield app
+    yield qt_app
+    QSettings.setDefaultFormat(previous_format)
 
 
 @pytest.fixture
@@ -59,7 +61,8 @@ def window(qapp, tmp_path):
     if widget._runner.busy:
         widget._runner.stop()
     widget.close()
-    qapp.processEvents()
+    widget.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
 
 def _until(qapp, predicate, timeout=5):
@@ -68,6 +71,94 @@ def _until(qapp, predicate, timeout=5):
         qapp.processEvents()
         QTest.qWait(10)
     assert predicate(), "Timed out waiting for the Qt event path"
+
+
+@pytest.mark.parametrize("route", ["toolbar", "f1", "context"])
+def test_tutorial_help_events_preserve_unsaved_run_state(window, qapp, monkeypatch, route):
+    monkeypatch.setattr(
+        window._runner, "start", lambda *args: pytest.fail("Help cannot start a command")
+    )
+    window._run_settings.customize.setChecked(True)
+    window._run_settings._fields["jobs.max_daily"].setValue(12)
+    window._config_editor.appendPlainText("# Unsaved configuration note")
+    window._answers_editor.appendPlainText("# Unsaved answer note")
+    window._input.setText("unsent response")
+    window._console.append_text("Existing console output\n")
+    window._console.flush()
+    qapp.processEvents()
+    window._settings.sync()
+    files = {path: path.read_bytes() for path in window._root.rglob("*") if path.is_file()}
+    before = (
+        window._current_options(),
+        window._run_settings.overrides(),
+        window._config_editor.toPlainText(),
+        window._answers_editor.toPlainText(),
+        window._input.text(),
+        window._console.toPlainText(),
+        window._config_editor.document().isModified(),
+        window._answers_editor.document().isModified(),
+        Path(window._settings.fileName()).read_bytes(),
+    )
+    titles = []
+
+    def close_guide():
+        guide = QApplication.activeModalWidget()
+        if isinstance(guide, TutorialDialog):
+            titles.append(guide._title.text())
+            guide.reject()
+        else:
+            titles.append(None)
+
+    for _ in range(2):
+        window.activateWindow()
+        qapp.processEvents()
+        QTimer.singleShot(0, close_guide)
+        if route == "toolbar":
+            window._tutorial_action.trigger()
+        elif route == "f1":
+            QTest.keyClick(window, Qt.Key.Key_F1)
+        else:
+            QTest.mouseClick(window._run_settings.help_button, Qt.MouseButton.LeftButton)
+        qapp.processEvents()
+
+    assert titles == [CUSTOMIZE_TOPIC if route == "context" else "Start here"] * 2
+    window._settings.sync()
+    assert before == (
+        window._current_options(),
+        window._run_settings.overrides(),
+        window._config_editor.toPlainText(),
+        window._answers_editor.toPlainText(),
+        window._input.text(),
+        window._console.toPlainText(),
+        window._config_editor.document().isModified(),
+        window._answers_editor.document().isModified(),
+        Path(window._settings.fileName()).read_bytes(),
+    )
+    assert files == {path: path.read_bytes() for path in window._root.rglob("*") if path.is_file()}
+    assert not window._runner.busy
+
+
+def test_tutorial_cannot_cover_a_running_command(window, monkeypatch):
+    notices = []
+    monkeypatch.setattr(CommandRunner, "busy", property(lambda self: True))
+    monkeypatch.setattr(QMessageBox, "information", lambda *args: notices.append(args[2]))
+    window._set_running(True)
+    assert not window._tutorial_action.isEnabled()
+    assert not window._run_settings.help_button.isEnabled()
+    window._show_tutorial()
+    assert notices and "Finish" in notices[0]
+
+
+def test_missing_tutorial_is_reported_instead_of_opening_empty_help(window, monkeypatch):
+    from linkedin_easy_apply.gui import tutorial
+
+    notices = []
+    monkeypatch.setattr(
+        tutorial, "load_tutorial", lambda path: (_ for _ in ()).throw(FileNotFoundError("guide"))
+    )
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: notices.append(args[1:]))
+    window._show_tutorial()
+    assert notices == [("Tutorial unavailable", "guide")]
 
 
 def test_run_controls_build_actual_cli_flags(window):

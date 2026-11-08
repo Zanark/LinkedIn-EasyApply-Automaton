@@ -182,6 +182,51 @@
       "number": 12,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG3Lgo"
+    },
+    "lea-13": {
+      "baseline": {
+        "title": "[lea-13] Existing-setup launch and private input handoff",
+        "managed": "f485185ab59b9628e4b9f3681c318519c9c28c45e0ce00cd2c5ce9cb1ea011d6",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdXXS6A",
+      "number": 13,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/13",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG4Enw"
+    },
+    "lea-14": {
+      "baseline": {
+        "title": "[lea-14] Guided desktop tutorial",
+        "managed": "5945d8b330089572c2d02c04db9cfa349d458b6db1e963e3265d39155e009074",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABda0jgA",
+      "number": 14,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/14",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG7T9w"
+    },
+    "lea-15": {
+      "baseline": {
+        "title": "[lea-15] Tutorial-enabled Windows v0.2.1 release",
+        "managed": "e8999cc91ff9c6b055abe0696c21ccda0f896907a64e04686e027424f234ab97",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdbPInA",
+      "number": 15,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/15",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG71fA"
     }
   }
 }

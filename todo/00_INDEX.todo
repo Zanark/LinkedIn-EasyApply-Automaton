@@ -29,6 +29,15 @@ Desktop and release workstreams were subsequently added as lea-11 and lea-12;
 their implementation, qualification and publication evidence is recorded separately.
 The portable v0.2.0 release is published, downloaded, integrity-verified and
 installed; its normal native startup and bundled offline commands passed.
+The subsequent lea-13 handoff reuses an existing configured workspace through
+ignored private inputs and launch helpers, without exporting authentication or
+qualifying a new live run.
+The subsequent lea-14 tutorial is locally implemented and technically qualified.
+Its read-only source entry covers the desktop controls without starting
+automation; the already-published v0.2.0 package is unchanged.
+The separate lea-15 follow-through packages that tutorial as Windows v0.2.1.
+Exact-source qualification, hosted publication and downloaded/native delivery
+must complete before that release workstream is marked DONE.
 
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
@@ -44,8 +53,33 @@ installed; its normal native startup and bundled offline commands passed.
 | lea-10 | 10_TRACKING_ADOPTION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/10 |
 | lea-11 | 11_DESKTOP_RUN_CONTROLS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/11 |
 | lea-12 | 12_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/12 |
+| lea-13 | 13_PRIVATE_SETUP_HANDOFF.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/13 |
+| lea-14 | 14_GUIDED_GUI_TUTORIAL.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/14 |
+| lea-15 | 15_TUTORIAL_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/15 |
 
 ## Completion log
+- 2026-11-08: Independently verified lea-15/#15 OPEN with one In Progress
+  issue-backed item and exact managed content/backlink. All fourteen earlier
+  mappings and original #2/#9 OPEN/In review gaps remain unchanged.
+- 2026-11-08: Began separately authorized v0.2.1 publication as lea-15.
+  The completed guide and handoff records retain their original local-only
+  checkpoint evidence. New release qualification and publication are pending.
+- 2026-11-08: Completed the read-only source tutorial as lea-14/#14.
+  Scoped preview/apply and independent read-back verified CLOSED/COMPLETED,
+  exact managed content, one Done issue-backed Project item and the persistent
+  backlink. The settled scoped apply reported one no-op, zero creates and zero
+  blockers; separate receipts matched remote content/timestamps and local
+  mapping/selected workstream bytes/mtimes. All thirteen earlier mappings and
+  original #2/#9 OPEN/In review gaps remain intact. No new build, release or
+  source publication occurred; the tutorial and tracking changes are local.
+- 2026-11-08: Completed the local existing-setup handoff as lea-13/#13.
+  Scoped preview/apply and independent read-back verified CLOSED/COMPLETED,
+  one Done Project item and the persistent backlink. The settled scoped apply
+  reported one no-op, zero creates and zero blockers; exact remote content,
+  issue/item timestamps and local mapping/workstream bytes/mtimes were unchanged.
+  All twelve earlier mappings and original #2/#9 OPEN/In review gaps remain intact.
+  The input bundle is ignored; the new documentation/tracking sources remain
+  local and uncommitted under this request's separate publication boundary.
 - 2026-11-06: Inventoried three legacy files. Kept `TODO.md` unchanged as mixed
   historical provenance, projected `dashboard.todo` once, and excluded empty
   `resume.todo`. The index and perpetual `99_DEVELOPMENT_LEDGER.todo` never become issues.

@@ -1,0 +1,66 @@
+# Existing-setup launch and private input handoff
+Workstream-ID: lea-13
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/13
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed local configuration handoff and existing-workspace launch scope
+Status: DONE
+Milestone: Reuse an existing configured installation without resetting private state
+Dependencies: lea-11, lea-12
+
+## Purpose
+Explain source and packaged-app reuse of an existing configured workspace.
+Collect required local inputs in an explicitly ignored folder without
+publishing applicant data or changing the original inputs.
+
+## Tasks
+- [x] Inventory configuration path dependencies without displaying private values.
+- [x] Add an explicit ignore rule before copying private inputs.
+- [x] Collect configuration, required resume inputs and preference snapshots.
+- [x] Preserve history and browser-profile references; do not export authentication.
+- [x] Provide existing-setup launch helpers with the required external interpreter.
+- [x] Keep public launch and configuration documentation consistent.
+- [x] Verify copies, ignored status, resolved dependencies and offline startup.
+- [x] Reconcile the reviewed public-safe workstream with issue and Project tracking.
+
+## Acceptance criteria
+- [x] The existing configured setup can open without a fresh initialization.
+- [x] The enabled external builder has a real interpreter when launched from the EXE.
+- [x] Private inputs remain excluded from Git, public projections and release assets.
+- [x] Original inputs and active history are preserved; browser credentials are not copied.
+- [x] The handoff distinguishes active configuration, backups and external dependencies.
+- [x] Offline evidence is not represented as a live LinkedIn run or human acceptance.
+
+## Completion evidence
+Collected required configuration, static resume and builder-master inputs,
+preferences and a consistent SQLite backup under the explicitly ignored
+private-setup directory. Copied inputs match their originals. No browser
+authentication, environment-variable values or generated caches were copied.
+
+The EXE helper retains the original configured workspace and active runtime
+references, with an explicit external interpreter for the enabled builder.
+The source helper retains the original configuration and virtual environment.
+Both offline launcher checks passed. The installed GUI opened a responsive
+native window and closed normally with exit zero, using a temporary database
+copy rather than opening the active history database. No automation child was
+started. Original input bytes, collected snapshots and desktop preferences
+were unchanged, and temporary qualification state was removed.
+
+Independent initial read-back verified the issue's exact managed content,
+one pinned Project item and the persistent backlink, preserving all earlier
+mappings and both original qualification gaps. Generic documentation and the
+private handoff distinguish active inputs, backups and external dependencies.
+This is machine-local startup evidence, not a standalone migration, fresh-machine
+qualification, live LinkedIn run or human acceptance. No new application,
+invitation, release, commit or push is part of this handoff.
+
+## Completion log
+- 2026-11-08: Confirmed that changing the workspace, not merely the config
+  filename, determines relative input and runtime paths. Scoped the handoff to
+  local ignored inputs and reusable launch helpers; excluded authentication
+  stores and private payloads from this reviewed public projection.
+- 2026-11-08: Collected the ignored input bundle and consistent history backup;
+  qualified both launchers and protected native startup without changing the
+  original inputs or starting automation.
+- 2026-11-08: Created and independently verified the reviewed issue, Project
+  membership and durable backlink. Completed the bounded local handoff; the
+  excluded index and ledger retain final reconciliation receipts.

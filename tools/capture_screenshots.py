@@ -32,6 +32,7 @@ from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from linkedin_easy_apply.gui.main_window import MainWindow  # noqa: E402
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
+from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog  # noqa: E402
 
 OUT = ROOT / "docs" / "images"
 WINDOWS_FONTS = Path(r"C:\Windows\Fonts")
@@ -77,6 +78,7 @@ SHOTS: list[tuple[int, str, str]] = [
     (0, "settings", "deepseafoam"),
     (0, "small", "harbor-daylight"),
 ]
+TUTORIAL_THEMES = ("deepseafoam", "harbor-daylight")
 
 
 def ensure_fonts() -> list[str]:
@@ -191,9 +193,21 @@ def main() -> int:
             if not window.grab().save(str(target)):
                 raise OSError(f"Could not save {target}")
             print(f"saved {target.relative_to(ROOT)}  ({target.stat().st_size // 1024} KB)")
+        for theme in TUTORIAL_THEMES:
+            window._apply_theme(THEMES[theme])
+            tutorial = TutorialDialog(window, start_topic=CUSTOMIZE_TOPIC)
+            tutorial.show()
+            application.processEvents()
+            target = OUT / f"gui-tutorial-{theme}.png"
+            if not tutorial.grab().save(str(target)):
+                raise OSError(f"Could not save {target}")
+            print(f"saved {target.relative_to(ROOT)}  ({target.stat().st_size // 1024} KB)")
+            tutorial.close()
+            tutorial.deleteLater()
+            application.processEvents()
         window.close()
         application.processEvents()
-    print(f"\nDone. {len(SHOTS)} screenshots in {OUT.relative_to(ROOT)}")
+    print(f"\nDone. {len(SHOTS) + len(TUTORIAL_THEMES)} screenshots in {OUT.relative_to(ROOT)}")
     return 0
 
 

@@ -10,10 +10,12 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
     QPlainTextEdit,
+    QPushButton,
     QSpinBox,
     QTabWidget,
     QVBoxLayout,
@@ -26,6 +28,7 @@ from linkedin_easy_apply.gui.widgets import muted
 
 class RunSettings(QWidget):
     changed = Signal()
+    help_requested = Signal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -36,7 +39,15 @@ class RunSettings(QWidget):
             "The saved YAML stays unchanged. Start or Copy creates a private preset "
             "in logs\\gui-runs, usable by the CLI."
         )
-        layout.addWidget(self.customize)
+        customize_row = QHBoxLayout()
+        customize_row.addWidget(self.customize, 1)
+        self.help_button = QPushButton("?")
+        self.help_button.setFixedWidth(32)
+        self.help_button.setAccessibleName("Explain per-run settings")
+        self.help_button.setToolTip("Explain this checkbox in the guided tutorial")
+        self.help_button.clicked.connect(self.help_requested)
+        customize_row.addWidget(self.help_button)
+        layout.addLayout(customize_row)
         self.tabs = QTabWidget()
         self.tabs.setEnabled(False)
         self.tabs.setVisible(False)

@@ -177,6 +177,25 @@ The GUI builds CLI argv; it does not duplicate the automation engine.
 merges only changed values, validates through `config/loader.parse_config`,
 and writes private presets. `gui/process.py` streams UTF-8 output through
 QProcess and forwards input. Stop terminates the child; it is not Ctrl+C.
+Desktop startup destroys its owned window before releasing `QApplication`,
+explicitly delivering deferred deletion after the event loop stops. Qt tests
+share one session application, destroy owned widgets and isolate preferences
+with an explicit temporary INI backend rather than touching native settings.
+
+`gui/tutorial.py` reads the reviewed `docs/gui-tutorial.md` chapters into a
+read-only dialog, shared by toolbar/F1 and contextual settings help. Standalone
+`gui --tutorial` avoids MainWindow construction, configuration loading and
+database initialization. Help is blocked during child commands. The Windows
+entry bypasses first-run workspace preparation for tutorial mode, and its spec
+explicitly includes the same guide in Windows v0.2.1. Frozen offline smoke
+renders the contextual guide alongside the normal window and sibling CLI;
+actual standalone native startup remains a separate qualification.
+Older v0.2.0 binaries are not retrofitted.
+
+Desktop preferences use the explicit `QSettings.defaultFormat()` / UserScope
+constructor. The two-string constructor uses native storage on Windows even
+after setting IniFormat globally, which would bypass temporary test/capture
+paths. Ordinary launches still default to the existing native preferences.
 
 `runtime.py` separates source/frozen resources from writable workspace data.
 Frozen startup copies missing examples into `%LOCALAPPDATA%\EasyApplyAutomaton`

@@ -27,9 +27,27 @@ configuration. The saved YAML is unchanged. The command preview identifies
 when a preset will be created. Treat presets as personal runtime data, not
 public examples. Use Configuration/Save for permanent changes.
 
+The checkbox starts unchecked: its tabs are hidden and apply no overrides.
+Checking alone does not save or start anything. A separate Dry run change can
+still require a preset. Use **?** or **Tutorial / F1** in the
+GUI for the [full control-by-control tutorial](gui-tutorial.md).
+`apply.py gui --tutorial` reads only that guide, without private setup/history.
+Windows v0.2.1 supports `EasyApplyAutomaton.exe --tutorial` and
+`lea.exe gui --tutorial` with the same non-initializing behavior. Older v0.2.0
+EXEs do not include the tutorial.
+
 The portable build excludes the Streamlit and OpenAI extras and browser
 binaries. An enabled external resume builder requires its own Python path;
 the EXE is not a Python interpreter. See [desktop setup](gui.md).
+
+For an existing setup, keep the workspace pointed at the configured checkout;
+changing `--config` alone does not relocate its relative answers, database or
+browser-profile paths. See [reuse instructions](gui.md#reuse-an-existing-setup).
+The ignored `private-setup` directory is reserved for machine-local input
+snapshots and launch helpers. Such a snapshot is not automatically portable:
+external builder/interpreter paths, environment variables and the original
+browser session still need deliberate handling. Git ignore is not encryption
+or an access-control boundary.
 
 ## Dashboard appearance
 

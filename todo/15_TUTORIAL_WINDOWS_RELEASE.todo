@@ -1,0 +1,76 @@
+# Tutorial-enabled Windows v0.2.1 release
+Workstream-ID: lea-15
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/15
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed tutorial packaging, release publication and documentation scope
+Status: IN_PROGRESS
+Milestone: Deliver the guided tutorial in a verified downloadable Windows release
+Dependencies: lea-12, lea-14
+
+## Purpose
+Publish the completed read-only desktop tutorial in a new Windows x64 release.
+Keep source and packaged usage documentation aligned while preserving private
+configuration and the immutable earlier release.
+
+## Tasks
+- [x] Review the existing tag-gated pipeline, public source and release authority.
+- [x] Select an unused version and align package metadata, README and usage guides.
+- [x] Include the guide and first-run instructions in the explicit public bundle.
+- [ ] Qualify release source and the actual frozen GUI/CLI offline.
+- [ ] Commit and push only reviewed public changes with repository-local attribution.
+- [ ] Publish the matching version tag through the existing qualified pipeline.
+- [ ] Verify the exact hosted run, downloaded integrity files and all bundled files.
+- [ ] Exercise downloaded normal GUI and standalone tutorial startup natively.
+- [ ] Reconcile issue, Project and persistent backlink, then deliver the release URL.
+
+## Acceptance criteria
+- [ ] The version tag, package version and downloaded manifest identify one exact source.
+- [ ] Both Windows entrypoints can open the bundled tutorial without private setup.
+- [ ] The normal desktop, contextual guide and sibling CLI work from the real asset.
+- [ ] Standalone tutorial navigation does not initialize configuration/history or start automation.
+- [ ] README screenshots and setup commands match this release's capabilities.
+- [ ] Private inputs, authentication, runtime history and unrelated dirty work remain unpublished.
+- [ ] Existing settings are preserved and the prior version's assets are not replaced.
+- [ ] Hosted publication and downloaded verification are distinguished from human/live qualification.
+- [ ] The completed workstream has one issue, one Done Project item and a durable backlink.
+
+## Completion evidence
+The existing release and tag inventory contains v0.2.0 only; selected patch
+version 0.2.1 without overwriting the earlier release. Reviewed the trusted-ref
+pipeline, job-scoped publication token and explicit public packaging resources.
+Package versions, README captions, tutorial commands and bundled first-run
+instructions are aligned. Existing setup remains outside the downloadable app;
+no background tracking, new LinkedIn application or invitation is authorized.
+Hosted source/frozen qualification, publication and downloaded native verification
+are pending, not established by the earlier source tutorial checks.
+The first fresh full source gate passed lint, format and typing, then failed
+with a Windows access violation/native heap-corruption exit after test
+assertions. The non-GUI selection exits normally; GUI lifetime isolation and
+correction are required before source qualification or publication is claimed.
+GUI diagnostics found retained closed windows. A focused shutdown regression
+failed before the correction: the standalone tutorial was not destroyed when
+its event loop returned. Desktop startup now explicitly delivers owned-window
+deletion before application shutdown; Qt fixtures share one session application
+and clean up native widgets. The corrected full local gates passed Ruff,
+Black and product typing, then 698 tests with exit zero and no retained
+top-level Qt widgets. The unrelated untracked plugin was excluded from local
+lint and remains unpublished. Frozen and downloaded qualification is pending.
+
+## Completion log
+- 2026-11-08: Started the separately authorized release follow-through after
+  the tutorial's local completion. Preserved earlier evidence and review gaps;
+  scoped a new bounded workstream rather than reopening the completed guide.
+  Confirmed repository owner access, main ref, existing release and unused
+  patch version. Private inputs and unrelated untracked work are excluded.
+- 2026-11-08: Preserved the failed source-gate exit and narrowed investigation
+  to the GUI path rather than treating completed assertions as a passing run.
+  The workflow lint passed using the existing tool. Native theme storage's
+  actual timestamp still matches the captured post-correction snapshot.
+- 2026-11-08: Added a failing ownership regression, corrected desktop shutdown
+  and fixture lifetime, and preserved the original native-failure receipt.
+  These changes remove a demonstrated lifecycle gap, not a claim about the
+  exact native heap-corruption stack. Source and frozen gates must exit zero.
+- 2026-11-08: Corrected tutorial/window/widget selection: 40 passed, exit zero,
+  with no retained top-level Qt widgets. The subsequent complete local suite
+  passed 698 tests and exited normally; original release lint/format/type
+  gates passed without suppressing the prior native failure.

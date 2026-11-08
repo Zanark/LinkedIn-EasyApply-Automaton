@@ -8,7 +8,7 @@ data = [
     (str(root / "configs" / f"{name}.example.yaml"), "configs")
     for name in ("config", "answers", "searches")
 ]
-data += [(str(root / "docs" / "mark.svg"), "docs")]
+data += [(str(root / "docs" / name), "docs") for name in ("mark.svg", "gui-tutorial.md")]
 data += collect_data_files("linkedin_easy_apply", includes=["database/sql/*.sql"])
 data += collect_data_files("playwright", excludes=["driver/package/.local-browsers/**"])
 

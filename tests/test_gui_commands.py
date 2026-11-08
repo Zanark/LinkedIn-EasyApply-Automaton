@@ -12,6 +12,7 @@ This module must import without PySide6 installed.
 from __future__ import annotations
 
 import pytest
+from typer.testing import CliRunner
 
 from linkedin_easy_apply.cli.main import app as cli_app
 from linkedin_easy_apply.gui import commands
@@ -19,6 +20,33 @@ from linkedin_easy_apply.gui import commands
 
 def _args(**kwargs) -> list[str]:
     return commands.run_args(commands.RunOptions(**kwargs))
+
+
+@pytest.mark.parametrize("tutorial", [False, True])
+def test_gui_cli_forwards_tutorial_without_loading_config(monkeypatch, tmp_path, tutorial):
+    from linkedin_easy_apply import gui
+
+    called = []
+    monkeypatch.setattr(gui, "launch", lambda **kwargs: called.append(kwargs) or 0)
+    config = str(tmp_path / "missing-config.yaml")
+    argv = ["gui", "--config", config, "--theme", "harbor-daylight"]
+    if tutorial:
+        argv.append("--tutorial")
+    result = CliRunner().invoke(cli_app, argv)
+    assert result.exit_code == 0, result.output
+    assert called == [{"config_path": config, "theme": "harbor-daylight", "tutorial": tutorial}]
+
+
+def test_gui_tutorial_resource_failure_exits_with_an_error(monkeypatch):
+    from linkedin_easy_apply import gui
+
+    def unavailable(**kwargs):
+        raise FileNotFoundError("Tutorial resource is missing")
+
+    monkeypatch.setattr(gui, "launch", unavailable)
+    result = CliRunner().invoke(cli_app, ["gui", "--tutorial"])
+    assert result.exit_code == 2
+    assert "Tutorial resource is missing" in result.output
 
 
 # -- scan -------------------------------------------------------------------- #

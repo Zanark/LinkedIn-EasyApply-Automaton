@@ -7,6 +7,7 @@
 <p align="center">
   <a href="docs/setup-and-commands.md">Setup &amp; commands</a> &nbsp; · &nbsp;
   <a href="docs/gui.md">Desktop GUI</a> &nbsp; · &nbsp;
+  <a href="docs/gui-tutorial.md">Guided tutorial</a> &nbsp; · &nbsp;
   <a href="docs/configuration.md">Configuration</a> &nbsp; · &nbsp;
   <a href="INIT.MD">Run guide</a> &nbsp; · &nbsp;
   <a href="docs/troubleshooting.md">Troubleshooting</a>
@@ -17,9 +18,9 @@
 **Discovers jobs from your searches, scores them against your criteria, picks the right résumé,
 answers every question from your own answer file, and applies — in a window or from the terminal.**
 
-<img src="docs/images/gui-run-deepseafoam.png" alt="The v0.2.0 Run workspace with action controls, command preview, wrapped console and prompt input" width="900">
+<img src="docs/images/gui-run-deepseafoam.png" alt="Run workspace with tutorial access, action controls, command preview and prompt input" width="900">
 
-<sub>v0.2.0 source-install preview: run controls, private overrides, wrapped logs and prompt input. All desktop screenshots use isolated fictional data, not live applications.</sub>
+<sub>Source-generated preview of the v0.2.1 desktop: run controls, private overrides, tutorial access, wrapped logs and prompt input. All desktop screenshots use isolated fictional data, not live applications.</sub>
 
 </div>
 
@@ -41,12 +42,22 @@ beside it. Use installed Edge/Chrome; browser binaries are not included. First l
 private example configs in `%LOCALAPPDATA%\EasyApplyAutomaton`, separate from any source checkout.
 See [the executable setup and limitations](docs/gui.md#windows-executable).
 
-The published [v0.2.0 package](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.0)
-is **109.2 MiB downloaded / 255.0 MiB extracted**. The executables are unsigned;
-Windows may show a SmartScreen warning. Configure your answers and sign in manually before your first run.
+The [v0.2.1 Windows package](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.1)
+includes the full offline tutorial. Exact download/extracted sizes and SHA-256
+checksums are recorded in the release's build manifest and `SHA256SUMS`.
+The executables are unsigned; Windows may show a SmartScreen warning.
+Configure your answers and sign in manually before your first run.
+
+**Already have a working source setup?** Run the GUI from that checkout to keep
+your existing configuration, answers, resumes, history and browser profile.
+No new setup or initialization is needed. See
+[reuse an existing setup](docs/gui.md#reuse-an-existing-setup) for source and EXE launch instructions.
+Machine-local input snapshots belong in the ignored `private-setup` folder,
+not in the release or a public upload.
 
 ```powershell
 .\.venv\Scripts\python.exe apply.py gui            # drive it from a window
+.\.venv\Scripts\python.exe apply.py gui --tutorial # read the offline guide without private setup
 .\.venv\Scripts\python.exe apply.py apply -n 15    # drive it from the terminal
 ```
 
@@ -76,6 +87,30 @@ Both palettes come from the [DeepSeaFoam](https://github.com/Zanark/DeepSeaFoam)
 
 ## What you can do in the window
 
+### Guided tutorial — every control, without starting a run
+
+Use **Tutorial / F1**, or the **?** beside **Customize settings for this run**.
+Back/Next and a topic list cover the five pages, all run settings, prompts,
+private presets and real-action boundaries. The guide does not change controls
+or files, and is blocked while a command runs so it cannot hide a live prompt.
+`gui --tutorial` opens only the guide, without loading configuration/history.
+Read [the same guide as Markdown](docs/gui-tutorial.md).
+
+From the extracted **v0.2.1** folder, open just the guide without initializing
+configuration, history or a browser:
+
+```powershell
+.\EasyApplyAutomaton.exe --tutorial
+# Or use the companion CLI:
+.\lea.exe gui --tutorial
+```
+
+| DeepSeaFoam | Harbor Daylight |
+| --- | --- |
+| <img src="docs/images/gui-tutorial-deepseafoam.png" alt="Read-only tutorial explaining unchecked customization and private preset behavior in DeepSeaFoam" width="430"> | <img src="docs/images/gui-tutorial-harbor-daylight.png" alt="The same customization tutorial with topic navigation in Harbor Daylight" width="430"> |
+
+<sub>Contextual checkbox explanation and replayable navigation in both themes, captured from source with fictional isolated state. The same guide is bundled in v0.2.1; older v0.2.0 EXEs do not contain it.</sub>
+
 ### Run — scan, apply, reapply, connect
 
 Pick an action and target, then tune saved searches/exact job URLs, limits, browser, resume and
@@ -90,14 +125,14 @@ For a bounded CLI batch, configure `search.job_urls` with exact LinkedIn job URL
 `apply` processes that list instead of crawling, preserving normal checks and limits;
 use `--dry-run` to rehearse it first.
 
-<img src="docs/images/gui-settings-deepseafoam.png" alt="Expanded v0.2.0 run settings showing the Limits tab and the Search, Browser and Behavior tabs" width="900">
+<img src="docs/images/gui-settings-deepseafoam.png" alt="Expanded source run settings showing contextual help, Limits and the other settings tabs" width="900">
 
 <sub>Expanded run settings: company/daily caps, search pages, page size, pauses and score threshold. Search, Browser and Behavior have their own tabs; overrides leave saved YAML unchanged.</sub>
 
 <details>
 <summary>Smaller window in Harbor Daylight</summary>
 
-<img src="docs/images/gui-small-harbor-daylight.png" alt="The v0.2.0 Run page at 980 by 680 pixels, with scrollable setup, wrapped output and visible prompt controls" width="900">
+<img src="docs/images/gui-small-harbor-daylight.png" alt="Current source Run page at 980 by 680 pixels, with scrollable setup and prompt controls" width="900">
 
 <sub>At 980 × 680, setup scrolls independently while the wrapped console and prompt input remain accessible.</sub>
 

@@ -33,6 +33,13 @@ The tag-gated release pipeline publishes only after offline source and frozen
 checks; unsigned binaries, fresh-machine and live-application qualification
 remain explicit limits. See [the desktop guide](docs/gui.md).
 
+The read-only desktop tutorial displays the bundled
+[option reference](docs/gui-tutorial.md). Source `apply.py gui --tutorial`
+opens that guide without constructing the command runner, loading application
+configuration or initializing history. Windows v0.2.1 includes this resource
+and supports `EasyApplyAutomaton.exe --tutorial` / `lea.exe gui --tutorial`.
+The older v0.2.0 package is unchanged.
+
 Assume I am already logged into LinkedIn.
 
 The application should open my logged-in browser profile, navigate to a LinkedIn Job Search page, inspect each job, determine whether it qualifies, and apply to it automatically while handling multi-step Easy Apply forms.

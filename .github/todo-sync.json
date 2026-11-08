@@ -49,6 +49,9 @@
     "lea-09": "09_DASHBOARD_SKIP_ANALYTICS.todo",
     "lea-10": "10_TRACKING_ADOPTION.todo",
     "lea-11": "11_DESKTOP_RUN_CONTROLS.todo",
-    "lea-12": "12_WINDOWS_RELEASE.todo"
+    "lea-12": "12_WINDOWS_RELEASE.todo",
+    "lea-13": "13_PRIVATE_SETUP_HANDOFF.todo",
+    "lea-14": "14_GUIDED_GUI_TUTORIAL.todo",
+    "lea-15": "15_TUTORIAL_WINDOWS_RELEASE.todo"
   }
 }

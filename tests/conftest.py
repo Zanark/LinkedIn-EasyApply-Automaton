@@ -38,3 +38,18 @@ def answers_data() -> dict:
 @pytest.fixture
 def answers_store(answers_data: dict) -> AnswerStore:
     return AnswerStore(answers_data)
+
+
+@pytest.fixture(scope="session")
+def qt_app():
+    """Keep one application alive until its native widgets have been destroyed."""
+    pytest.importorskip("PySide6")
+    from PySide6.QtCore import QCoreApplication, QEvent
+    from PySide6.QtWidgets import QApplication
+
+    application = QApplication.instance() or QApplication([])
+    yield application
+    application.closeAllWindows()
+    for widget in application.topLevelWidgets():
+        widget.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)

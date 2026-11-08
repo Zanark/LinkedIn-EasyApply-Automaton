@@ -21,14 +21,11 @@ from linkedin_easy_apply.gui.theme import DEEP_SEA_FOAM, HARBOR_DAYLIGHT  # noqa
 from linkedin_easy_apply.gui.widgets import Console  # noqa: E402
 
 
-@pytest.fixture(scope="module")
-def qt_app() -> QApplication:
-    return QApplication.instance() or QApplication([])
-
-
 @pytest.fixture
-def console(qt_app: QApplication) -> Console:
-    return Console(DEEP_SEA_FOAM)
+def console(qt_app: QApplication):
+    widget = Console(DEEP_SEA_FOAM)
+    yield widget
+    widget.deleteLater()
 
 
 def _html(console: Console) -> str:

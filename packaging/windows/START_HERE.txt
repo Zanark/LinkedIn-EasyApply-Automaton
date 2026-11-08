@@ -3,6 +3,8 @@ EASY APPLY AUTOMATON - WINDOWS PORTABLE
 1. Extract the ENTIRE ZIP to a writable folder.
 2. Double-click EasyApplyAutomaton.exe. Do not move it out of this folder.
    The companion lea.exe is the same tool for PowerShell/Command Prompt.
+   Use Tutorial (F1) to learn every page and option without starting a run.
+   The ? beside "Customize settings for this run" explains private overrides.
 3. First launch creates examples in:
    %LOCALAPPDATA%\EasyApplyAutomaton\configs
    Edit Configuration and Answers with your own verified information.
@@ -17,6 +19,12 @@ EASY APPLY AUTOMATON - WINDOWS PORTABLE
 The Run page has per-submit confirmation and an input field for CLI prompts.
 Send Enter accepts the prompt's displayed default. Stop forcibly terminates
 the child; it is not a guarantee of graceful browser cleanup.
+
+For the tutorial alone, without initializing configuration or history:
+  EasyApplyAutomaton.exe --tutorial
+  lea.exe gui --tutorial
+The 21-topic guide is offline and read-only; navigation never saves settings,
+creates run presets or starts a browser. Tutorial mode ignores --config.
 
 Edge/Chrome must already be installed. For Chromium, use Tools ->
 Install Chromium browser (downloads separately). No browser is bundled.

@@ -19,6 +19,44 @@ graceful Ctrl+C. See [the full desktop guide](docs/gui.md) for limitations:
 unsigned EXEs, no bundled dashboard/OpenAI, and an external Python requirement
 for dynamic resume building.
 
+### Reuse an existing setup
+
+From your already configured checkout, use its existing environment:
+
+```powershell
+$env:LEA_WORKSPACE = (Get-Location).Path
+.\.venv\Scripts\python.exe apply.py gui
+```
+
+This keeps your current answers, resumes, history and browser profile; do not
+repeat initialization or overwrite them with examples. The EXE can also use
+that workspace, but its optional-feature limits still apply. In particular,
+an enabled dynamic builder needs `resume.builder.python` set to an actual
+external Python executable. See [the reuse guide](docs/gui.md#reuse-an-existing-setup).
+Keep any machine-local input bundle under the ignored `private-setup` folder;
+it is private data, not a release asset or a standalone migration.
+
+### Guided tutorial
+
+```powershell
+.\.venv\Scripts\python.exe apply.py gui --tutorial
+```
+
+This opens only a read-only guide: no private configuration, database or browser
+startup. Use its topic list and Back/Next to explore all options. In the
+GUI, **Tutorial / F1** replays it; **?** beside the customization checkbox
+opens that explanation. Checking customization only exposes changed-value
+overrides; Start/Copy can create a private preset without changing saved YAML.
+The [full guide](docs/gui-tutorial.md) is also readable outside the app.
+Windows v0.2.1 includes the same guide. From its extracted folder:
+
+```powershell
+.\EasyApplyAutomaton.exe --tutorial
+.\lea.exe gui --tutorial
+```
+
+Older v0.2.0 EXEs do not support these tutorial flags.
+
 The commands below are for the source checkout. In the extracted release
 folder, replace `.\.venv\Scripts\python.exe apply.py` with `.\lea.exe`.
 

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import override
 
 import yaml
-from PySide6.QtCore import QSettings, Qt, QTimer, QUrl
+from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer, QUrl
 from PySide6.QtGui import (
     QAction,
     QColor,
@@ -59,6 +59,7 @@ from linkedin_easy_apply.gui.process import CommandRunner, start_detached
 from linkedin_easy_apply.gui.settings import write_run_config
 from linkedin_easy_apply.gui.settings_panel import RunSettings
 from linkedin_easy_apply.gui.theme import DEFAULT_THEME, THEMES, Palette, build_stylesheet, resolve
+from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog
 from linkedin_easy_apply.gui.widgets import Card, Console, PathRow, heading, muted
 from linkedin_easy_apply.runtime import is_frozen, resource_root, workspace_root
 
@@ -78,7 +79,7 @@ class MainWindow(QMainWindow):
         self, config_path: str, theme: str | None = None, *, workspace: Path | None = None
     ) -> None:
         super().__init__()
-        self._settings = QSettings(_ORG, _APP)
+        self._settings = QSettings(QSettings.defaultFormat(), QSettings.Scope.UserScope, _ORG, _APP)
         stored = str(self._settings.value("theme", DEFAULT_THEME))
         self._palette: Palette = resolve(theme or stored)
         self._root = workspace or project_root()
@@ -179,6 +180,12 @@ class MainWindow(QMainWindow):
         bar.addWidget(QLabel("Config "))
         bar.addWidget(self._config_field)
         bar.addWidget(browse)
+
+        self._tutorial_action = QAction("Tutorial", self)
+        self._tutorial_action.setShortcut(QKeySequence.StandardKey.HelpContents)
+        self._tutorial_action.setToolTip("Read-only guided tutorial (F1)")
+        self._tutorial_action.triggered.connect(self._show_tutorial)
+        bar.addAction(self._tutorial_action)
 
         dashboard_action = QAction("Open dashboard", self)
         dashboard_action.setShortcut(QKeySequence("Ctrl+D"))
@@ -288,6 +295,9 @@ class MainWindow(QMainWindow):
         setup_layout.addWidget(safety)
         advanced = Card("3  Tune this run")
         self._run_settings = RunSettings()
+        self._run_settings.help_requested.connect(
+            lambda: self._show_tutorial(topic=CUSTOMIZE_TOPIC)
+        )
         advanced.add(self._run_settings)
         setup_layout.addWidget(advanced)
         setup_layout.addStretch(1)
@@ -721,6 +731,8 @@ class MainWindow(QMainWindow):
     def _set_running(self, running: bool) -> None:
         self._start_button.setEnabled(not running)
         self._stop_button.setEnabled(running)
+        self._tutorial_action.setEnabled(not running)
+        self._run_settings.help_button.setEnabled(not running)
         self.statusBar().showMessage("Running…" if running else "Ready")
         self._run_state.setText("RUNNING" if running else "READY")
         for field in (self._input, self._send_button, self._enter_button):
@@ -732,6 +744,22 @@ class MainWindow(QMainWindow):
         self._set_running(False)
         self.statusBar().showMessage(message, 8000)
         self._refresh_stats()
+
+    def _show_tutorial(self, _checked: bool = False, *, topic: str | None = None) -> None:
+        if self._runner.busy:
+            QMessageBox.information(
+                self, "Command running", "Finish the current command before opening the tutorial."
+            )
+            return
+        try:
+            dialog = TutorialDialog(self, start_topic=topic)
+        except (OSError, UnicodeError, ValueError) as exc:
+            QMessageBox.warning(self, "Tutorial unavailable", str(exc))
+            return
+        try:
+            dialog.exec()
+        finally:
+            dialog.deleteLater()
 
     # -- configuration -------------------------------------------------------
     def _on_config_path_changed(self) -> None:
@@ -989,7 +1017,9 @@ def theme_icon(palette: Palette) -> QIcon:
     return QIcon(pixmap)
 
 
-def run(config_path: str = "configs/config.yaml", theme: str | None = None) -> int:
+def run(
+    config_path: str = "configs/config.yaml", theme: str | None = None, *, tutorial: bool = False
+) -> int:
     """Create the application and show the window. Returns the Qt exit code."""
     application = QApplication.instance() or QApplication([])
     if not isinstance(application, QApplication):
@@ -997,6 +1027,18 @@ def run(config_path: str = "configs/config.yaml", theme: str | None = None) -> i
     application.setApplicationName("Easy Apply Automaton")
     application.setApplicationDisplayName("Easy Apply Automaton")
     application.setWindowIcon(application_icon())
-    window = MainWindow(config_path=config_path, theme=theme)
+    window: QWidget
+    if tutorial:
+        preferences = QSettings(QSettings.defaultFormat(), QSettings.Scope.UserScope, _ORG, _APP)
+        stored = str(preferences.value("theme", DEFAULT_THEME))
+        window = TutorialDialog()
+        window.setStyleSheet(build_stylesheet(resolve(theme or stored)))
+    else:
+        window = MainWindow(config_path=config_path, theme=theme)
     window.show()
-    return application.exec()
+    try:
+        return application.exec()
+    finally:
+        # The stopped event loop cannot deliver deferred deletion on its own.
+        window.deleteLater()
+        QCoreApplication.sendPostedEvents(window, QEvent.Type.DeferredDelete)
