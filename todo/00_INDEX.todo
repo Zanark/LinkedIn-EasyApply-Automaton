@@ -77,6 +77,13 @@ The subsequent lea-21 removes Qt's accidental toolbar visibility menu.
 Eight focused cases and all 167 GUI regressions pass locally; text editing,
 Tutorial/F1 and reopening without a setup reset remain intact. Existing
 screenshots and releases are unchanged; scoped settlement is recorded below.
+The separate lea-22 follow-through now delivers those completed improvements
+as Windows v0.2.2 from exact source d06cf742fa7ce6b63267cf5efb5033504a713db8.
+Both main/tag qualification runs pass, and the tag-gated hosted release is
+published. The actual downloaded assets and all 450 bundled files are verified;
+a new side-by-side installation passes eight frozen offline checks.
+The source launcher, selected private/native metadata and earlier releases
+remain intact. Publication does not close the original live qualification gaps.
 
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
@@ -101,9 +108,19 @@ screenshots and releases are unchanged; scoped settlement is recorded below.
 | lea-19 | 19_GUI_OPTION_TOOLTIPS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/19 |
 | lea-20 | 20_LIVE_RUN_METRICS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/20 |
 | lea-21 | 21_FIXED_MAIN_TOOLBAR.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/21 |
-| lea-22 | 22_DESKTOP_POLISH_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/22 |
+| lea-22 | 22_DESKTOP_POLISH_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/22 |
 
 ## Completion log
+- 2026-11-10: Independently reconciled lea-22/#22 CLOSED/COMPLETED,
+  exact managed content, one Done issue-backed Project item and persistent
+  backlink. Settled apply produced one no-op without content/timestamp churn.
+  All twenty-one older mappings and original #2/#9 review gaps remain intact.
+  The tracking-only delivery receipt does not change the v0.2.2 tag.
+- 2026-11-10: lea-22 delivers the published and installed Windows v0.2.2.
+  Exact main/tag qualification, hosted notes, downloaded integrity, all 450
+  bundled files and eight installed offline checks pass. Preserve the
+  immutable release source and unchanged setup; tracking settlement is
+  independently verified separately from release qualification.
 - 2026-11-10: lea-22/#22 has its actual issue, one In Progress item and
   persistent backlink. Version, release notes and affected guides are aligned;
   corrected full source gates pass all 772 tests. Retain the initial

@@ -321,12 +321,12 @@
     "lea-22": {
       "baseline": {
         "title": "[lea-22] Desktop polish Windows v0.2.2 release",
-        "managed": "ace9724d11533b0abc6871ddaa9a4e6bfae3614b50aafdea31508e01e99cd188",
+        "managed": "7e2b752c5d33cc5c34b3233d9eee858a9695c4c6adb3d64d29bda1120191b211",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABdxTieA",
       "number": 22,

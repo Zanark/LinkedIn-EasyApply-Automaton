@@ -3,7 +3,7 @@ Workstream-ID: lea-22
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/22
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed release follow-through for completed desktop presentation work
-Status: IN_PROGRESS
+Status: DONE
 Milestone: Deliver the completed desktop improvements in a verified Windows release
 Dependencies: lea-15, lea-17, lea-18, lea-19, lea-20, lea-21
 
@@ -18,23 +18,23 @@ an independently running application.
 - [x] Establish that the existing source launcher runs the checkout, not a downloaded EXE.
 - [x] Review the exact public payload and align version, release notes and usage guides.
 - [x] Run source release gates without using real browser or applicant data.
-- [ ] Commit/push only reviewed files with repository-local attribution and required trailers.
-- [ ] Publish the matching tag through the existing qualification-gated Windows pipeline.
-- [ ] Download and verify hosted assets, exact source identity and all bundled file hashes.
-- [ ] Install into a new local version directory and exercise frozen GUI/CLI offline.
-- [ ] Verify the existing source launcher and preservation of private setup and earlier releases.
-- [ ] Reconcile the issue, Project status and persistent backlink.
+- [x] Commit/push only reviewed files with repository-local attribution and required trailers.
+- [x] Publish the matching tag through the existing qualification-gated Windows pipeline.
+- [x] Download and verify hosted assets, exact source identity and all bundled file hashes.
+- [x] Install into a new local version directory and exercise frozen GUI/CLI offline.
+- [x] Verify the existing source launcher and preservation of private setup and earlier releases.
+- [x] Reconcile the issue, Project status and persistent backlink.
 
 ## Acceptance criteria
-- [ ] Package metadata, tag, hosted run and downloaded manifest identify one exact release source.
-- [ ] The downloadable desktop includes readable colored logs, two-line hover help, live counters and the fixed toolbar.
-- [ ] README media and usage guides distinguish the new release from unchanged older binaries.
-- [ ] The installed actual asset passes the existing frozen offline checks.
-- [ ] The source launcher keeps its existing command and configured workspace without reinitialization.
-- [ ] Private inputs, authentication, runtime data, continuity and unrelated work are not published.
-- [ ] Earlier release assets and existing installations are preserved; no running GUI is driven or restarted.
-- [ ] Publication and offline qualification are not presented as live-site, clean-machine or human acceptance.
-- [ ] One repository issue, one correctly staged Project item and a durable backlink represent this workstream.
+- [x] Package metadata, tag, hosted run and downloaded manifest identify one exact release source.
+- [x] The downloadable desktop includes readable colored logs, two-line hover help, live counters and the fixed toolbar.
+- [x] README media and usage guides distinguish the new release from unchanged older binaries.
+- [x] The installed actual asset passes the existing frozen offline checks.
+- [x] The source launcher keeps its existing command and configured workspace without reinitialization.
+- [x] Private inputs, authentication, runtime data, continuity and unrelated work are not published.
+- [x] Earlier release assets and existing installations are preserved; no running GUI is driven or restarted.
+- [x] Publication and offline qualification are not presented as live-site, clean-machine or human acceptance.
+- [x] One repository issue, one correctly staged Project item and a durable backlink represent this workstream.
 
 ## Completion evidence
 Initial read-back verified the public repository, owner access and remote main.
@@ -48,9 +48,35 @@ bundled tutorial and first-run instructions match the completed desktop features
 The corrected full source gate passes Ruff, Black (117 files), mypy (72 source
 files) and all 772 tests with native exit zero. The initial two order-dependent
 test failures and their isolated-import fix are retained in the log.
-Source version reports 0.2.2; the unchanged launcher check passes without opening
-a GUI or starting automation. Hosted publication and installed verification
-remain pending; source checks do not qualify a downloaded executable.
+The reviewed 56-file source is published at
+d06cf742fa7ce6b63267cf5efb5033504a713db8 with matching annotated tag v0.2.2,
+repository-local attribution and both required session trailers. Canonical
+GitHub tree read-back independently matches every reviewed blob. Exact push
+runs 42682056610 (main) and 42682056827 (tag) both pass qualification; only
+the version-tag run publishes. The hosted release notes match the reviewed
+versioned notes, and the latest stable release is v0.2.2:
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.2
+
+All three actual downloaded assets match hosted sizes/digests and SHA256SUMS.
+The manifest identifies that exact source and version. ZIP safety/inventory
+and all 450 extracted file sizes/hashes are verified before and after placement.
+The 114,579,088-byte ZIP has SHA256
+a46ceddf5924295892e0c09575a51c6aad6de4d1d75aef62bb64702136ff409e.
+The bundle is installed side by side in a new 0.2.2 version directory.
+Eight existing frozen offline checks pass with native exit zero: version,
+help, init, stats, test-form, CSV/XLSX exports and actual GUI render/driver/
+sibling-child integration. The installed CLI separately reports 0.2.2;
+the bundled tutorial matches the reviewed source and contains 21 topics.
+
+The unchanged source-launcher check still passes without opening a GUI or
+starting automation. Selected original-input/native preference metadata,
+all fifteen reviewed media hashes, earlier installed public entrypoints,
+both older hosted releases/assets and their tag refs remain unchanged.
+No real workspace contents or user processes are used as test fixtures.
+These are installed-asset offline checks, not live LinkedIn, clean-machine
+or human visual acceptance. Scoped issue/Project/backlink completion is
+independently reconciled; its settled no-churn receipt is retained separately.
+Subsequent tracking-only commits do not move the immutable release tag.
 
 ## Completion log
 - 2026-11-10: Started the separately authorized release follow-through. Preserve
@@ -68,3 +94,12 @@ remain pending; source checks do not qualify a downloaded executable.
 - 2026-11-10: Corrected full source release gates passed with 772 tests.
   Complete public payload review retains the existing fictional media; align
   the release notes and guides without changing the source launcher or inputs.
+- 2026-11-10: Published the reviewed source and matching version tag by a
+  normal atomic push. Both exact hosted runs passed; the tag-gated release
+  published all three Windows assets. Hosted notes are read back after
+  normalizing transport line endings, without changing their reviewed text.
+- 2026-11-10: Downloaded the actual hosted assets, verified all 450 files
+  and installed a new version directory without replacing older binaries.
+  All eight frozen offline checks and the exact installed version passed.
+  Rechecked the source launcher, selected private/native metadata, media,
+  older release assets/tags and installed entrypoints without live actions.

@@ -23,6 +23,34 @@
   source launcher help check pass without starting a GUI or automation.
   The new release issue is #22 with its actual durable backlink and one
   In Progress item; publication and installed-asset checks remain pending.
+- Published the reviewed 56-file commit
+  d06cf742fa7ce6b63267cf5efb5033504a713db8 and matching annotated v0.2.2
+  tag by a normal atomic push, with verified local attribution and trailers.
+  Canonical hosted-tree read-back matches every reviewed source blob.
+- Exact hosted main run 42682056610 and tag run 42682056827 both completed
+  successfully, including source gates, frozen build and offline executable
+  checks. Only the tag run published. Updated release notes match the reviewed
+  versioned text after transport-newline normalization; latest stable is v0.2.2.
+- Downloaded all three actual hosted assets. Hosted digests, SHA256SUMS,
+  exact manifest source/version, safe ZIP inventory and all 450 file sizes/
+  hashes pass. The 114,579,088-byte ZIP is installed into a new 0.2.2
+  directory without replacing an earlier installation.
+- Eight installed frozen checks pass with native exit zero, including the
+  rendered GUI/Playwright-driver/sibling-CLI integration and fictional CSV/
+  XLSX exports. The actual CLI separately reports 0.2.2 and the bundled
+  21-topic tutorial exactly matches its reviewed source.
+- The source-launcher check still passes without starting a GUI or automation.
+  Selected private/native metadata, all fifteen media hashes, four earlier
+  installed entrypoints, both earlier hosted releases/assets and original
+  tag refs are unchanged. No real runtime data or user GUI was used.
+- Declare lea-22 complete for scoped issue/Project reconciliation, retaining
+  the independent settled receipt separately. A bounded tracking follow-through
+  does not retag the released source. These checks do not establish live-site,
+  clean-machine or human visual acceptance.
+- Independent completion verification now confirms #22 CLOSED/COMPLETED,
+  exact managed content, one Done item and its persistent backlink. Scoped
+  settled apply produced one no-op with unchanged content and timestamps.
+  All twenty-one earlier mappings and the original #2/#9 review gaps remain.
 
 ## 2026-11-10 - Prevent accidental hiding of the essential toolbar
 
