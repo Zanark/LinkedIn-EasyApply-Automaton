@@ -8,6 +8,27 @@ settings are collected by `gui/settings_panel.RunSettings`; the Qt-free
 saved YAML. `CommandRunner` owns a QProcess, streams output and forwards prompt
 input, rather than calling a second implementation of application logic.
 
+`gui/widgets.Console` is a presentation adapter: recognized Loguru metadata
+becomes compact, color-coded labels, while original ANSI-stripped lines remain
+in a bounded backlog. Theme changes and Details repaint that history using
+plain-text spans and natural wrapping. Unknown output stays literal; this
+does not change engine decisions, child output or rotating file diagnostics.
+
+`progress.py` is a separate, Qt-free observation boundary. An optional
+`ProgressReporter` emits complete strict snapshots at authoritative job,
+application, outreach and invitation outcomes. `CommandRunner` opts its child
+in and separates bounded framed records from ordinary text; `RunMetrics`
+renders counts, target progress and elapsed process time without parsing logs
+or polling SQLite. Snapshots contain action/status/IDs/counts, never job,
+applicant or message content. This is ephemeral observability, not a second
+database: a confirmed action can be reported before later persistence finishes.
+Ordinary CLI invocations do not emit these frames.
+
+Native option help is another presentation concern: `gui/widgets.tooltip`
+formats purpose/example lines, while the window and settings panel own
+selection-specific descriptions. Hovering neither persists overrides nor
+invokes the command runner; the existing tutorial remains the longer reference.
+
 `runtime.py` distinguishes immutable packaged resources from writable user
 data. The Windows one-folder distribution has a windowed EXE and a console
 EXE sharing dependencies; GUI commands select the sibling CLI instead of

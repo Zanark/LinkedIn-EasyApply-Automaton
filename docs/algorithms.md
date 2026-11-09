@@ -268,6 +268,26 @@ rounds" is the same **convergence criterion** used to end iterative optimizers,
 fixpoint computations, and simulation loops. The hard cap is a **circuit-breaker
 by iteration count** — cheap insurance against runaway loops.
 
+The outer `orchestrator.py::_execute` also deduplicates jobs across search
+pages before incrementing Scanned. `ProgressReporter` observes that same
+boundary, rather than counting repeated log lines or database upserts.
+
+### Framing a second stream for desktop telemetry
+
+`progress.py::ProgressStream.feed` incrementally separates record-start marker,
+JSON snapshot and record-end marker from ordinary child output. A possible
+split marker is retained; unrelated text, especially prompts without newlines,
+is returned immediately. Active frames are bounded to 16,384 payload
+characters; invalid, incomplete or oversized records produce generic warnings,
+never echoed payloads, and the view retains its last valid snapshot.
+
+This is a small **streaming state machine**, like a network protocol decoder,
+not log-message classification. Fixed-size snapshots avoid replaying a history
+of deltas in the GUI. State grows only with the bounded current frame/marker
+suffix; it does not retain the run's output backlog. `gui/metrics.py` keeps
+elapsed time using a monotonic clock, so wall-clock corrections do not alter
+duration. Ordinary CLI/file logs stay outside this optional protocol.
+
 ---
 
 ## 10. Exponential backoff retry

@@ -75,6 +75,9 @@ The CLI (`cli/main.py`) prepares everything before any browser opens:
    `reapply` instead obtains its targets from the database.
 7. **`db.start_run(...)`** inserts a row in the `runs` table and returns a
    `run_id`; a `RunSummary` counter object is created.
+   For an opted-in GUI child, `ProgressReporter.start` also publishes the
+   effective action, target and dry-run mode. Discovery/skip/outcome boundaries
+   publish subsequent snapshots; ordinary terminal commands emit no frames.
 8. Enter the browser context manager: **`with BrowserManager(...) as browser:`**
    launches Edge (or Chrome/Chromium) using your **persistent profile** so your
    existing LinkedIn login is reused — the tool never handles your password.
@@ -376,6 +379,15 @@ printing its path in the run summary. The same drafts also surface on the
     to 20 seconds after Submit; without confirmation it stops instead of retrying.
     The CLI shows an `Unconfirmed` row and exits with code 2. Database search and
     reapply guards exclude that job until manual review.
+
+The current-source GUI does not wait for step 31: it displays outcome snapshots
+throughout the command. Confirmed Applied increments immediately after the
+workflow returns SUBMITTED, before hiring-team approval can block. Outreach
+reports its exact sent/drafted/declined/failed/dry-run status, not the ambiguous
+return count; invitation outcomes have their own counters. Final-summary and
+database persistence still follow their existing sequence. Interruption in that
+gap can leave live totals ahead of persisted history; telemetry does not close
+that durability gap or authorize an automatic retry.
 
 Read-only work-history and education steps are distinguished by their visible
 form text, not an empty editable-field list. The workflow waits briefly for a

@@ -1,0 +1,70 @@
+# Desktop polish Windows v0.2.2 release
+Workstream-ID: lea-22
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/22
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed release follow-through for completed desktop presentation work
+Status: IN_PROGRESS
+Milestone: Deliver the completed desktop improvements in a verified Windows release
+Dependencies: lea-15, lea-17, lea-18, lea-19, lea-20, lea-21
+
+## Purpose
+Publish the completed desktop logs, hover help, live outcome counters and fixed
+toolbar as Windows v0.2.2. Keep the concise illustrated README, source launcher
+and packaged capabilities aligned without replacing private setup or controlling
+an independently running application.
+
+## Tasks
+- [x] Verify publication authority, repository identity, prior releases and unused version.
+- [x] Establish that the existing source launcher runs the checkout, not a downloaded EXE.
+- [x] Review the exact public payload and align version, release notes and usage guides.
+- [x] Run source release gates without using real browser or applicant data.
+- [ ] Commit/push only reviewed files with repository-local attribution and required trailers.
+- [ ] Publish the matching tag through the existing qualification-gated Windows pipeline.
+- [ ] Download and verify hosted assets, exact source identity and all bundled file hashes.
+- [ ] Install into a new local version directory and exercise frozen GUI/CLI offline.
+- [ ] Verify the existing source launcher and preservation of private setup and earlier releases.
+- [ ] Reconcile the issue, Project status and persistent backlink.
+
+## Acceptance criteria
+- [ ] Package metadata, tag, hosted run and downloaded manifest identify one exact release source.
+- [ ] The downloadable desktop includes readable colored logs, two-line hover help, live counters and the fixed toolbar.
+- [ ] README media and usage guides distinguish the new release from unchanged older binaries.
+- [ ] The installed actual asset passes the existing frozen offline checks.
+- [ ] The source launcher keeps its existing command and configured workspace without reinitialization.
+- [ ] Private inputs, authentication, runtime data, continuity and unrelated work are not published.
+- [ ] Earlier release assets and existing installations are preserved; no running GUI is driven or restarted.
+- [ ] Publication and offline qualification are not presented as live-site, clean-machine or human acceptance.
+- [ ] One repository issue, one correctly staged Project item and a durable backlink represent this workstream.
+
+## Completion evidence
+Initial read-back verified the public repository, owner access and remote main.
+The prior release inventory contains v0.2.0 and v0.2.1; the v0.2.2 tag is absent.
+The configured source launcher directly invokes the checkout's existing Python,
+GUI entrypoint and configuration. It does not select or download release assets.
+Preservation baselines cover existing public changes, selected private-file
+metadata, native preference metadata, all twenty-one tracking mappings and empty
+staging. Package metadata is v0.2.2, and the concise README, affected guides,
+bundled tutorial and first-run instructions match the completed desktop features.
+The corrected full source gate passes Ruff, Black (117 files), mypy (72 source
+files) and all 772 tests with native exit zero. The initial two order-dependent
+test failures and their isolated-import fix are retained in the log.
+Source version reports 0.2.2; the unchanged launcher check passes without opening
+a GUI or starting automation. Hosted publication and installed verification
+remain pending; source checks do not qualify a downloaded executable.
+
+## Completion log
+- 2026-11-10: Started the separately authorized release follow-through. Preserve
+  completed workstreams and original live qualification gaps; do not reopen
+  their settled descriptions merely to narrate publication.
+  Keep the existing source command and install the package side by side.
+- 2026-11-10: Initial preview rejected a placeholder backlink before any remote
+  write. Removed that placeholder; the synchronizer must insert the actual URL.
+- 2026-11-10: Corrected preview and apply created the actual issue and one
+  In Progress Project item. The persistent backlink is the verified issue URL.
+- 2026-11-10: Initial source gates passed Ruff, Black and mypy; pytest reported
+  770 passed and two theme-reopen failures. The Qt-free import test reloaded
+  palette classes shared by later tests. Isolated that import in a fresh child
+  instead of weakening the reopen assertions; the full gate must be rerun.
+- 2026-11-10: Corrected full source release gates passed with 772 tests.
+  Complete public payload review retains the existing fictional media; align
+  the release notes and guides without changing the source launcher or inputs.

@@ -10,20 +10,30 @@ This module must import without PySide6 installed.
 
 from __future__ import annotations
 
+import subprocess
+import sys
+
 import pytest
 
 from linkedin_easy_apply.gui import theme
 
 
-def test_theme_module_needs_no_qt(monkeypatch):
-    """Importing the theme must not drag in PySide6."""
-    import sys
-
-    monkeypatch.setitem(sys.modules, "PySide6", None)
-    import importlib
-
-    importlib.reload(theme)
-    assert theme.DEFAULT_THEME == "deepseafoam"
+def test_theme_module_needs_no_qt():
+    """Check a fresh import without replacing other tests' palette classes."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-B",
+            "-c",
+            "import sys; sys.modules['PySide6'] = None; "
+            "from linkedin_easy_apply.gui import theme; "
+            "assert theme.DEFAULT_THEME == 'deepseafoam'",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # -- palette contract -------------------------------------------------------- #

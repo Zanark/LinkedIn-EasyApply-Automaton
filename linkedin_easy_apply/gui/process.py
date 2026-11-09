@@ -12,6 +12,13 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
+from linkedin_easy_apply.progress import (
+    PROGRESS_ENV,
+    ProgressError,
+    ProgressSnapshot,
+    ProgressStream,
+)
+
 __all__ = ["CommandRunner", "child_environment", "start_detached"]
 
 
@@ -28,6 +35,7 @@ def child_environment() -> QProcessEnvironment:
     environment.insert("PYTHONIOENCODING", "utf-8")
     environment.insert("NO_COLOR", "1")
     environment.insert("TERM", "dumb")
+    environment.insert(PROGRESS_ENV, "1")
     return environment
 
 
@@ -47,6 +55,8 @@ class CommandRunner(QObject):
 
     started_command = Signal(str)  # the full command line
     output = Signal(str)  # one chunk of combined stdout/stderr
+    progress = Signal(object)
+    progress_error = Signal(str)
     finished = Signal(int, str)  # exit code, human-readable status
 
     def __init__(self, working_directory: Path, parent: QObject | None = None) -> None:
@@ -55,6 +65,7 @@ class CommandRunner(QObject):
         self._process: QProcess | None = None
         self._stopping = False
         self._decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        self._progress_stream = ProgressStream()
 
     # -- state ---------------------------------------------------------------
     @property
@@ -76,14 +87,15 @@ class CommandRunner(QObject):
         process.readyReadStandardOutput.connect(self._drain)
         process.finished.connect(self._on_finished)
         process.errorOccurred.connect(self._on_error)
+        process.started.connect(lambda: self.started_command.emit(" ".join(argv)))
 
         self._process = process
         self._stopping = False
         self._decoder.reset()
+        self._progress_stream = ProgressStream()
         process.start(argv[0], argv[1:])
         if not process.waitForStarted(5000):
             return False
-        self.started_command.emit(" ".join(argv))
         return True
 
     def stop(self) -> None:
@@ -107,7 +119,16 @@ class CommandRunner(QObject):
             return
         raw = self._process.readAllStandardOutput().data()
         if raw:
-            self.output.emit(self._decoder.decode(raw))
+            self._deliver(self._decoder.decode(raw))
+
+    def _deliver(self, text: str) -> None:
+        for record in self._progress_stream.feed(text):
+            if isinstance(record, ProgressSnapshot):
+                self.progress.emit(record)
+            elif isinstance(record, ProgressError):
+                self.progress_error.emit(record.message)
+            else:
+                self.output.emit(record)
 
     def _on_error(self, error: QProcess.ProcessError) -> None:
         if error == QProcess.ProcessError.FailedToStart:
@@ -119,7 +140,12 @@ class CommandRunner(QObject):
         self._drain()
         tail = self._decoder.decode(b"", final=True)
         if tail:
-            self.output.emit(tail)
+            self._deliver(tail)
+        for record in self._progress_stream.finish():
+            if isinstance(record, ProgressError):
+                self.progress_error.emit(record.message)
+            else:
+                self.output.emit(record)
         self._process = None
         if self._stopping:
             message = "Stopped."

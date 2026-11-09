@@ -44,6 +44,39 @@ README walkthrough GIFs with captions and static alternatives. Local media
 completion and tracking settlement are verified. Commit/push is separately
 authorized; source-publication verification is a post-push gate. The existing
 v0.2.1 release is not rebuilt or replaced.
+The subsequent lea-17 curation is complete locally: the run GIF is prominent,
+two distinct screenshots remain, and guide links replace repetitive prose.
+GitHub Markdown text fell from 1,912 to 347 words, including collapsed content,
+and 319 to 82 lines. All twenty-four retained relative references resolve.
+Desktop light, mobile light and desktop dark checks passed, followed by direct
+inspection of three full-page snapshots. An oversized-banner placement failure
+was corrected by reducing only display width, not weakening the check.
+All fifteen GUI assets, the SVG and selected original-input metadata remain
+unchanged. This is locally styled GitHub Markdown, not human acceptance
+or a published GitHub page. It does not reopen settled media production;
+final scoped completion settlement is recorded separately.
+The preceding source publication is already independently verified at
+70250ba915de2d972d177da46753859a1e3bca03. No fresh commit, push or release is requested.
+The subsequent lea-18 console presentation is complete locally: naturally
+wrapped text, compact severity/activity badges and reversible Details.
+All 145 focused GUI regressions passed, and narrow dark/light source previews
+and preserved private/native metadata are checked. Related guides and fictional
+Run media are refreshed; the distributed v0.2.1 executable is not rebuilt.
+Scoped completion settlement is recorded separately below.
+The subsequent lea-19 adds two-line native purpose/example hover help across
+desktop options, labels and changing selections. The 150-case GUI integration,
+focused capture regression, four dark/light popup previews and affected guides
+are complete locally. Only the matching Limits still is refreshed; released
+v0.2.1 and the independently running user window are unchanged.
+The subsequent lea-20 adds live per-command job, hiring-message and invitation
+counters with separate drafts/dry runs/uncertainty, elapsed time and target
+progress. The 308-case affected integration, dark/light geometry, sampled
+offscreen review and affected guides/fictional Run media are complete locally.
+Existing releases and the user's running window are not rebuilt or controlled.
+The subsequent lea-21 removes Qt's accidental toolbar visibility menu.
+Eight focused cases and all 167 GUI regressions pass locally; text editing,
+Tutorial/F1 and reopening without a setup reset remain intact. Existing
+screenshots and releases are unchanged; scoped settlement is recorded below.
 
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
@@ -63,8 +96,103 @@ v0.2.1 release is not rebuilt or replaced.
 | lea-14 | 14_GUIDED_GUI_TUTORIAL.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/14 |
 | lea-15 | 15_TUTORIAL_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/15 |
 | lea-16 | 16_README_GUI_MEDIA.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/16 |
+| lea-17 | 17_README_CURATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/17 |
+| lea-18 | 18_GUI_LOG_READABILITY.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/18 |
+| lea-19 | 19_GUI_OPTION_TOOLTIPS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/19 |
+| lea-20 | 20_LIVE_RUN_METRICS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/20 |
+| lea-21 | 21_FIXED_MAIN_TOOLBAR.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/21 |
+| lea-22 | 22_DESKTOP_POLISH_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/22 |
 
 ## Completion log
+- 2026-11-10: lea-22/#22 has its actual issue, one In Progress item and
+  persistent backlink. Version, release notes and affected guides are aligned;
+  corrected full source gates pass all 772 tests. Retain the initial
+  order-dependent test failure and fix. Hosted delivery is still pending.
+- 2026-11-10: Added lea-22 for the authorized Windows v0.2.2 publication and
+  side-by-side local installation. Align the completed desktop features and
+  guides, preserve the existing source launcher and private setup, and verify
+  hosted/downloaded identity without restarting an independently running GUI.
+- 2026-11-10: Independently verified lea-21/#21 CLOSED/COMPLETED, exact
+  managed content, one Done issue-backed Project item and persistent backlink.
+  Settled apply produced one no-op without content/timestamp churn. All
+  twenty older issues/items/mappings and original #2/#9 review gaps remain
+  unchanged. Final preservation retains 53 unrelated public fingerprints,
+  all fifteen media hashes, selected private/native metadata and HEAD/staging.
+- 2026-11-10: Completed the lea-21 toolbar fix, 167-case GUI qualification and
+  seven affected guides. Preserve prior source work and all existing media.
+  Scoped issue/Project/backlink settlement remains a separate receipt.
+- 2026-11-10: Added lea-21 to remove the accidental Main toolbar hide menu.
+  Keep text-editing menus and existing setup; use isolated checks without
+  controlling an independently running window or publishing a new release.
+- 2026-11-09: Independently verified lea-20 CLOSED/COMPLETED with exact managed
+  content, one Done issue-backed Project item and persistent backlink. Settled
+  scoped apply produced one no-op with unchanged remote/local content and
+  timestamps. All nineteen older issues/items/mappings and original #2/#9
+  OPEN/In review gaps remain intact. Final preservation retains twenty-eight
+  unrelated fingerprints; the index and ledger intentionally record completion.
+  Final bookkeeping wording was separately previewed/applied and independently
+  read back; its settled rerun again produced one no-op without content or
+  timestamp churn.
+- 2026-11-09: Completed lea-20 local implementation and bounded offline
+  qualification. Pre-bookkeeping checks preserved thirty public fingerprints, nineteen
+  older mappings, selected private/native metadata, HEAD and the empty
+  staged diff. Scoped closure/Done/no-churn settlement is recorded separately.
+- 2026-11-09: Added lea-20 for live per-command desktop metrics across Apply,
+  Scan, Reapply and Connect. Preserve existing source work, private settings
+  and independently running instances; no new live run or release is included.
+- 2026-11-09: Independently reconciled lea-19/#19 CLOSED/COMPLETED with
+  exact managed content, one Done issue-backed Project item and persistent
+  backlink. Settled scoped apply verified one no-op; exact remote content/
+  timestamps and local mapping/workstream bytes/mtimes stayed unchanged.
+  All eighteen earlier records and original #2/#9 review gaps are preserved.
+  This receipt is outside the settled managed body; sources remain local.
+- 2026-11-09: Completed lea-19 implementation, technical qualification and
+  sampled offscreen popup review. Preserved all eighteen earlier mappings,
+  33 unrelated public files, selected private/native metadata and the empty
+  staged diff. Scoped closure/Done/no-churn settlement follows separately.
+- 2026-11-09: Initial independent lea-19 read-back verified #19 OPEN with
+  exact managed content, one In Progress item and persistent backlink. All
+  eighteen earlier issues/items and their timestamps remain unchanged.
+- 2026-11-09: Added lea-19 for two-line native hover help across desktop
+  fields, toggles and changing options. Preserve prior source changes and
+  existing releases; use isolated fictional workspaces without live actions.
+- 2026-11-09: Independently reconciled lea-18/#18 CLOSED/COMPLETED with
+  exact managed content, one Done issue-backed Project item and persistent
+  backlink. Settled scoped apply verified one no-op; exact remote content/
+  timestamps and local mapping/workstream bytes/mtimes stayed unchanged.
+  All seventeen earlier records and original #2/#9 review gaps are preserved.
+  This receipt stays outside the settled managed body; sources remain local.
+- 2026-11-09: Completed lea-18's implementation, 145-case focused GUI
+  integration, narrow-theme review and directly affected documentation/media.
+  HEAD and unstaged index content are preserved. Physical index bytes differ
+  from the initial checksum, but the cached diff remains empty; no baseline
+  was reset. Scoped completion/Done/no-churn settlement follows separately.
+- 2026-11-09: Independently verified #18 OPEN with exact managed content,
+  one In Progress Project item and persistent backlink. All seventeen earlier
+  mappings, issue/item contents/timestamps and workstream bytes/mtimes remain
+  unchanged, including original #2/#9 OPEN/In review qualification gaps.
+- 2026-11-09: Added lea-18 for compact, naturally wrapped desktop logs,
+  semantic activity/severity labels and an original-prefix Details view.
+  Use fictional fixtures; do not start a live run or publish a new release.
+- 2026-11-08: Independently verified lea-17/#17 CLOSED/COMPLETED with exact
+  managed content, one Done Project item and persistent backlink. The settled
+  scoped apply verified one no-op; exact remote content/timestamps and local
+  mapping/workstream bytes/mtimes stayed unchanged. All sixteen earlier
+  records and original #2/#9 OPEN/In review gaps are preserved. This receipt
+  stays outside the settled managed body. Curation sources remain local;
+  no new commit, push or release occurred.
+- 2026-11-08: Local lea-17 curation and Markdown/layout/link verification
+  complete. Native preferences, selected private metadata, unchanged source
+  assets and the unstaged source boundary are independently checked.
+  Final scoped closure/Done/no-churn settlement remains a separate receipt.
+- 2026-11-08: Scoped synchronization created #17 and one In Progress item,
+  with an independently verified managed body and persistent backlink.
+  All sixteen earlier mapping objects, issue/item content and timestamps,
+  workstream bytes and original #2/#9 OPEN/In review gaps remain unchanged.
+- 2026-11-08: Added lea-17 for concise README curation, not a reopening of
+  completed media production. Reuse the existing GIF and selected screenshots;
+  preserve originals, detailed guides, private setup and unrelated work.
+  Rendering, link checks and scoped tracking settlement remain pending.
 - 2026-11-08: Separately authorized source publication for the completed
   lea-16 media, capture tooling, focused tests, documentation and durable
   tracking sources. Review and stage only this bounded public payload.

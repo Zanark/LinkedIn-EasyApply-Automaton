@@ -45,6 +45,7 @@ from linkedin_easy_apply.jobs import Job, JobExtractor, JobSearch
 from linkedin_easy_apply.jobs.search import paginated_url
 from linkedin_easy_apply.jobs.seniority import DEFAULT_SENIORITY, detect_seniority
 from linkedin_easy_apply.parser import QuestionParser
+from linkedin_easy_apply.progress import ProgressReporter
 from linkedin_easy_apply.scoring import ScoringEngine
 from linkedin_easy_apply.utils.paths import ensure_dir
 from linkedin_easy_apply.utils.screenshots import ScreenshotManager
@@ -92,12 +93,14 @@ class Orchestrator:
         on_approve_message: ApproveHandler | None = None,
         message_hiring_team: bool | None = None,
         ai_provider: AIProvider | None = None,
+        progress: ProgressReporter | None = None,
     ) -> None:
         self._config = config
         self._db = database
         self._answers = answers
         self._on_unknown = on_unknown
         self._on_confirm = on_confirm_submit
+        self._progress = progress or ProgressReporter()
 
         self._parser = QuestionParser(
             skills=answers.known_skills(), fuzzy_threshold=config.answers.fuzzy_threshold
@@ -143,6 +146,7 @@ class Orchestrator:
             record=self._db.record_outreach,
             max_per_run=cfg.max_per_run,
             skip_if_messaged=cfg.skip_if_messaged,
+            on_outcome=self._progress.outreach,
         )
 
     def _make_dynamic_resume(self) -> DynamicResumeBuilder | None:
@@ -198,6 +202,7 @@ class Orchestrator:
 
         run_id = self._db.start_run(run_mode, search_names)
         summary = RunSummary(run_id=run_id, mode=run_mode)
+        self._progress.start(mode, run_id=run_id, dry_run=dry_run, target=max_per_run)
         if reapply:
             logger.info(
                 "Reapply starting: dry_run={} interactive={} | {} failed/aborted job(s) to retry",
@@ -330,6 +335,7 @@ class Orchestrator:
                         seen_ids.add(key)
                     new_jobs += 1
                     summary.scanned += 1
+                    self._progress.increment({"scanned": 1}, phase="reviewing")
                     self._process_job(browser, job, summary, mode, settings, max_per_run)
                     if summary.unconfirmed:
                         logger.error("Stopping run: a submission needs verification on LinkedIn")
@@ -434,6 +440,7 @@ class Orchestrator:
                 logger.warning("Skip (could not open) - {}", label)
                 continue
             summary.scanned += 1
+            self._progress.increment({"scanned": 1}, phase="reviewing")
             self._process_job(browser, job, summary, "apply", settings, max_per_run)
             if summary.unconfirmed:
                 logger.error("Stopping targeted run: a submission needs verification on LinkedIn")
@@ -453,6 +460,7 @@ class Orchestrator:
     def _note_skip(self, summary: RunSummary, reason: str, job_id: int | None = None) -> None:
         """Count a skip on the summary *and* persist its per-job reason."""
         summary.note_skip(reason)
+        self._progress.increment({"skipped": 1})
         self._db.record_skip(summary.run_id, job_id, reason)
 
     def _process_job(
@@ -677,6 +685,7 @@ class Orchestrator:
         )
 
         try:
+            self._progress.increment(phase="applying")
             result = workflow.apply(
                 resume_path=str(resume.path) if resume else None,
                 cover_letter_path=str(cover.pdf_path) if cover else None,
@@ -696,9 +705,11 @@ class Orchestrator:
                 application_id, status="failed", reason=str(exc), finished=True
             )
             summary.failed += 1
+            self._progress.increment({"failed": 1})
             return
 
         if result.status is ApplyStatus.SUBMITTED:
+            self._progress.increment({"applied": 1})
             # The post-submit "application sent" modal is what carries the "Meet
             # the hiring team" recruiter cards, so message them BEFORE closing it
             # (and before _persist_result's throttle pause could let it auto-close).
@@ -713,6 +724,7 @@ class Orchestrator:
         """Optionally message the job's 'Meet the hiring team' recruiters."""
         if self._outreach is None:
             return
+        self._progress.increment(phase="outreach")
         try:
             base_context = {
                 "role": job.title or "this role",
@@ -776,7 +788,9 @@ class Orchestrator:
         if not self._config.outreach.send_connection_notes:
             return
         try:
-            result = ConnectionInviteService(self._config, self._db).run(run_id)
+            result = ConnectionInviteService(self._config, self._db, progress=self._progress).run(
+                run_id
+            )
         except Exception as exc:  # pragma: no cover - defensive
             logger.warning("Connection-note pass failed: {}", exc)
             return
@@ -818,8 +832,10 @@ class Orchestrator:
             logger.warning("LinkedIn daily submission cap hit - ending the run early")
         elif result.status is ApplyStatus.FAILED:
             summary.failed += 1
+            self._progress.increment({"failed": 1})
         elif result.status is ApplyStatus.UNCONFIRMED:
             summary.unconfirmed += 1
+            self._progress.increment({"unconfirmed": 1})
             logger.warning(
                 "Submission unconfirmed for {}; not counted as success or failure", job.summary
             )
@@ -828,6 +844,7 @@ class Orchestrator:
                 # A dry run reaching Submit is a completed application for
                 # budgeting purposes, so --limit bounds a dry run too.
                 summary.dry_runs += 1
+                self._progress.increment({"dry_runs": 1})
             self._note_skip(summary, result.status.value, job_id)
 
     def _record_answers(self, application_id: int, answers: list[AnsweredQuestion]) -> None:

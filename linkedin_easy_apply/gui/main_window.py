@@ -55,12 +55,13 @@ from linkedin_easy_apply import __version__
 from linkedin_easy_apply.config import AppConfig, ConfigError, load_config
 from linkedin_easy_apply.config.loader import parse_config
 from linkedin_easy_apply.gui import commands
+from linkedin_easy_apply.gui.metrics import RunMetrics
 from linkedin_easy_apply.gui.process import CommandRunner, start_detached
 from linkedin_easy_apply.gui.settings import write_run_config
 from linkedin_easy_apply.gui.settings_panel import RunSettings
 from linkedin_easy_apply.gui.theme import DEFAULT_THEME, THEMES, Palette, build_stylesheet, resolve
 from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog
-from linkedin_easy_apply.gui.widgets import Card, Console, PathRow, heading, muted
+from linkedin_easy_apply.gui.widgets import Card, Console, PathRow, heading, muted, tooltip
 from linkedin_easy_apply.runtime import is_frozen, resource_root, workspace_root
 
 __all__ = ["MainWindow", "run"]
@@ -68,6 +69,79 @@ __all__ = ["MainWindow", "run"]
 _ORG = "LinkedInEasyApplyAutomaton"
 _APP = "DesktopGUI"
 _DASHBOARD_URL = "http://localhost:8501"
+
+_ACTION_HELP: dict[str, tuple[str, str]] = {
+    "scan": (
+        "Discover, score and record jobs without filling or submitting applications.",
+        "Use Scan to inspect available jobs before trying an Apply dry run.",
+    ),
+    "apply": (
+        "Discover jobs or open an exact-job batch, then attempt eligible applications.",
+        "Keep Dry run on to inspect forms without submitting.",
+    ),
+    "reapply": (
+        "Retry eligible failed or aborted jobs; submitted and uncertain attempts stay excluded.",
+        "Fix a saved answer, then retry; List retry targets only previews candidates.",
+    ),
+    "connect": (
+        "Process pending free connection invitations, not job applications.",
+        "Use Dry run to inspect pending notes before allowing real invitations.",
+    ),
+}
+
+_LIMIT_HELP: dict[str, tuple[str, str]] = {
+    "scan": (
+        "Cap discovered jobs; 0 uses jobs.max_per_run from the configuration.",
+        "10 scans and scores up to ten jobs without filling forms.",
+    ),
+    "apply": (
+        "Target confirmed submissions; 0 uses jobs.max_per_run from the configuration.",
+        "5 aims for five submissions; exhausted jobs or other guards can stop it sooner.",
+    ),
+    "reapply": (
+        "Cap retry candidates; 0 considers all eligible failed or aborted jobs.",
+        "3 retries up to three candidates; List retry targets only still lists all.",
+    ),
+    "connect": (
+        "Cap pending invitations; 0 uses outreach.connect_max_per_run from the configuration.",
+        "5 processes up to five pending notes, not five application submissions.",
+    ),
+}
+
+_TOOL_HELP: dict[str, tuple[str, str]] = {
+    "login": (
+        "Open the configured browser so you can sign in to LinkedIn manually.",
+        "Finish signing in in the browser, then use Send Enter to close the login command.",
+    ),
+    "test-browser": (
+        "Briefly open the configured browser to check the saved session.",
+        "Leave Optional blank for the LinkedIn feed, or supply another URL.",
+    ),
+    "stats": (
+        "Print statistics from the configured local database.",
+        "Review recorded application totals in the Run log without opening a browser.",
+    ),
+    "init": (
+        "Scaffold example configuration and runtime folders in the workspace.",
+        "Use for a new workspace; this tool does not force-overwrite existing configs.",
+    ),
+    "version": (
+        "Print the application's installed version.",
+        "Use this to identify the source version without opening a browser.",
+    ),
+    "install-browser": (
+        "Download Playwright's optional Chromium browser.",
+        "Use this for browser.engine=chromium; installed Edge or Chrome do not need it.",
+    ),
+    "resume-test": (
+        "Preview the static resume choice for a job title without applying.",
+        "Enter Senior Backend Engineer; Optional adds a job description for matching.",
+    ),
+    "test-form": (
+        "Show how the parser and saved answers recognise a form question.",
+        "Enter Years of Python experience? to inspect its category and resolved answer.",
+    ),
+}
 
 
 def project_root() -> Path:
@@ -138,18 +212,38 @@ class MainWindow(QMainWindow):
         self._nav_buttons: list[QPushButton] = []
         group = QButtonGroup(self)
         group.setExclusive(True)
-        for index, (label, tip) in enumerate(
+        for index, (label, purpose, example) in enumerate(
             [
-                ("Run", "Scan, apply, reapply and connect"),
-                ("Configuration", "Edit config.yaml"),
-                ("Answers", "Edit answers.yaml"),
-                ("Data", "Statistics, export and the dashboard"),
-                ("Tools", "Sign in, verify the browser, one-shot commands"),
+                (
+                    "Run",
+                    "Choose and monitor an automation command.",
+                    "Start with a Scan or Apply dry run.",
+                ),
+                (
+                    "Configuration",
+                    "Edit and validate the selected configuration YAML.",
+                    "Save a changed daily cap for future runs.",
+                ),
+                (
+                    "Answers",
+                    "Edit the saved answers used by the form filler.",
+                    "Save an answer before retrying a failed form.",
+                ),
+                (
+                    "Data",
+                    "Inspect database totals, exports and optional analytics.",
+                    "Export recorded applications as CSV.",
+                ),
+                (
+                    "Tools",
+                    "Run one-shot setup and inspection commands.",
+                    "Verify a browser session or preview a resume choice.",
+                ),
             ]
         ):
             button = QPushButton(label)
             button.setCheckable(True)
-            button.setToolTip(tip)
+            button.setToolTip(tooltip(purpose, example))
             button.clicked.connect(lambda _checked, i=index: self._pages.setCurrentIndex(i))
             group.addButton(button)
             column.addWidget(button)
@@ -159,7 +253,6 @@ class MainWindow(QMainWindow):
         column.addWidget(muted("Your browser.\nYour answers.\nOne automation engine."))
         column.addSpacing(12)
         self._theme_button = QPushButton()
-        self._theme_button.setToolTip("Switch between DeepSeaFoam and Harbor Daylight")
         self._theme_button.clicked.connect(self._toggle_theme)
         column.addWidget(self._theme_button)
         return sidebar
@@ -169,38 +262,65 @@ class MainWindow(QMainWindow):
         bar.setMovable(False)
 
         self._config_field = QLineEdit(self._config_path)
-        self._config_field.setToolTip("Configuration file every command is given")
+        self._config_field.setToolTip(
+            tooltip(
+                "Select the configuration YAML; relative paths use this workspace.",
+                "Change this path and finish editing to load another setup.",
+            )
+        )
         # Bounded so a long path cannot stretch the whole window.
         self._config_field.setMinimumWidth(220)
         self._config_field.setMaximumWidth(460)
         self._config_field.editingFinished.connect(self._on_config_path_changed)
         browse = QPushButton("Browse…")
+        browse.setToolTip(
+            tooltip(
+                "Choose a configuration file in a native file picker.",
+                "Select another config.yaml to load its configuration, answers and data snapshot.",
+            )
+        )
         browse.clicked.connect(self._browse_config)
 
-        bar.addWidget(QLabel("Config "))
+        config_label = QLabel("Config ")
+        config_label.setToolTip(self._config_field.toolTip())
+        bar.addWidget(config_label)
         bar.addWidget(self._config_field)
         bar.addWidget(browse)
 
         self._tutorial_action = QAction("Tutorial", self)
         self._tutorial_action.setShortcut(QKeySequence.StandardKey.HelpContents)
-        self._tutorial_action.setToolTip("Read-only guided tutorial (F1)")
+        self._tutorial_action.setToolTip(
+            tooltip(
+                "Open the read-only guided tutorial; F1 does the same.",
+                "Read about run options without starting a command or saving settings.",
+            )
+        )
         self._tutorial_action.triggered.connect(self._show_tutorial)
         bar.addAction(self._tutorial_action)
 
         dashboard_action = QAction("Open dashboard", self)
+        dashboard_action.setToolTip(self._dashboard_help())
         dashboard_action.setShortcut(QKeySequence("Ctrl+D"))
         dashboard_action.triggered.connect(self._open_dashboard)
         bar.addAction(dashboard_action)
         if is_frozen():
             dashboard_action.setEnabled(False)
-            dashboard_action.setToolTip(
-                "Streamlit analytics is available in the source installation."
-            )
 
         quit_action = QAction("Quit", self)
+        quit_action.setToolTip(
+            tooltip(
+                "Close the desktop window, asking first if its CLI command is running.",
+                "A separately launched dashboard can keep running after the window closes.",
+            )
+        )
         quit_action.setShortcut(QKeySequence.StandardKey.Quit)
         quit_action.triggered.connect(self.close)
         self.addAction(quit_action)
+
+    @override
+    def createPopupMenu(self) -> None:
+        """Do not offer Qt's hide action for the essential top toolbar."""
+        return None
 
     # -- pages ---------------------------------------------------------------
     def _page(self, title: str, subtitle: str) -> tuple[QWidget, QVBoxLayout]:
@@ -230,8 +350,13 @@ class MainWindow(QMainWindow):
 
         controls = Card("1  Choose an action")
         self._action_box = QComboBox()
-        for label in commands.RUN_ACTIONS:
+        for label, action in commands.RUN_ACTIONS.items():
             self._action_box.addItem(label)
+            self._action_box.setItemData(
+                self._action_box.count() - 1,
+                tooltip(*_ACTION_HELP[action]),
+                Qt.ItemDataRole.ToolTipRole,
+            )
         self._action_box.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
         )
@@ -240,17 +365,30 @@ class MainWindow(QMainWindow):
         self._limit_spin = QSpinBox()
         self._limit_spin.setRange(0, 100000)
         self._limit_spin.setSpecialValueText("Command default")
-        self._limit_spin.setToolTip(
-            "Apply: confirmed submissions. Scan: jobs. Reapply: retry cap. Connect: invitations. "
-            "Zero uses the command's default."
-        )
         self._url_field = QLineEdit()
+        self._url_field.setToolTip(
+            tooltip(
+                "Use a search URL for Scan or Apply instead of saved searches or an exact-job batch.",
+                "Paste a filtered LinkedIn jobs/search URL; Reapply and Connect do not use it.",
+            )
+        )
         self._url_field.setPlaceholderText("Optional LinkedIn search URL")
         self._connect_run = QSpinBox()
         self._connect_run.setRange(0, 2147483647)
         self._connect_run.setSpecialValueText("All pending runs")
-        self._connect_run.setToolTip("Only send connection notes drafted in this run ID.")
+        self._connect_run.setToolTip(
+            tooltip(
+                "Restrict Connect to notes drafted by one run; 0 includes all pending runs.",
+                "42 processes pending notes from run 42 only, not every stored draft.",
+            )
+        )
         self._list_only = QCheckBox("List retry targets only (no browser)")
+        self._list_only.setToolTip(
+            tooltip(
+                "List all eligible retry candidates and exit without opening a browser.",
+                "Review failed jobs first; this list ignores the Run target cap.",
+            )
+        )
 
         form = QFormLayout()
         form.setSpacing(10)
@@ -269,19 +407,51 @@ class MainWindow(QMainWindow):
 
         safety = Card("2  Review run behavior")
         self._dry_run = QCheckBox("Dry run - never submit or send")
+        self._dry_run.setToolTip(
+            tooltip(
+                "Inspect or fill without submitting applications or sending invitations.",
+                "Apply stops before Submit; Scan never fills forms regardless of this control.",
+            )
+        )
         self._dry_run.setChecked(True)
         self._ignore_score = QCheckBox("Ignore the minimum score")
+        self._ignore_score.setToolTip(
+            tooltip(
+                "Bypass the score threshold for Apply or Reapply; other guards still apply.",
+                "A low-scoring job can be attempted, but submitted-job deduplication remains active.",
+            )
+        )
         self._confirm_submit = QCheckBox("Confirm before every application")
+        self._confirm_submit.setToolTip(
+            tooltip(
+                "Ask before each real submission; this keeps interactive CLI input enabled.",
+                "Send Enter accepts the displayed Yes default and submits when Dry run is off.",
+            )
+        )
         self._interactive = QCheckBox("Answer unknown questions in this window")
         self._interactive.setChecked(True)
         self._interactive.setToolTip(
-            "Turn off to add --yes. Unresolved questions are not invented."
+            tooltip(
+                "Allow unknown-answer input when Pause on unknown questions is also enabled.",
+                "Off adds --yes, unless Confirm before every application keeps prompting active.",
+            )
         )
         self._outreach = QCheckBox("Hiring-team outreach (mixed = config)")
         self._outreach.setTristate(True)
         self._outreach.setCheckState(Qt.CheckState.PartiallyChecked)
-        self._outreach.setToolTip("Partially checked = use the outreach.enabled config value")
+        self._outreach.setToolTip(
+            tooltip(
+                "Override hiring-team outreach: mixed uses config, checked enables, empty disables.",
+                "Check this with Outreach=draft to collect contacts after confirmed applications.",
+            )
+        )
         self._verbose = QCheckBox("Verbose (DEBUG logging)")
+        self._verbose.setToolTip(
+            tooltip(
+                "Request DEBUG-level decision details for the command.",
+                "Enable to inspect matching decisions; logs may contain sensitive form values.",
+            )
+        )
         for box in (
             self._dry_run,
             self._ignore_score,
@@ -308,29 +478,75 @@ class MainWindow(QMainWindow):
         execution.setMinimumWidth(300)
         execution_layout = QVBoxLayout(execution)
         execution_layout.setContentsMargins(8, 0, 0, 0)
-        execution_layout.setSpacing(10)
+        execution_layout.setSpacing(8)
         state_row = QHBoxLayout()
         self._run_state = QLabel("READY")
+        self._run_state.setToolTip(
+            tooltip(
+                "Show the child command's process state, not application confirmation.",
+                "DONE means exit code zero; SUBMITTED logs confirm individual applications.",
+            )
+        )
         self._run_state.setProperty("role", "badge")
         state_row.addWidget(self._run_state)
-        state_row.addStretch(1)
+        self._metrics = RunMetrics()
+        state_row.addWidget(self._metrics.caption, 1)
+        self._log_details = QCheckBox("Details")
+        self._log_details.setToolTip(
+            tooltip(
+                "Switch compact log labels to original prefixes without changing file logs.",
+                "Enable to see dates, modules, functions and line numbers, then turn off to compact.",
+            )
+        )
+        state_row.addWidget(self._log_details)
         clear_button = QPushButton("Clear log")
+        clear_button.setToolTip(
+            tooltip(
+                "Clear only the visible console and its in-window history.",
+                "Start a fresh view without deleting log files or database records.",
+            )
+        )
         state_row.addWidget(clear_button)
         execution_layout.addLayout(state_row)
+        execution_layout.addWidget(self._metrics)
         self._command_preview = QPlainTextEdit()
         self._command_preview.setReadOnly(True)
+        self._command_preview.setToolTip(
+            tooltip(
+                "Read-only preview of the selected CLI command; viewing it creates no preset.",
+                "A private-preset placeholder becomes a real path only on Start or Copy command.",
+            )
+        )
         self._command_preview.setObjectName("CommandPreview")
         self._command_preview.setMaximumHeight(76)
         execution_layout.addWidget(self._command_preview)
         buttons = QHBoxLayout()
         self._start_button = QPushButton("Start scan")
+        self._start_button.setToolTip(
+            tooltip(
+                "Start the selected action with these options; save or reload edited YAML first.",
+                "Live Apply, Reapply and Connect require a separate start confirmation.",
+            )
+        )
         self._start_button.setProperty("role", "primary")
         self._start_button.clicked.connect(self._start_run)
         self._stop_button = QPushButton("Stop")
+        self._stop_button.setToolTip(
+            tooltip(
+                "Terminate the CLI process; cleanup and browser closure are not guaranteed.",
+                "Use for a stuck command; this is not the CLI's graceful Ctrl+C shutdown.",
+            )
+        )
         self._stop_button.setProperty("role", "danger")
         self._stop_button.setEnabled(False)
         self._stop_button.clicked.connect(self._runner.stop)
         copy_button = QPushButton("Copy command")
+        copy_button.setToolTip(
+            tooltip(
+                "Copy an executable CLI command; changed run settings create a private preset.",
+                "Change Daily cap, then Copy to use that preset in a terminal; saved YAML stays intact.",
+            )
+        )
         copy_button.clicked.connect(self._copy_command)
         buttons.addWidget(self._start_button)
         buttons.addWidget(self._stop_button)
@@ -339,6 +555,7 @@ class MainWindow(QMainWindow):
         execution_layout.addLayout(buttons)
 
         self._console = Console(self._palette)
+        self._log_details.toggled.connect(self._console.set_details)
         clear_button.clicked.connect(self._console.clear)
         execution_layout.addWidget(self._console, 1)
         execution_layout.addWidget(
@@ -348,11 +565,29 @@ class MainWindow(QMainWindow):
         )
         input_row = QHBoxLayout()
         self._input = QLineEdit()
+        self._input.setToolTip(
+            tooltip(
+                "Send text to the running command's current prompt, not to the browser directly.",
+                "Type an answer or n, then Send; it is disabled when no command is running.",
+            )
+        )
         self._input.setPlaceholderText("Answer the current CLI prompt...")
         self._input.returnPressed.connect(self._send_input)
         self._send_button = QPushButton("Send")
+        self._send_button.setToolTip(
+            tooltip(
+                "Send the prompt input followed by Enter to the running command.",
+                "Type n and Send to decline a CLI approval prompt.",
+            )
+        )
         self._send_button.clicked.connect(self._send_input)
         self._enter_button = QPushButton("Send Enter")
+        self._enter_button.setToolTip(
+            tooltip(
+                "Send a blank Enter to accept the current prompt's displayed default.",
+                "At a submit confirmation the default is Yes, so Enter can submit an application.",
+            )
+        )
         self._enter_button.clicked.connect(lambda: self._send_input(empty=True))
         input_row.addWidget(self._input, 1)
         input_row.addWidget(self._send_button)
@@ -389,16 +624,40 @@ class MainWindow(QMainWindow):
             "loader the CLI uses, so a mistake is caught here rather than mid-run.",
         )
         self._config_editor = QPlainTextEdit()
+        self._config_editor.setToolTip(
+            tooltip(
+                "Edit the selected configuration YAML; changes are not saved automatically.",
+                "Adjust jobs.max_daily, then Validate and Save before starting a command.",
+            )
+        )
         self._config_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         column.addWidget(self._config_editor, 1)
 
         row = QHBoxLayout()
         validate = QPushButton("Validate")
+        validate.setToolTip(
+            tooltip(
+                "Check this editor's YAML syntax and configuration model without saving.",
+                "Catch an invalid daily cap before writing the configuration file.",
+            )
+        )
         validate.clicked.connect(lambda: self._validate_yaml(self._config_editor, strict=True))
         save = QPushButton("Save")
+        save.setToolTip(
+            tooltip(
+                "Validate and write this configuration editor to the selected YAML file.",
+                "Save an edited daily cap to use it in later commands.",
+            )
+        )
         save.setProperty("role", "primary")
         save.clicked.connect(self._save_config_text)
         reload_button = QPushButton("Reload")
+        reload_button.setToolTip(
+            tooltip(
+                "Replace this editor and per-run settings with the configuration on disk.",
+                "Discard an unsaved experiment and restore the saved YAML values.",
+            )
+        )
         reload_button.clicked.connect(self._load_config_text)
         row.addWidget(validate)
         row.addWidget(save)
@@ -416,18 +675,48 @@ class MainWindow(QMainWindow):
             "YAML syntax only; sync-answers on the Tools page checks the content.",
         )
         self._answers_editor = QPlainTextEdit()
+        self._answers_editor.setToolTip(
+            tooltip(
+                "Edit the answers YAML used by the form filler; changes stay unsaved until Save.",
+                "Correct a saved answer, save it, then retry the affected application.",
+            )
+        )
         self._answers_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         column.addWidget(self._answers_editor, 1)
 
         row = QHBoxLayout()
         validate = QPushButton("Validate")
+        validate.setToolTip(
+            tooltip(
+                "Check answers YAML syntax only; this does not verify answer content.",
+                "Catch malformed indentation; use sync-answers for its separate content checks.",
+            )
+        )
         validate.clicked.connect(lambda: self._validate_yaml(self._answers_editor, strict=False))
         save = QPushButton("Save")
+        save.setToolTip(
+            tooltip(
+                "Write syntactically valid answers YAML from this editor to its configured file.",
+                "Save a corrected answer before starting a retry.",
+            )
+        )
         save.setProperty("role", "primary")
         save.clicked.connect(self._save_answers_text)
         reload_button = QPushButton("Reload")
+        reload_button.setToolTip(
+            tooltip(
+                "Replace unsaved answers in this editor with the answers file on disk.",
+                "Discard an accidental edit and restore the last saved answer values.",
+            )
+        )
         reload_button.clicked.connect(self._load_answers_text)
         sync = QPushButton("Run sync-answers")
+        sync.setToolTip(
+            tooltip(
+                "Run the sync-answers preview against saved files and show its output in Run.",
+                "Save edits first; this button does not add --apply to write synchronization changes.",
+            )
+        )
         sync.clicked.connect(
             lambda: self._run(commands.sync_answers_args(self._config_path), page_index=0)
         )
@@ -449,6 +738,12 @@ class MainWindow(QMainWindow):
         )
 
         self._stats_table = QTableWidget(0, 2)
+        self._stats_table.setToolTip(
+            tooltip(
+                "Read a snapshot of the configured local database; cells are not editable.",
+                "Use Refresh to update totals after a run.",
+            )
+        )
         self._stats_table.setHorizontalHeaderLabels(["Metric", "Value"])
         self._stats_table.horizontalHeader().setStretchLastSection(True)
         self._stats_table.verticalHeader().setVisible(False)
@@ -458,6 +753,12 @@ class MainWindow(QMainWindow):
         stats_card = Card("Database")
         stats_card.add(self._stats_table)
         refresh = QPushButton("Refresh")
+        refresh.setToolTip(
+            tooltip(
+                "Reload the configured database snapshot into this page.",
+                "Update totals after a completed command without opening a browser.",
+            )
+        )
         refresh.clicked.connect(self._refresh_stats)
         stats_card.add(refresh)
         column.addWidget(stats_card, 1)
@@ -470,6 +771,7 @@ class MainWindow(QMainWindow):
             )
         )
         open_dashboard = QPushButton("Open dashboard")
+        open_dashboard.setToolTip(self._dashboard_help())
         open_dashboard.setProperty("role", "primary")
         open_dashboard.clicked.connect(self._open_dashboard)
         if is_frozen():
@@ -481,16 +783,51 @@ class MainWindow(QMainWindow):
                 )
             )
         browser = QPushButton("Open in browser")
+        browser.setToolTip(
+            tooltip(
+                "Open the local dashboard URL in your default web browser without starting its server.",
+                "Use after Open dashboard; otherwise localhost:8501 may not be available.",
+            )
+        )
         browser.clicked.connect(lambda: webbrowser.open(_DASHBOARD_URL))
         dashboard_card.add_row(open_dashboard, browser)
         column.addWidget(dashboard_card)
 
         export_card = Card("Export")
         self._export_format = QComboBox()
+        self._export_format.setToolTip(
+            tooltip(
+                "Choose the applications export file format.",
+                "csv opens as text or in a spreadsheet; xlsx creates an Excel workbook.",
+            )
+        )
         self._export_format.addItems(["csv", "xlsx"])
+        for index, (purpose, example) in enumerate(
+            [
+                (
+                    "Export application records as comma-separated text.",
+                    "Choose csv for a plain-text spreadsheet import.",
+                ),
+                (
+                    "Export application records as an Excel workbook.",
+                    "Choose xlsx for an .xlsx file with spreadsheet columns.",
+                ),
+            ]
+        ):
+            self._export_format.setItemData(
+                index, tooltip(purpose, example), Qt.ItemDataRole.ToolTipRole
+            )
         export_button = QPushButton("Export applications…")
+        export_button.setToolTip(
+            tooltip(
+                "Choose a destination and export recorded applications in the selected format.",
+                "Save a private CSV report; exported records can contain personal data.",
+            )
+        )
         export_button.clicked.connect(self._export)
-        export_card.add_row(QLabel("Format"), self._export_format, export_button)
+        format_label = QLabel("Format")
+        format_label.setToolTip(self._export_format.toolTip())
+        export_card.add_row(format_label, self._export_format, export_button)
         column.addWidget(export_card)
         return page
 
@@ -501,7 +838,17 @@ class MainWindow(QMainWindow):
         )
         card = Card("Command")
         self._tool_box = QComboBox()
+        self._tool_box.setToolTip(
+            tooltip(
+                "Choose a one-shot command; accepted inputs change with the selected tool.",
+                "Choose Preview resume choice to inspect static selection without applying.",
+            )
+        )
         self._tool_box.addItems(list(commands.TOOLS))
+        for index, spec in enumerate(commands.TOOLS.values()):
+            self._tool_box.setItemData(
+                index, tooltip(*_TOOL_HELP[spec.command]), Qt.ItemDataRole.ToolTipRole
+            )
         self._tool_box.currentTextChanged.connect(self._on_tool_changed)
         self._tool_value = QLineEdit()
         self._tool_option = QLineEdit()
@@ -510,9 +857,17 @@ class MainWindow(QMainWindow):
         form.addRow("Tool", self._tool_box)
         form.addRow("Value", self._tool_value)
         form.addRow("Optional", self._tool_option)
+        self._tool_form = form
+        form.labelForField(self._tool_box).setToolTip(self._tool_box.toolTip())
         card.body().addLayout(form)
 
         run_button = QPushButton("Run")
+        run_button.setToolTip(
+            tooltip(
+                "Execute the selected tool with its accepted inputs; output appears on Run.",
+                "Sign in opens a browser; Install optional Chromium downloads browser files.",
+            )
+        )
         run_button.setProperty("role", "primary")
         run_button.clicked.connect(self._run_tool)
         card.add(run_button)
@@ -533,6 +888,18 @@ class MainWindow(QMainWindow):
         self._on_tool_changed(self._tool_box.currentText())
         return page
 
+    @staticmethod
+    def _dashboard_help() -> str:
+        if is_frozen():
+            return tooltip(
+                "The portable build does not bundle the optional Streamlit dashboard.",
+                "Use Data totals/exports here, or launch analytics from a source installation.",
+            )
+        return tooltip(
+            "Start the optional Streamlit analytics server in a separate process.",
+            "Install the dashboard source extra first; analytics opens at localhost:8501.",
+        )
+
     # -- theme ---------------------------------------------------------------
     def _apply_theme(self, palette: Palette) -> None:
         self._palette = palette
@@ -543,7 +910,12 @@ class MainWindow(QMainWindow):
         other = self._other_theme().label
         self._theme_button.setText("Light mode" if palette.is_dark else "Dark mode")
         self._theme_button.setIcon(theme_icon(palette))
-        self._theme_button.setToolTip(f"Switch to {other}")
+        self._theme_button.setToolTip(
+            tooltip(
+                f"Switch the desktop to {other}; the theme choice is saved locally.",
+                "Change the appearance without changing run options or log history.",
+            )
+        )
         self._settings.setValue("theme", palette.key)
 
     def _other_theme(self) -> Palette:
@@ -579,6 +951,10 @@ class MainWindow(QMainWindow):
 
     def _on_action_changed(self, label: str) -> None:
         action = commands.RUN_ACTIONS.get(label, "scan")
+        self._action_box.setToolTip(tooltip(*_ACTION_HELP[action]))
+        self._limit_spin.setToolTip(tooltip(*_LIMIT_HELP[action]))
+        for field in (self._action_box, self._limit_spin, self._url_field, self._connect_run):
+            self._action_form.labelForField(field).setToolTip(field.toolTip())
         self._url_field.setEnabled(action in {"scan", "apply"})
         self._ignore_score.setEnabled(action in {"apply", "reapply"})
         self._outreach.setEnabled(action in {"apply", "reapply"})
@@ -636,7 +1012,7 @@ class MainWindow(QMainWindow):
         if overrides:
             path = write_run_config(self._config_file(), overrides, self._root)
             options = replace(options, config=str(path))
-            self._console.note(f"Private run settings saved to {path}", "muted")
+            self._console.note(f"Private run settings saved to {path}", "muted", label="CONFIG")
         return options
 
     def _start_run(self) -> None:
@@ -663,7 +1039,10 @@ class MainWindow(QMainWindow):
             )
             if confirmation != QMessageBox.StandardButton.Yes:
                 return
-        self._run(commands.run_args(options))
+        self._run(
+            commands.run_args(options),
+            metrics_action=None if options.list_only else options.action,
+        )
 
     def _copy_command(self) -> None:
         try:
@@ -680,9 +1059,9 @@ class MainWindow(QMainWindow):
     def _send_input(self, _checked: bool = False, *, empty: bool = False) -> None:
         text = "" if empty else self._input.text()
         if not self._runner.send_input(text):
-            self._console.note("No running command accepted this input.", "warning")
+            self._console.note("No running command accepted this input.", "warning", label="INPUT")
             return
-        self._console.note("[input sent]" if text else "[Enter sent]", "muted")
+        self._console.note("Answer sent." if text else "Enter sent.", "accent", label="INPUT")
         self._input.clear()
 
     def _run_tool(self) -> None:
@@ -709,8 +1088,47 @@ class MainWindow(QMainWindow):
         self._tool_option.setEnabled(bool(spec and spec.optional_flag))
         self._tool_option.setPlaceholderText(spec.optional_hint if spec else "")
         self._tool_option.clear()
+        command = spec.command if spec else ""
+        value_help = {
+            "resume-test": (
+                "Enter the job title used to preview static resume matching.",
+                "Senior Backend Engineer checks the saved mappings without applying.",
+            ),
+            "test-form": (
+                "Enter a form question to inspect recognition and saved-answer resolution.",
+                "Years of Python experience? shows how that question is interpreted.",
+            ),
+        }.get(
+            command,
+            (
+                "This tool does not use a required Value input.",
+                "Choose Recognise a question to enter a form question here.",
+            ),
+        )
+        option_help = {
+            "test-browser": (
+                "Optionally choose the URL opened by the browser-session check.",
+                "Leave blank for the LinkedIn feed, or enter https://www.linkedin.com/jobs/.",
+            ),
+            "resume-test": (
+                "Optionally include a job description in the static resume match.",
+                "Python and SQL backend work adds context beyond the job title.",
+            ),
+        }.get(
+            command,
+            (
+                "This tool does not use an Optional input.",
+                "Choose Preview resume choice to supply a job description here.",
+            ),
+        )
+        self._tool_value.setToolTip(tooltip(*value_help))
+        self._tool_option.setToolTip(tooltip(*option_help))
+        for field in (self._tool_value, self._tool_option):
+            self._tool_form.labelForField(field).setToolTip(field.toolTip())
 
-    def _run(self, args: list[str], page_index: int = 0) -> None:
+    def _run(
+        self, args: list[str], page_index: int = 0, *, metrics_action: str | None = None
+    ) -> None:
         if self._runner.busy:
             QMessageBox.information(
                 self, "Already running", "Stop the current command before starting another."
@@ -719,14 +1137,21 @@ class MainWindow(QMainWindow):
         self._pages.setCurrentIndex(page_index)
         self._nav_buttons[page_index].setChecked(True)
         argv = commands.full_argv(args)
-        self._console.note(f"$ {commands.describe(argv)}", "accent")
+        self._metrics.prepare(metrics_action)
+        self._console.note(f"$ {commands.describe(argv)}", "accent", label="COMMAND")
         if not self._runner.start(argv):
-            self._console.note("Could not start the command.", "error")
+            self._console.note("Could not start the command.", "error", label="ERROR")
 
     def _connect_runner(self) -> None:
         self._runner.output.connect(self._console.append_text)
+        self._runner.progress.connect(self._metrics.update_progress)
+        self._runner.progress_error.connect(self._metrics.warn)
+        self._runner.progress_error.connect(
+            lambda message: self._console.note(message, "warning", label="METRICS")
+        )
         self._runner.finished.connect(self._on_finished)
         self._runner.started_command.connect(lambda _cmd: self._set_running(True))  # noqa: ARG005
+        self._runner.started_command.connect(lambda _cmd: self._metrics.begin())  # noqa: ARG005
 
     def _set_running(self, running: bool) -> None:
         self._start_button.setEnabled(not running)
@@ -740,7 +1165,15 @@ class MainWindow(QMainWindow):
 
     def _on_finished(self, exit_code: int, message: str) -> None:
         self._console.flush()
-        self._console.note(message, "document" if exit_code == 0 else "warning")
+        if message == "Stopped.":
+            self._metrics.finish("Stopped")
+            self._console.note(message, "warning", label="STOPPED")
+        elif exit_code == 0:
+            self._metrics.finish("Finished")
+            self._console.note(message, "document", label="DONE")
+        else:
+            self._metrics.finish("Error")
+            self._console.note(message, "error", label="ERROR")
         self._set_running(False)
         self.statusBar().showMessage(message, 8000)
         self._refresh_stats()

@@ -35,6 +35,7 @@ from linkedin_easy_apply.config import AppConfig, ConfigError, load_config
 from linkedin_easy_apply.config.models import SearchConfig, SearchEntry
 from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.logging import setup_logging
+from linkedin_easy_apply.progress import gui_progress
 from linkedin_easy_apply.runtime import is_frozen, resource_root
 
 if TYPE_CHECKING:
@@ -341,6 +342,9 @@ def connect(
     db = _database(cfg)
     effective = limit if limit is not None else cfg.outreach.connect_max_per_run
     pending = db.pending_connection_invites(run_id, limit=effective)
+    progress = gui_progress()
+    if progress is not None:
+        progress.start("connect", dry_run=dry_run)
     if not pending:
         console.print("[green]No pending connection notes to send.[/green]")
         return
@@ -359,7 +363,7 @@ def connect(
             console.print("[yellow]Cancelled.[/yellow]")
             return
 
-    service = ConnectionInviteService(cfg, db, dry_run=dry_run)
+    service = ConnectionInviteService(cfg, db, dry_run=dry_run, progress=progress)
     summary = service.run(run_id, limit=limit)
     console.print(_connect_table(summary))
 
@@ -457,6 +461,7 @@ def _run_orchestrator(
         on_confirm_submit=on_confirm,
         on_approve_message=on_approve_message,
         message_hiring_team=do_outreach,
+        progress=gui_progress(),
     )
     try:
         summary = orchestrator.run(

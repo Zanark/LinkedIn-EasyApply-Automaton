@@ -19,6 +19,22 @@ graceful Ctrl+C. See [the full desktop guide](docs/gui.md) for limitations:
 unsigned EXEs, no bundled dashboard/OpenAI, and an external Python requirement
 for dynamic resume building.
 
+**Desktop v0.2.2 and source:** compact timestamps, colored severity/activity labels
+and natural word wrapping. Toggle **Details** for original diagnostic prefixes.
+**Hover help:** fields, toggles and labels explain their purpose and give a
+practical example on the next line. Reopen the updated GUI to load these updates.
+Older v0.2.1 EXEs are unchanged; extract v0.2.2 into a separate folder.
+The toolbar also removes the right-click **Main** hide checkbox;
+[recover a hidden older toolbar](docs/troubleshooting.md#the-top-toolbar-disappeared)
+without resetting your setup.
+
+**Live counters (v0.2.2 and source):** the Run page shows Scanned, Applied, Skipped,
+Failed and HR sent during Apply/Scan/Reapply; Connect shows profile/invitation
+outcomes. Drafts, dry runs and uncertain submissions stay separate from sends.
+Target progress and elapsed time remain visible, and the last counts survive
+Stop or Clear log. See [counter meanings](docs/gui.md#live-run-counters-current-source).
+If a command is already running, finish it before manually restarting the GUI.
+
 ### Reuse an existing setup
 
 From your already configured checkout, use its existing environment:
@@ -36,6 +52,12 @@ external Python executable. See [the reuse guide](docs/gui.md#reuse-an-existing-
 Keep any machine-local input bundle under the ignored `private-setup` folder;
 it is private data, not a release asset or a standalone migration.
 
+An existing `private-setup\Start-SourceSetup.cmd` keeps running this checkout's
+Python and configured workspace. It does not download or select a release.
+Keep using the same launcher after updating the source; finish active commands
+and save editor changes before reopening. The packaged EXE is a separate option,
+not a replacement for the source launcher or its installed extras.
+
 ### Guided tutorial
 
 ```powershell
@@ -48,7 +70,7 @@ GUI, **Tutorial / F1** replays it; **?** beside the customization checkbox
 opens that explanation. Checking customization only exposes changed-value
 overrides; Start/Copy can create a private preset without changing saved YAML.
 The [full guide](docs/gui-tutorial.md) is also readable outside the app.
-Windows v0.2.1 includes the same guide. From its extracted folder:
+Windows v0.2.1 and later include the same guide. From the extracted folder:
 
 ```powershell
 .\EasyApplyAutomaton.exe --tutorial

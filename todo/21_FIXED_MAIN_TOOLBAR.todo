@@ -1,0 +1,55 @@
+# Keep the essential desktop toolbar visible
+Workstream-ID: lea-21
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/21
+
+Status: DONE
+Milestone: Prevent accidental hiding of configuration and help controls
+Dependencies: None
+Publication: PUBLIC_SAFE_PROJECTION
+
+## Purpose
+Remove the native toolbar visibility menu that can hide the only top toolbar
+when its Main checkbox is unchecked.
+
+## Tasks
+- Reproduce the context-menu event path in an isolated offscreen window.
+- Disable the default main-window visibility popup, preserving text editing.
+- Check tutorial access, reopening and unchanged saved configuration/preferences.
+- Update affected guides and reconcile only this workstream's tracking.
+
+## Acceptance criteria
+- Right-clicking Tutorial or the toolbar cannot offer a Main hide checkbox.
+- Text-field context menus and existing Tutorial/F1 behavior remain available.
+- Reopening restores an older hidden toolbar without resetting the setup.
+- Checks use fictional temporary state and do not control an existing instance.
+- Technical verification is distinct from native acceptance and publication.
+
+## Completion evidence
+Local implementation and bounded offline verification are complete.
+An actual context-menu event reproduced the native Main visibility action
+before the fix. MainWindow now returns no default toolbar popup; both themes
+cover right-clicks on Tutorial and the toolbar, normal configuration-field
+editing menus, and reopening an older hidden bar without resetting saved
+configuration, answers or theme.
+
+All 167 cases across the five GUI suites passed with native exit zero,
+including eight focused new cases. Black/Ruff passed the two changed Python
+files; mypy passed all ten GUI source files. Seven affected guides are updated.
+The normal visible layout and all existing media remain unchanged.
+
+Checks use temporary fictional workspaces and isolated INI preferences.
+No existing user process is inspected, stopped or restarted. Source changes
+remain local and uncommitted; released v0.2.1 is unchanged. Offline checks are
+not installed-release qualification, live automation or human acceptance.
+Scoped issue/Project/backlink settlement is recorded separately.
+
+## Completion log
+- 2026-11-10: Removed the accidental visibility menu while preserving native
+  field editing, Tutorial/F1 behavior and existing configuration/preferences.
+  GUI regressions and scoped static checks pass; recovery requires only a
+  manual reopen after the current run and unsaved edits are handled.
+- 2026-11-10: The first tracking preview rejected a missing Publication field
+  without remote writes. Corrected the reviewed publication declaration;
+  the subsequent scoped preview passed without weakening validation.
+- 2026-11-10: Started a bounded desktop-only fix. Preserve prior source work,
+  configuration, history, existing releases and independently opened instances.

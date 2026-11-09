@@ -21,6 +21,7 @@ from linkedin_easy_apply.database.db import Database
 from linkedin_easy_apply.jobs.models import Job
 from linkedin_easy_apply.jobs.search import paginated_url
 from linkedin_easy_apply.orchestrator import Orchestrator, RunSummary
+from linkedin_easy_apply.progress import ProgressReporter
 
 _SEARCH_URL = "https://www.linkedin.com/jobs/search/?keywords=backend&f_AL=true"
 
@@ -62,6 +63,7 @@ def _run_execute(
     max_daily: int = 0,
     max_pages: int = 40,
     page_size: int = 25,
+    progress: ProgressReporter | None = None,
 ) -> tuple[RunSummary, list[Job]]:
     config = AppConfig()
     config.database.path = tmp_path / "test.db"
@@ -70,7 +72,7 @@ def _run_execute(
     config.jobs.search_page_size = page_size
     db = Database(config.database.path)
     db.initialize()
-    orch = Orchestrator(config, db, AnswerStore({}))
+    orch = Orchestrator(config, db, AnswerStore({}), progress=progress)
 
     class FakeSearch:
         def __init__(self, page, extractor=None):
@@ -169,16 +171,27 @@ def test_unconfirmed_submit_stops_without_another_attempt(tmp_path, monkeypatch)
     assert summary.applied == summary.failed == 0
 
 
-def test_seen_jobs_are_not_processed_twice(tmp_path, monkeypatch):
+@pytest.mark.parametrize("mode", ["apply", "scan"])
+def test_seen_jobs_are_not_processed_twice(tmp_path, monkeypatch, mode):
     """A job that reappears on a later page (LinkedIn re-ordering) is de-duped."""
     pages = {0: [_job(0)], 25: [_job(0), _job(1)], 50: []}
     outcomes = ["skip", "skip", "skip"]
+    snapshots = []
+    progress = ProgressReporter(snapshots.append)
+    progress.start(mode, target=30)
     summary, processed = _run_execute(
-        tmp_path, monkeypatch, pages=pages, outcomes=outcomes, limit=30
+        tmp_path,
+        monkeypatch,
+        pages=pages,
+        outcomes=outcomes,
+        limit=30,
+        mode=mode,
+        progress=progress,
     )
 
     assert [j.external_id for j in processed] == ["0", "1"]  # j0 processed once
     assert summary.scanned == 2
+    assert [snapshot.counts["scanned"] for snapshot in snapshots] == [0, 1, 2]
 
 
 def test_daily_cap_stops_before_processing(tmp_path, monkeypatch):
@@ -230,12 +243,22 @@ def test_scan_mode_stops_at_scanned_limit(tmp_path, monkeypatch):
     """In scan mode --limit caps *scanned* jobs (there are no submissions)."""
     pages = {0: [_job(0), _job(1), _job(2)]}
     outcomes = ["skip", "skip", "skip"]
+    snapshots = []
+    progress = ProgressReporter(snapshots.append)
+    progress.start("scan", target=2)
     summary, processed = _run_execute(
-        tmp_path, monkeypatch, pages=pages, outcomes=outcomes, limit=2, mode="scan"
+        tmp_path,
+        monkeypatch,
+        pages=pages,
+        outcomes=outcomes,
+        limit=2,
+        mode="scan",
+        progress=progress,
     )
 
     assert summary.scanned == 2
     assert len(processed) == 2  # j2 never reached
+    assert snapshots[-1].target == snapshots[-1].counts["scanned"] == 2
 
 
 if __name__ == "__main__":  # pragma: no cover

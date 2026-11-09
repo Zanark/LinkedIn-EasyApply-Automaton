@@ -12,6 +12,8 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
+
 from linkedin_easy_apply.answers.hiring_message import HiringTeamMessenger
 from linkedin_easy_apply.answers.hiring_report import render_outreach_report
 from linkedin_easy_apply.config.models import OutreachConfig, OutreachMode
@@ -19,6 +21,7 @@ from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.forms import selectors
 from linkedin_easy_apply.forms.outreach import HiringTeamOutreach
 from linkedin_easy_apply.orchestrator import Orchestrator
+from linkedin_easy_apply.progress import ProgressReporter
 
 # Map each selector list's FIRST candidate to a role so the fake can answer
 # ``locator(selector)`` the way the real DOM would (the code always matches on
@@ -144,6 +147,8 @@ def _outreach(
     records=None,
     max_per_run=5,
     skip_if_messaged=True,
+    on_outcome=None,
+    dry_run=False,
 ) -> HiringTeamOutreach:
     def _record(**kwargs: Any) -> None:
         if records is not None:
@@ -157,6 +162,8 @@ def _outreach(
         record=_record,
         max_per_run=max_per_run,
         skip_if_messaged=skip_if_messaged,
+        on_outcome=on_outcome,
+        dry_run=dry_run,
     )
 
 
@@ -167,6 +174,35 @@ _CTX = {
     "tech_stack": ["Java"],
     "years_experience": 8,
 }
+
+
+@pytest.mark.parametrize(
+    ("mode", "decision", "overlay", "dry_run", "metric"),
+    [
+        ("draft", None, True, False, "hr_drafted"),
+        ("send", "Hello", True, False, "hr_sent"),
+        ("send", None, True, False, "hr_declined"),
+        ("send", "Hello", False, False, "hr_failed"),
+        ("send", "Hello", True, True, "hr_dry_runs"),
+    ],
+)
+def test_live_outreach_metrics_distinguish_drafts_sends_and_unsent_outcomes(
+    mode, decision, overlay, dry_run, metric
+):
+    snapshots = []
+    reporter = ProgressReporter(snapshots.append)
+    reporter.start("apply")
+    outreach = _outreach(
+        lambda _name, _message: decision,
+        mode=mode,
+        on_outcome=reporter.outreach,
+        dry_run=dry_run,
+    )
+    page = _page([_card("Example recruiter")], overlay=overlay)
+    outreach.reach_out(page, _CTX)
+    assert snapshots[-1].counts[metric] == 1
+    assert snapshots[-1].counts["hr_sent"] == (1 if metric == "hr_sent" else 0)
+    assert snapshots[-1].counts["connect_sent"] == 0
 
 
 # -- messenger ----------------------------------------------------------------
@@ -707,6 +743,7 @@ def _orch_with(outreach_cfg: OutreachConfig) -> Orchestrator:
     orch = object.__new__(Orchestrator)
     orch._config = SimpleNamespace(outreach=outreach_cfg)
     orch._db = MagicMock()
+    orch._progress = ProgressReporter()
     return orch
 
 

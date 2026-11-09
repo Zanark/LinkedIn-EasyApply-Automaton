@@ -31,6 +31,7 @@ from linkedin_easy_apply.browser import BrowserLaunchError, BrowserManager
 from linkedin_easy_apply.config.models import AppConfig
 from linkedin_easy_apply.connect.connector import ConnectOutcome, InviteTarget, ProfileConnector
 from linkedin_easy_apply.database import Database
+from linkedin_easy_apply.progress import Metric, ProgressReporter
 
 
 @dataclass(slots=True)
@@ -58,9 +59,11 @@ class ConnectionInviteService:
         connector: ProfileConnector | None = None,
         sleeper: Callable[[float], None] | None = None,
         browser_factory: Callable[[], Any] | None = None,
+        progress: ProgressReporter | None = None,
     ) -> None:
         self._config = config
         self._db = db
+        self._progress = progress or ProgressReporter()
         cfg = config.outreach
         self._dry_run = cfg.connect_dry_run if dry_run is None else dry_run
         self._max = max(0, cfg.connect_max_per_run)
@@ -78,6 +81,7 @@ class ConnectionInviteService:
         cap = limit if limit is not None else (self._max or None)
         targets = self._load_targets(run_id, cap)
         summary = ConnectSummary(total=len(targets), dry_run=self._dry_run)
+        self._progress.connections(len(targets), dry_run=self._dry_run)
         if not targets:
             logger.info("Connect: no pending connection notes to send")
             return summary
@@ -138,6 +142,18 @@ class ConnectionInviteService:
     def _tally(
         self, outcome: ConnectOutcome, target: InviteTarget, summary: ConnectSummary
     ) -> None:
+        metrics: dict[ConnectOutcome, Metric] = {
+            ConnectOutcome.SENT: "connect_sent",
+            ConnectOutcome.DRY_RUN: "connect_dry_runs",
+            ConnectOutcome.ALREADY: "connect_already",
+            ConnectOutcome.NO_BUTTON: "connect_skipped",
+            ConnectOutcome.NOTE_UNAVAILABLE: "connect_skipped",
+            ConnectOutcome.FAILED: "connect_failed",
+        }
+        increments: dict[Metric, int] = {"connect_processed": 1}
+        if outcome in metrics:
+            increments[metrics[outcome]] = 1
+        self._progress.increment(increments)
         if outcome is ConnectOutcome.SENT:
             summary.sent += 1
             ids = self._ids_by_key.get(self._dedup_key(target.profile_url), [target.id])

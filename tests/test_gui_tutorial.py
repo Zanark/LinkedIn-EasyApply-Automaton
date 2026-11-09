@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
-from PySide6.QtWidgets import QApplication, QDialog  # noqa: E402
+from PySide6.QtWidgets import QApplication, QDialog, QPushButton  # noqa: E402
 
 from linkedin_easy_apply.gui import main_window  # noqa: E402
 from linkedin_easy_apply.gui.process import CommandRunner  # noqa: E402
@@ -37,6 +37,13 @@ def test_topic_navigation_finish_and_replay(qapp):
     guide.show()
     qapp.processEvents()
     first = guide._body.toPlainText()
+    for field in (guide._topic_list, guide._body, *guide.findChildren(QPushButton)):
+        purpose, example = field.toolTip().splitlines()
+        assert purpose and example.startswith("Example: ")
+    for index in range(guide._topic_list.count()):
+        purpose, example = guide._topic_list.item(index).toolTip().splitlines()
+        assert purpose and example.startswith("Example: ")
+    next_help = guide._next.toolTip()
     assert not guide._back.isEnabled()
     QTest.mouseClick(guide._next, Qt.MouseButton.LeftButton)
     assert guide._topic_list.currentRow() == 1
@@ -45,6 +52,9 @@ def test_topic_navigation_finish_and_replay(qapp):
     assert guide._body.toPlainText() == first
     guide._topic_list.setCurrentRow(len(guide._topics) - 1)
     assert guide._next.text() == "Finish"
+    assert guide._next.toolTip() != next_help
+    assert "Close the tutorial" in guide._next.toolTip()
+    assert "\nExample: Finish" in guide._next.toolTip()
     assert not guide._body.openLinks() and not guide._body.openExternalLinks()
     QTest.mouseClick(guide._next, Qt.MouseButton.LeftButton)
     assert guide.result() == QDialog.DialogCode.Accepted

@@ -17,11 +17,14 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any
 
+import pytest
+
 from linkedin_easy_apply.config.models import AppConfig
 from linkedin_easy_apply.connect.connector import ConnectOutcome, InviteTarget, ProfileConnector
 from linkedin_easy_apply.connect.service import ConnectionInviteService
 from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.forms import selectors
+from linkedin_easy_apply.progress import ProgressReporter
 
 # Map each selector list's FIRST candidate to a role so the fake can answer
 # ``locator(selector)`` the way the real DOM would (the connector always matches
@@ -209,7 +212,13 @@ class _ScriptConnector:
         return outcome
 
 
-def _service(db: Database, connector: _ScriptConnector, *, dry_run: bool = False):
+def _service(
+    db: Database,
+    connector: _ScriptConnector,
+    *,
+    dry_run: bool = False,
+    progress: ProgressReporter | None = None,
+):
     return ConnectionInviteService(
         AppConfig(),
         db,
@@ -217,6 +226,7 @@ def _service(db: Database, connector: _ScriptConnector, *, dry_run: bool = False
         connector=connector,  # type: ignore[arg-type]
         sleeper=lambda _seconds: None,
         browser_factory=lambda: _FakeBrowser(),
+        progress=progress,
     )
 
 
@@ -326,6 +336,48 @@ def test_service_no_pending_never_opens_browser(tmp_path):
     summary = service.run()
     assert summary.total == 0
     assert summary.sent == 0
+
+
+@pytest.mark.parametrize("attached", [False, True])
+def test_connection_progress_is_live_distinct_and_preserves_application_totals(tmp_path, attached):
+    db = Database(tmp_path / "metrics.db")
+    db.initialize()
+    run = _seed(
+        db,
+        [
+            {"key": str(index), "url": f"https://example.test/people/{index}", "note": "Hello"}
+            for index in range(7)
+        ],
+    )
+    snapshots = []
+    reporter = ProgressReporter(snapshots.append)
+    if attached:
+        reporter.start("apply", target=5)
+        reporter.increment({"applied": 2, "hr_drafted": 7})
+    connector = _ScriptConnector(
+        [
+            ConnectOutcome.SENT,
+            ConnectOutcome.DRY_RUN,
+            ConnectOutcome.ALREADY,
+            ConnectOutcome.NO_BUTTON,
+            ConnectOutcome.FAILED,
+            ConnectOutcome.LIMIT_REACHED,
+        ]
+    )
+    summary = _service(db, connector, progress=reporter).run(run)
+    assert [s.counts["connect_processed"] for s in snapshots if s.phase == "connecting"] == list(
+        range(7)
+    )
+    counts = snapshots[-1].counts
+    assert counts["connect_total"] == 7
+    assert counts["connect_sent"] == counts["connect_dry_runs"] == 1
+    assert counts["connect_already"] == counts["connect_skipped"] == counts["connect_failed"] == 1
+    assert counts["applied"] == (2 if attached else 0)
+    assert counts["hr_drafted"] == (7 if attached else 0)
+    assert snapshots[-1].action == ("apply" if attached else "connect")
+    assert snapshots[-1].target == (5 if attached else 7)
+    assert summary.sent == 2 and summary.limit_reached
+    assert len(db.pending_connection_invites(run)) == 6
 
 
 # --------------------------------------------------------------------------- #

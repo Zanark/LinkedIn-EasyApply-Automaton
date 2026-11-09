@@ -1,5 +1,18 @@
 # Troubleshooting
 
+## The top toolbar disappeared
+
+Older windows expose Qt's native toolbar visibility menu when you right-click
+Tutorial or the toolbar. Unchecking **Main** hides the entire bar; it is not a
+tutorial option.
+
+Finish any running command, save unsaved Configuration/Answers edits, then
+close and reopen the GUI with your usual launcher. A newly opened window
+restores the bar without resetting configuration, answers or theme.
+Source and Windows v0.2.2 remove that visibility menu while preserving text-field
+editing menus. An already running instance does not hot-load the fix; older
+v0.2.1 EXEs need replacement with a separately extracted new release.
+
 ## Browser won't launch
 
 **`BrowserLaunchError: Playwright is not installed`**
@@ -100,7 +113,31 @@ prompt, or fill the field on the LinkedIn page and press Enter so the tool reads
 that value back. The final answer is remembered for next time. Run
 non-interactively with `--yes` to auto-skip instead.
 
+## Live counters are blank, interrupted or differ from history
+
+The counters are included in source and Windows v0.2.2, not older v0.2.1 EXEs.
+Finish any active run and save edits before reopening the updated GUI. Only its own
+Apply, Scan, Reapply and Connect children supply metrics; list-only and unrelated
+tools hide the strip. `--` means no valid snapshot arrived, not zero activity.
+
+A metrics warning preserves the last valid counts. A successful child exit
+does not fill an unmet target or prove a send. Completed dry runs and scan-only
+jobs also appear in Skipped; drafts are not HR sent. Clear log and theme or
+selector changes deliberately retain totals.
+
+Live action reporting can precede database writes and the final summary,
+especially while outreach approval waits. Stop is forceful: after interruption
+near a send, verify LinkedIn and history before retrying. The counters are not
+a durable recovery ledger. See [the reference](gui.md#live-run-counters-current-source).
+
 ## Reading the logs
+
+The source GUI and Windows v0.2.2 use short timestamps and colored severity/activity
+labels to fit its console. Enable **Details** beside Clear log for original
+prefixes, or hover a compact entry for its date/source. Scrolling up stops tail
+following until you return to the bottom. This does not affect the saved files.
+Amber SKIP/DRY-RUN are not errors; SUBMIT is not confirmed submission, and
+DONE confirms only a successful child exit. STOPPED means cancellation.
 
 Every line in `logs/easy_apply_<date>.log` has four pipe-delimited fields:
 

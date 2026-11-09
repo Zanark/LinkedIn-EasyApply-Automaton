@@ -87,6 +87,7 @@ class HiringTeamOutreach:
         max_per_run: int = 5,
         skip_if_messaged: bool = True,
         dry_run: bool = False,
+        on_outcome: Callable[[str], None] | None = None,
     ) -> None:
         self._messenger = messenger
         # Sending needs an approval handler; without one we can only draft.
@@ -94,6 +95,7 @@ class HiringTeamOutreach:
         self._on_approve = on_approve
         self._has_messaged = has_messaged
         self._record = record
+        self._on_outcome = on_outcome
         self._max_per_run = max_per_run
         self._skip_if_messaged = skip_if_messaged
         self._dry_run = dry_run
@@ -378,6 +380,8 @@ class HiringTeamOutreach:
             pass
 
     def _record_safe(self, **kwargs: Any) -> None:
+        if self._on_outcome is not None:
+            self._on_outcome(str(kwargs["status"]))
         try:
             self._record(**kwargs)
         except Exception as exc:  # pragma: no cover - defensive

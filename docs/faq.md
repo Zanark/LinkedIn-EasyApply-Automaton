@@ -50,6 +50,18 @@ No. AI is disabled by default and entirely optional. With `ai.enabled: false`
 the flow is 100% deterministic. When enabled, AI only *advises* (match score,
 missing skills, a recommendation); it can never submit an application.
 
+### What do the desktop's live counters count?
+
+Source and Windows v0.2.2 show outcomes for the GUI's current command, not lifetime
+history. Applied needs workflow confirmation; HR sent excludes drafts and
+connection invitations. Scan-only jobs and completed dry runs also count as
+Skipped, as in the final summary. Dry runs, drafts and uncertain submissions
+have separate totals. Counts survive Stop and Clear log; only an accepted new
+command resets them. Interrupted persistence can leave history behind an
+observed action, so verify before retrying. See the
+[complete counter reference](gui.md#live-run-counters-current-source).
+Older v0.2.1 EXEs do not contain these counters.
+
 ### What happens when it hits a question it doesn't recognise?
 
 By default (`run.pause_on_unknown_question: true`) it pauses and asks you for the

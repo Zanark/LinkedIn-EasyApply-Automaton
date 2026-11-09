@@ -16,7 +16,13 @@ EASY APPLY AUTOMATON - WINDOWS PORTABLE
 6. Start with Scan, then Apply with Dry run checked. Dry run fills real forms
    but never submits. Live Apply/Reapply/Connect ask before starting.
 
-The Run page has per-submit confirmation and an input field for CLI prompts.
+The Run page has live outcome counters, per-submit confirmation and an input
+field for CLI prompts. Drafts, dry runs and uncertain submissions are separate
+from confirmed applications or messages. Counts describe the current command,
+not lifetime history, and remain visible after it finishes or stops.
+The wrapped console uses colored severity/activity labels; Details restores
+original diagnostic prefixes. Hover controls for their purpose and an example.
+The essential toolbar cannot be hidden by a right-click visibility checkbox.
 Send Enter accepts the prompt's displayed default. Stop forcibly terminates
 the child; it is not a guarantee of graceful browser cleanup.
 
@@ -36,6 +42,8 @@ Do not disable antivirus, change security policies, or run as Administrator.
 
 Keep the whole application folder together when moving or upgrading.
 Replace it with a newly extracted release; the separate workspace is retained.
+Finish active commands and save editor changes before reopening the new app.
+Do not overwrite a running version; extract into a separate version directory.
 Existing configs are never overwritten automatically. Back up your workspace.
 LEA_WORKSPACE can select a different private writable workspace.
 

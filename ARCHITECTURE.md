@@ -24,6 +24,16 @@ The application should automate my own LinkedIn Easy Apply workflow.
 
 **Desktop delivery implementation.** The GUI is a CLI shell with live prompt
 input, per-submit approval and common Search/Limits/Browser/Behavior controls.
+The source console presents compact, semantically colored severity/activity
+labels with natural wrapping; Details restores original diagnostic prefixes.
+This is a view-only change, not a change to child execution or saved logging.
+Native hover help explains each field/toggle with a purpose and practical
+example; selection-dependent descriptions stay in the GUI, not the engine.
+The source Run page also displays current-command outcome cards, target progress
+and elapsed process time. Qt-free `progress.py` reports typed, framed snapshots
+only to opted-in GUI children; `gui/metrics.py` renders them independently of
+human logs. Confirmed applications and engine-reported messages stay separate
+from drafts, completed dry runs, uncertainty and connection invitations.
 Validated per-run presets live privately in `logs\gui-runs`; saved YAML is not
 changed by run customization. Frozen resources and writable workspace are
 separated by `runtime.py`. The Windows x64 one-folder package shares dependencies

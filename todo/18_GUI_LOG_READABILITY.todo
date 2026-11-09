@@ -1,0 +1,73 @@
+# Compact and semantically colored desktop logs
+Workstream-ID: lea-18
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/18
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed desktop console implementation and fictional offline fixtures
+Status: DONE
+Milestone: Make narrow run-console output readable without losing diagnostics
+Dependencies: lea-11
+
+## Purpose
+Replace oversized diagnostic prefixes in the desktop console with compact
+time, severity and activity labels. Preserve full output through a diagnostic
+view, the existing file logs and unchanged CLI execution behavior.
+Use semantic theme colors and natural wrapping rather than color alone.
+
+## Tasks
+- [x] Trace current console rendering, source metadata, themes and process streaming.
+- [x] Implement compact severity/activity labels and original-prefix viewing.
+- [x] Preserve prompts, multiline diagnostics, theme repainting and bounded history.
+- [x] Verify focused regressions and narrow dark/light layouts with fictional data.
+- [x] Update directly affected guides and reviewed demonstration media.
+- [x] Verify the scoped issue, Project identity and persistent backlink.
+
+## Acceptance criteria
+- [x] Ordinary log records show compact time, level and appropriate activity labels.
+- [x] Success, caution and failure use distinct semantic colors in both themes.
+- [x] Messages wrap at spaces; long tokens remain readable without horizontal overflow.
+- [x] Diagnostic prefixes remain available without restarting or changing log levels.
+- [x] Prompts and multiline/unknown output are not dropped or interpreted as markup.
+- [x] Theme changes recolor the backlog and do not duplicate partial output.
+- [x] Existing settings, unrelated dirty work and published releases are preserved.
+- [x] Offline verification is not represented as a live application or human approval.
+
+## Completion evidence
+Locally implemented plain-text formatted spans, compact time/severity/activity
+badges, original-source tooltips and reversible Details. Unknown output,
+literal markup, indentation, streaming prompts and split ANSI/CRLF sequences
+are preserved. The bounded backlog repaints in either theme; appending does
+not steal the reader's selection or scroll position.
+
+GUI notices distinguish configuration, input, commands and errors. A process
+ending successfully is DONE, cancellation is STOPPED and failure is ERROR;
+none is presented as proof of application submission. Submission attempt,
+confirmed submission and dry-run activity retain separate meanings.
+
+The five focused GUI suites passed all 145 tests with native process exit
+zero. Scoped Ruff/Black checks passed for the six changed Python files;
+GUI mypy passed for nine source files. Independent 360-pixel dark/light
+console checks confirm no horizontal overflow and reversible original text.
+Direct sampled visual review covers expanded dark Run, compact light Run
+and a paired narrow-theme console sheet, not complete animation playback
+or human aesthetic acceptance.
+
+Affected guides and fictional source previews are refreshed. The run GIF
+has nine frames, a 17.8-second loop and 1026086 bytes; the tutorial GIF is
+unchanged. All twenty-four retained README relative references resolve.
+Original selected private size/mtime metadata and native preferences match
+their baseline; HEAD is unchanged and the index has no staged changes.
+Prior README curation and unrelated work are retained.
+
+This is source-only offline completion. Full file/CLI logging and child
+execution are unchanged. No live run, commit, push, package build, release
+replacement or human acceptance is included. Scoped completion settlement
+is recorded separately in the navigation index and development ledger.
+
+## Completion log
+- 2026-11-09: Completed compact, naturally wrapped, semantically colored
+  desktop logs and reversible diagnostics. Focused integration, isolated
+  native presentation, documentation and preservation checks passed.
+  Keep the existing distributed executable and live-qualification boundaries.
+- 2026-11-09: Started bounded desktop-log improvements. The existing renderer
+  makes spaces nonbreaking and retains long source prefixes in the compact
+  console. Preserve original diagnostics and use only fictional public examples.

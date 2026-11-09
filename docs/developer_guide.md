@@ -33,6 +33,7 @@ linkedin_easy_apply/
 ├── ai/            AIProvider ABC, Null/OpenAI providers, factory
 ├── dashboard/     optional Streamlit app
 ├── cli/           Typer CLI (main.py)
+├── progress.py    strict Qt-free outcome snapshots and stream framing
 ├── utils/         text, retry, paths, screenshots
 └── orchestrator.py  end-to-end flow
 ```
@@ -182,10 +183,41 @@ explicitly delivering deferred deletion after the event loop stops. Qt tests
 share one session application, destroy owned widgets and isolate preferences
 with an explicit temporary INI backend rather than touching native settings.
 
+`MainWindow.createPopupMenu()` returns `None` so Qt cannot offer a visibility
+checkbox for the essential top toolbar. Keep ordinary text-control context
+menus intact. Layout visibility is not persisted; reopening restores an older
+hidden toolbar without clearing configuration or the saved theme.
+
+`gui/widgets.py::Console` inserts plain `QTextCursor` spans, not HTML:
+spaces/indentation remain literal and long messages wrap at word boundaries.
+Only recognized dated Loguru prefixes become compact severity/activity badges;
+unknown output stays intact. Original ANSI-stripped lines and semantic roles
+remain in the bounded backlog, allowing theme changes and the Details checkbox
+to repaint without changing child/file logs. Submission-attempt, confirmation,
+dry-run, cancellation and process-exit labels retain distinct meanings.
+
+`progress.py` supplies a strict version-1, status-only snapshot protocol.
+`CommandRunner` opts its own child in with `LEA_GUI_PROGRESS=1`, separates frames
+from human output and forwards snapshots to `gui/metrics.py::RunMetrics`.
+Hook authoritative outcomes, not log strings: confirmation before outreach
+approval; exact outreach statuses before recording; invitation results distinct
+from dry-run would-send. Preserve the existing persistence/final-summary
+sequence. Bad/truncated frames warn without leaking payloads or clearing valid
+counts. Ordinary CLI/file logs emit no telemetry. Real-child tests verify
+updates before exit, prompt forwarding, stop/reset and rejection recovery.
+
+`gui/widgets.py::tooltip` formats option help as purpose plus a second
+`Example:` line. Explicit inventories cover settings, actions, targets and tool
+arguments; field labels share their control's help, and dependent descriptions
+update on selection changes. Use native Qt tooltips rather than layout-expanding
+help controls, and preserve the console's diagnostic span tooltips. Coverage
+checks include labels/items and actual help events on disabled controls,
+spinbox editors and text viewports, without executing commands or saving state.
+
 `gui/tutorial.py` reads the reviewed `docs/gui-tutorial.md` chapters into a
 read-only dialog, shared by toolbar/F1 and contextual settings help. Standalone
 `gui --tutorial` avoids MainWindow construction, configuration loading and
-database initialization. Help is blocked during child commands. The Windows
+database initialization. The tutorial is blocked during child commands. The Windows
 entry bypasses first-run workspace preparation for tutorial mode, and its spec
 explicitly includes the same guide in Windows v0.2.1. Frozen offline smoke
 renders the contextual guide alongside the normal window and sibling CLI;
@@ -202,7 +234,14 @@ $env:QT_QPA_PLATFORM = "offscreen"
 .\.venv\Scripts\python.exe -B tools\capture_screenshots.py
 ```
 
+For a Run-only presentation change, add `--run-only` to refresh seven affected
+Run PNGs and its GIF without replacing unrelated page/tutorial media.
+
 The tool writes thirteen desktop PNGs and two looping GIFs to `docs\images`.
+The README intentionally uses a curated subset: the run GIF comes before setup,
+with distinct still views rather than the entire capture inventory. Retain the
+other source images for guides and future curation; a front-page edit does not
+require regenerating unchanged media.
 It renders only owned Qt widgets, exercises real action/settings controls and
 read-only tutorial navigation, and captions illustrative output explicitly.
 Configuration, database and INI preferences live in a temporary demo workspace;
@@ -210,8 +249,16 @@ location labels and command executable paths are fictionalized before capture.
 Start, Copy command, Save, browser and dashboard launchers are not exercised.
 Font checks reject missing-glyph boxes. Owned windows are explicitly destroyed
 before temporary workspace cleanup, including when GIF encoding fails.
+The Limits still requests a real help event and composites only the owned
+window and native tooltip. A missing or clipped popup fails explicitly;
+never use a desktop/screen grab on a shared workstation. Targeted updates
+can reuse `_save_screenshot(..., tooltip_target=field)` without regenerating
+unchanged media. Display-path fictionalization preserves option-help text.
 Review the rendered media and captions before any separately authorized push;
 these captures do not qualify a live run, installed release or human acceptance.
+The Run captures inject explicit **Offline demo** snapshots using the same
+reporter; neither a process nor an elapsed timer starts. Geometry tests register
+the same usable fonts before judging digits, wrapping and compact header fit.
 
 Desktop preferences use the explicit `QSettings.defaultFormat()` / UserScope
 constructor. The two-string constructor uses native storage on Windows even

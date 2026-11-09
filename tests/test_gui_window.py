@@ -13,8 +13,27 @@ import yaml
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer  # noqa: E402
+from PySide6.QtGui import QContextMenuEvent, QFont, QHelpEvent  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
-from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
+from PySide6.QtWidgets import (  # noqa: E402
+    QAbstractSpinBox,
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QFormLayout,
+    QLineEdit,
+    QListWidget,
+    QMenu,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QScrollArea,
+    QTableWidget,
+    QToolBar,
+    QToolTip,
+    QWidget,
+    QWidgetAction,
+)
 
 from linkedin_easy_apply.config import load_config  # noqa: E402
 from linkedin_easy_apply.gui import commands  # noqa: E402
@@ -23,16 +42,24 @@ from linkedin_easy_apply.gui.process import CommandRunner  # noqa: E402
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
 from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog  # noqa: E402
 from linkedin_easy_apply.gui.widgets import Console  # noqa: E402
+from linkedin_easy_apply.progress import ProgressSnapshot  # noqa: E402
+from tools.capture_screenshots import ensure_fonts  # noqa: E402
 
 
 @pytest.fixture(scope="module")
 def qapp(qt_app, tmp_path_factory):
+    families = ensure_fonts()
+    if not families:
+        pytest.skip("GUI geometry requires usable fonts, not missing-glyph boxes.")
+    previous_font = qt_app.font()
+    qt_app.setFont(QFont("Segoe UI" if "Segoe UI" in families else families[0], 9))
     settings = tmp_path_factory.mktemp("qt-settings")
     previous_format = QSettings.defaultFormat()
     QSettings.setDefaultFormat(QSettings.IniFormat)
     QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, str(settings))
     yield qt_app
     QSettings.setDefaultFormat(previous_format)
+    qt_app.setFont(previous_font)
 
 
 @pytest.fixture
@@ -60,6 +87,7 @@ def window(qapp, tmp_path):
     yield widget
     if widget._runner.busy:
         widget._runner.stop()
+        _until(qapp, lambda: not widget._runner.busy)
     widget.close()
     widget.deleteLater()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
@@ -71,6 +99,90 @@ def _until(qapp, predicate, timeout=5):
         qapp.processEvents()
         QTest.qWait(10)
     assert predicate(), "Timed out waiting for the Qt event path"
+
+
+def _send_context_menu(qapp, widget, dismiss_popup):
+    QTimer.singleShot(0, dismiss_popup)
+    point = widget.rect().center()
+    event = QContextMenuEvent(QContextMenuEvent.Reason.Mouse, point, widget.mapToGlobal(point))
+    QApplication.sendEvent(widget, event)
+    qapp.processEvents()
+
+
+@pytest.mark.parametrize("theme", THEMES)
+@pytest.mark.parametrize("target", ["toolbar", "tutorial"])
+def test_toolbar_context_menu_cannot_hide_main_controls(window, qapp, theme, target):
+    window._apply_theme(THEMES[theme])
+    toolbar = window.findChild(QToolBar)
+    widget = toolbar if target == "toolbar" else toolbar.widgetForAction(window._tutorial_action)
+    assert widget is not None
+    menus = []
+
+    def try_to_hide_toolbar():
+        popup = QApplication.activePopupWidget()
+        if isinstance(popup, QMenu):
+            menus.append([action.text() for action in popup.actions()])
+            for action in popup.actions():
+                if action.isCheckable() and action.text() == toolbar.windowTitle():
+                    action.trigger()
+                    break
+            popup.close()
+
+    _send_context_menu(qapp, widget, try_to_hide_toolbar)
+
+    assert not menus, menus
+    assert toolbar.isVisible()
+    assert window._config_field.isVisible()
+    assert toolbar.widgetForAction(window._tutorial_action).isVisible()
+    assert not window._runner.busy
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_toolbar_config_field_keeps_its_edit_context_menu(window, qapp, theme):
+    window._apply_theme(THEMES[theme])
+    original = window._config_field.text()
+    menus = []
+
+    def dismiss_edit_menu():
+        popup = QApplication.activePopupWidget()
+        if isinstance(popup, QMenu):
+            menus.append([action.text() for action in popup.actions()])
+            popup.close()
+
+    _send_context_menu(qapp, window._config_field, dismiss_edit_menu)
+
+    assert menus and menus[0]
+    assert "Main" not in menus[0]
+    assert window._config_field.text() == original
+    assert window.findChild(QToolBar).isVisible()
+
+
+@pytest.mark.parametrize("theme", THEMES)
+def test_toolbar_reappears_on_reopen_without_resetting_setup(window, qapp, theme):
+    window._apply_theme(THEMES[theme])
+    window._settings.sync()
+    preferences = Path(window._settings.fileName()).read_bytes()
+    configs = {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
+    toolbar = window.findChild(QToolBar)
+    toolbar.toggleViewAction().trigger()
+    assert not toolbar.isVisible()
+    window.close()
+
+    reopened = MainWindow(window._config_path, workspace=window._root)
+    try:
+        reopened.show()
+        qapp.processEvents()
+        assert reopened.findChild(QToolBar).isVisible()
+        assert reopened._config_field.text() == window._config_path
+        assert reopened._palette == THEMES[theme]
+        assert reopened._loaded_config.jobs.max_daily == 37
+        reopened._settings.sync()
+        assert Path(reopened._settings.fileName()).read_bytes() == preferences
+        assert configs == {path: path.read_bytes() for path in configs}
+    finally:
+        reopened.close()
+        reopened.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
 
 @pytest.mark.parametrize("route", ["toolbar", "f1", "context"])
@@ -161,6 +273,161 @@ def test_missing_tutorial_is_reported_instead_of_opening_empty_help(window, monk
     assert notices == [("Tutorial unavailable", "guide")]
 
 
+def _assert_option_help(text):
+    lines = text.splitlines()
+    assert len(lines) == 2, text
+    assert lines[0].strip() and not lines[0].startswith("Example:"), text
+    assert lines[1].startswith("Example: ") and lines[1][9:].strip(), text
+
+
+def test_option_help_covers_controls_items_labels_and_changing_selections(window, qapp):
+    field_types = (
+        QAbstractSpinBox,
+        QCheckBox,
+        QComboBox,
+        QLineEdit,
+        QListWidget,
+        QPlainTextEdit,
+        QPushButton,
+        QTableWidget,
+    )
+    for theme in THEMES.values():
+        window._apply_theme(theme)
+        window._load_config_text()
+        for field in window.findChildren(QWidget):
+            if not isinstance(field, field_types) or isinstance(field, Console):
+                continue
+            if isinstance(field, QLineEdit) and isinstance(field.parent(), QAbstractSpinBox):
+                continue
+            _assert_option_help(field.toolTip())
+            if isinstance(field, QComboBox):
+                for index in range(field.count()):
+                    _assert_option_help(field.itemData(index, Qt.ItemDataRole.ToolTipRole))
+        for form in window.findChildren(QFormLayout):
+            for row in range(form.rowCount()):
+                item = form.itemAt(row, QFormLayout.ItemRole.FieldRole)
+                field = item.widget() if item is not None else None
+                label = form.labelForField(field) if field is not None else None
+                if label is not None:
+                    assert label.toolTip() == field.toolTip()
+        for index in range(window._run_settings.tabs.count()):
+            _assert_option_help(window._run_settings.tabs.tabToolTip(index))
+        for index in range(window._run_settings.searches.count()):
+            _assert_option_help(window._run_settings.searches.item(index).toolTip())
+        actions = [
+            *window.actions(),
+            *(action for bar in window.findChildren(QToolBar) for action in bar.actions()),
+        ]
+        for action in actions:
+            if action.isSeparator() or isinstance(action, QWidgetAction):
+                continue
+            _assert_option_help(action.toolTip())
+
+    limit_help = {}
+    for label, action in commands.RUN_ACTIONS.items():
+        window._action_box.setCurrentText(label)
+        limit_help[action] = window._limit_spin.toolTip()
+        _assert_option_help(limit_help[action])
+        assert window._action_form.labelForField(window._limit_spin).toolTip() == limit_help[action]
+    assert len(set(limit_help.values())) == len(commands.RUN_ACTIONS)
+    assert "confirmed submissions" in limit_help["apply"]
+    assert "retry candidates" in limit_help["reapply"]
+    assert "pending invitations" in limit_help["connect"]
+    assert "discovered jobs" in limit_help["scan"]
+
+    for label, spec in commands.TOOLS.items():
+        window._tool_box.setCurrentText(label)
+        for field in (window._tool_value, window._tool_option):
+            _assert_option_help(field.toolTip())
+            assert window._tool_form.labelForField(field).toolTip() == field.toolTip()
+        assert ("does not use" in window._tool_value.toolTip()) == (not spec.needs_value)
+        assert ("does not use" in window._tool_option.toolTip()) == (not bool(spec.optional_flag))
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+def test_real_tooltip_events_preserve_unsaved_fields_files_and_preferences(
+    window, qapp, monkeypatch, theme
+):
+    monkeypatch.setattr(
+        window._runner, "start", lambda *args: pytest.fail("Hover help cannot start a command")
+    )
+    window._apply_theme(THEMES[theme])
+    window._action_box.setCurrentText("Apply")
+    settings = window._run_settings
+    settings.customize.setChecked(True)
+    daily = settings._fields["jobs.max_daily"]
+    daily.setValue(12)
+    window._config_editor.appendPlainText("# Unsaved hover-help example")
+    window._answers_editor.appendPlainText("# Unsaved hover-help example")
+    window._input.setText("unsent response")
+    window._console.append_text("Existing console output\n")
+    window._console.flush()
+    qapp.processEvents()
+    window._settings.sync()
+
+    def snapshot():
+        return (
+            window._current_options(),
+            settings.overrides(),
+            window._command_preview.toPlainText(),
+            window._config_editor.toPlainText(),
+            window._answers_editor.toPlainText(),
+            window._input.text(),
+            window._console.toPlainText(),
+            window._config_editor.document().isModified(),
+            window._answers_editor.document().isModified(),
+            Path(window._settings.fileName()).read_bytes(),
+        )
+
+    before = snapshot()
+    files = {path: path.read_bytes() for path in window._root.rglob("*") if path.is_file()}
+
+    def show_help(target, expected, position=None):
+        ancestor = target.parentWidget()
+        while ancestor is not None:
+            if isinstance(ancestor, QScrollArea):
+                ancestor.ensureWidgetVisible(target)
+            ancestor = ancestor.parentWidget()
+        window.activateWindow()
+        qapp.processEvents()
+        point = position if position is not None else target.rect().center()
+        event = QHelpEvent(QEvent.Type.ToolTip, point, target.mapToGlobal(point))
+        QApplication.sendEvent(target, event)
+        _until(qapp, lambda: QToolTip.isVisible() and QToolTip.text() == expected)
+        assert snapshot() == before
+
+    try:
+        settings.tabs.setCurrentIndex(1)
+        show_help(daily, daily.toolTip())
+        form = daily.parentWidget().layout()
+        show_help(form.labelForField(daily), daily.toolTip())
+        show_help(daily.findChild(QLineEdit), daily.toolTip())
+        assert not window._input.isEnabled()
+        show_help(window._input, window._input.toolTip())
+        settings.tabs.setCurrentIndex(0)
+        item = settings.searches.item(0)
+        show_help(
+            settings.searches.viewport(),
+            item.toolTip(),
+            settings.searches.visualItemRect(item).center(),
+        )
+        show_help(settings.job_urls.viewport(), settings.job_urls.toolTip())
+        window._pages.setCurrentIndex(1)
+        show_help(window._config_editor.viewport(), window._config_editor.toolTip())
+        window._pages.setCurrentIndex(4)
+        assert not window._tool_option.isEnabled()
+        show_help(window._tool_option, window._tool_option.toolTip())
+    finally:
+        QToolTip.hideText()
+        qapp.processEvents()
+
+    window._settings.sync()
+    assert snapshot() == before
+    assert files == {path: path.read_bytes() for path in window._root.rglob("*") if path.is_file()}
+    assert not (window._root / "logs" / "gui-runs").exists()
+    assert not window._runner.busy
+
+
 def test_run_controls_build_actual_cli_flags(window):
     window._action_box.setCurrentText("Apply")
     QTest.mouseClick(window._confirm_submit, Qt.LeftButton)
@@ -190,7 +457,7 @@ def test_run_controls_build_actual_cli_flags(window):
 def test_every_live_action_asks_before_starting(window, monkeypatch, label):
     started = []
     questions = []
-    monkeypatch.setattr(window, "_run", lambda args: started.append(args))
+    monkeypatch.setattr(window, "_run", lambda args, **kwargs: started.append(args))
 
     def decline(*args):
         questions.append(args)
@@ -206,7 +473,7 @@ def test_every_live_action_asks_before_starting(window, monkeypatch, label):
 
 def test_retry_listing_does_not_request_live_confirmation(window, monkeypatch):
     calls = []
-    monkeypatch.setattr(window, "_run", lambda args: calls.append(args))
+    monkeypatch.setattr(window, "_run", lambda args, **kwargs: calls.append(args))
     monkeypatch.setattr(
         QMessageBox, "question", lambda *args: pytest.fail("A retry list cannot submit")
     )
@@ -319,6 +586,152 @@ def test_utf8_character_split_across_output_chunks_is_not_corrupted(qapp, tmp_pa
     assert "".join(seen) == "\u20ac\n"
 
 
+def test_real_child_updates_metrics_before_finish_and_controls_preserve_them(
+    window, qapp, monkeypatch
+):
+    seen = []
+    window._runner.output.connect(seen.append)
+    code = (
+        "from linkedin_easy_apply.progress import gui_progress; "
+        "p=gui_progress(); assert p is not None; "
+        "p.start('apply',run_id=42,target=3); "
+        "print('First: ',end='',flush=True); input(); "
+        "p.increment({'scanned':4,'applied':1,'skipped':1,'failed':1,'hr_sent':1}); "
+        "print('Second: ',end='',flush=True); input(); p.increment({'applied':1})"
+    )
+    monkeypatch.setattr(commands, "full_argv", lambda _args: [sys.executable, "-u", "-c", code])
+    window._run(["offline-metrics-fixture"], metrics_action="apply")
+    _until(qapp, lambda: "First: " in "".join(seen))
+    assert [value.text() for value in window._metrics._values] == ["0"] * 5
+    window._runner.send_input("continue")
+    _until(qapp, lambda: "Second: " in "".join(seen))
+    assert window._runner.busy
+    assert [value.text() for value in window._metrics._values] == ["4", "1", "1", "1", "1"]
+    before = window._metrics._snapshot
+    window._action_box.setCurrentText("Connect (send pending invitations)")
+    window._apply_theme(THEMES["harbor-daylight"])
+    next(
+        button for button in window.findChildren(QPushButton) if button.text() == "Clear log"
+    ).click()
+    assert window._metrics._snapshot == before
+    assert "Apply #42" in window._metrics.caption.text()
+    assert window._metrics._titles[-1].text() == "HR sent"
+    window._runner.send_input("finish")
+    _until(qapp, lambda: not window._runner.busy)
+    assert window._metrics._values[1].text() == "2"
+    assert "Finished - last reported" in window._metrics._details.text()
+    assert not window._metrics._timer.isActive()
+    assert "LEA_METRICS" not in "".join(seen)
+    assert window._metrics._target.value() == 666
+
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.No)
+    window._action_box.setCurrentText("Apply")
+    window._dry_run.setChecked(False)
+    window._start_run()
+    assert window._metrics._values[1].text() == "2"
+
+    code = "print('Offline tool finished')"
+    window._run(["offline-tool-fixture"])
+    _until(qapp, lambda: not window._runner.busy)
+    assert window._metrics._snapshot is None
+    assert not window._metrics.isVisible()
+
+
+@pytest.mark.parametrize("stop", [False, True])
+def test_real_child_stop_and_error_freeze_dry_invites_without_claiming_sends(
+    window, qapp, monkeypatch, stop
+):
+    seen = []
+    window._runner.output.connect(seen.append)
+    code = (
+        "from linkedin_easy_apply.progress import gui_progress; "
+        "p=gui_progress(); p.start('connect',dry_run=True); "
+        "p.connections(5,dry_run=True); p.increment({'connect_processed':2,'connect_dry_runs':2}); "
+        "print('Ready: ',end='',flush=True); input(); raise SystemExit(2)"
+    )
+    monkeypatch.setattr(commands, "full_argv", lambda _args: [sys.executable, "-u", "-c", code])
+    window._run(["offline-connect-fixture"], metrics_action="connect")
+    _until(qapp, lambda: "Ready: " in "".join(seen))
+    if stop:
+        window._stop_button.click()
+    else:
+        window._runner.send_input("finish")
+    _until(qapp, lambda: not window._runner.busy)
+    assert [value.text() for value in window._metrics._values] == ["2", "0", "0", "0", "0"]
+    assert ("Stopped" if stop else "Error") in window._metrics._details.text()
+    assert "Would-send 2" in window._metrics._details.text()
+    assert not window._metrics._timer.isActive()
+    assert window._metrics._target.value() == 400
+
+
+def test_real_child_bad_and_truncated_metrics_keep_last_valid_counts(window, qapp, monkeypatch):
+    seen = []
+    warnings = []
+    window._runner.output.connect(seen.append)
+    window._runner.progress_error.connect(warnings.append)
+    code = (
+        "import sys; from linkedin_easy_apply.progress import gui_progress,FRAME_START,FRAME_END; "
+        "p=gui_progress(); p.start('apply'); p.increment({'applied':2}); "
+        "sys.stderr.write(FRAME_START+'not-json'+FRAME_END+FRAME_START+'{'); sys.stderr.flush()"
+    )
+    monkeypatch.setattr(commands, "full_argv", lambda _args: [sys.executable, "-u", "-c", code])
+    window._run(["offline-malformed-fixture"], metrics_action="apply")
+    _until(qapp, lambda: not window._runner.busy)
+    assert window._metrics._values[1].text() == "2"
+    assert "Metrics interrupted" in window._metrics._details.text()
+    assert "[METRICS]" in window._console.toPlainText()
+    assert "not-json" not in "".join(seen + warnings)
+    assert not window._metrics._timer.isActive()
+
+
+def test_failed_launch_never_presents_unreported_metrics_as_zero(window, qapp, monkeypatch):
+    monkeypatch.setattr(commands, "full_argv", lambda _args: [str(window._root / "missing.exe")])
+    window._run(["offline-missing-fixture"], metrics_action="apply")
+    qapp.processEvents()
+    assert [value.text() for value in window._metrics._values] == ["--"] * 5
+    assert "Error: no run metrics received" in window._metrics._details.text()
+    assert not window._metrics._timer.isActive()
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+@pytest.mark.parametrize("size", [(980, 680), (1340, 860)])
+def test_metrics_fit_compact_and_expanded_themes_with_purpose_example_help(
+    window, qapp, size, theme
+):
+    counts = ProgressSnapshot(action="apply").counts | {
+        "scanned": 10_000,
+        "applied": 12,
+        "skipped": 9000,
+        "failed": 7,
+        "hr_drafted": 3,
+        "dry_runs": 2,
+        "unconfirmed": 1,
+    }
+    window.resize(*size)
+    window._apply_theme(THEMES[theme])
+    window._metrics.prepare("apply")
+    window._set_running(True)
+    window._metrics.begin()
+    window._metrics.update_progress(
+        ProgressSnapshot(action="apply", run_id=42, target=20, counts=counts)
+    )
+    qapp.processEvents()
+    assert window.size().width() == size[0]
+    assert window._console.width() > 260
+    assert window._console.height() > 80
+    assert window._metrics._row_widgets[1].isVisible() == (window._metrics.width() < 540)
+    caption = window._metrics.caption
+    assert (
+        max(caption.fontMetrics().horizontalAdvance(line) for line in caption.text().splitlines())
+        <= caption.contentsRect().width()
+    )
+    assert caption.fontMetrics().height() * len(caption.text().splitlines()) <= caption.height()
+    for title, value in zip(window._metrics._titles, window._metrics._values, strict=True):
+        assert value.fontMetrics().horizontalAdvance(value.text()) <= value.contentsRect().width()
+        assert title.toolTip().count("\n") == value.toolTip().count("\n") == 1
+        assert "Example:" in value.toolTip()
+
+
 @pytest.mark.parametrize("prefix", ["", "Previous line\n"])
 def test_partial_prompt_flush_and_clear_preserve_previous_text(qapp, prefix):
     console = Console(THEMES["deepseafoam"])
@@ -379,6 +792,42 @@ def test_small_window_keeps_console_and_controls_accessible(window, qapp):
     assert not window._theme_button.icon().isNull()
 
 
+def test_log_details_toggle_preserves_output_without_starting_a_command(window, monkeypatch):
+    monkeypatch.setattr(
+        window._runner, "start", lambda *args: pytest.fail("Details must not start a command")
+    )
+    raw = (
+        "2026-01-01 09:12:34 | INFO     | "
+        "linkedin_easy_apply.forms.easy_apply:_fill_field:123 - Example field was filled"
+    )
+    original_config = window._config_file().read_bytes()
+    window._console.append_text(raw + "\nAnswer: ")
+    assert "[FORM]" in window._console.toPlainText()
+    window._log_details.click()
+    assert window._console.toPlainText() == raw + "\nAnswer: "
+    window._log_details.click()
+    assert "[FORM]" in window._console.toPlainText()
+    assert window._console.toPlainText().endswith("\nAnswer: ")
+    assert window._config_file().read_bytes() == original_config
+
+
+@pytest.mark.parametrize(
+    ("code", "message", "label", "role"),
+    [
+        (0, "Finished successfully.", "DONE", "document"),
+        (1, "Stopped.", "STOPPED", "warning"),
+        (2, "Finished with exit code 2.", "ERROR", "error"),
+    ],
+)
+def test_command_outcome_labels_distinguish_success_stop_and_failure(
+    window, code, message, label, role
+):
+    window._on_finished(code, message)
+    cursor = window._console.document().find(f"[{label}]")
+    assert not cursor.isNull()
+    assert cursor.charFormat().foreground().color().name() == window._palette[role].lower()
+
+
 def test_readme_run_capture_uses_real_controls_without_execution(
     window, qapp, tmp_path, monkeypatch
 ):
@@ -390,10 +839,15 @@ def test_readme_run_capture_uses_real_controls_without_execution(
     monkeypatch.setattr(window._runner, "start", lambda *args: started.append(args))
     files = {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
     observed = []
+    metrics = []
     render = capture._walkthrough_frame
 
     def observe(widget, caption):
         options = widget._current_options()
+        metrics.append((options.action, widget._metrics._snapshot))
+        list_only = options.action == "reapply" and options.list_only
+        assert widget._metrics._state == ("Waiting" if list_only else "Offline demo")
+        assert not widget._metrics._timer.isActive()
         observed.append(
             (
                 options.action,
@@ -414,6 +868,15 @@ def test_readme_run_capture_uses_real_controls_without_execution(
     assert {state[5] for state in observed if state[4]} == {0, 1, 2, 3}
     assert any(state[0] == "reapply" and state[2] for state in observed)
     assert any(state[0] == "connect" and state[3] == 11 for state in observed)
+    assert all(snapshot is None or snapshot.action == action for action, snapshot in metrics)
+    apply_counts = [
+        snapshot.counts
+        for action, snapshot in metrics
+        if action == "apply" and snapshot is not None
+    ]
+    assert apply_counts[0]["scanned"] < apply_counts[-1]["scanned"]
+    assert apply_counts[-1]["dry_runs"] > apply_counts[0]["dry_runs"]
+    assert all(counts["applied"] == counts["hr_sent"] == 0 for counts in apply_counts)
     assert started == [] and not window._runner.busy
     assert files == {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
     assert not (window._root / "logs" / "gui-runs").exists()
@@ -429,6 +892,45 @@ def test_readme_run_capture_uses_real_controls_without_execution(
                 .tobytes()
             )
         assert len(states) >= 5, "The actual UI, not just captions, must change."
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+def test_readme_tooltip_capture_preserves_option_help_and_configuration(
+    window, qapp, tmp_path, monkeypatch, theme
+):
+    from PIL import Image, ImageChops
+
+    from tools import capture_screenshots as capture
+
+    monkeypatch.setattr(
+        window._runner, "start", lambda *args: pytest.fail("A capture cannot start a command")
+    )
+    window.resize(1340, 860)
+    window._apply_theme(THEMES[theme])
+    window._run_settings.customize.setChecked(True)
+    window._run_settings.tabs.setCurrentIndex(1)
+    qapp.processEvents()
+    daily = window._run_settings._fields["jobs.max_daily"]
+    scroll = window._run_splitter.widget(0)
+    scroll.ensureWidgetVisible(daily)
+    qapp.processEvents()
+    options = window._current_options()
+    files = {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
+    fields = window.findChildren(QLineEdit)
+    help_before = [field.toolTip() for field in fields]
+    plain = tmp_path / "plain.png"
+    target = tmp_path / "help.png"
+    capture._save_screenshot(window, plain)
+    capture._save_screenshot(window, target, tooltip_target=daily)
+    with Image.open(plain) as before, Image.open(target) as after:
+        assert before.size == after.size
+        assert ImageChops.difference(before.convert("RGB"), after.convert("RGB")).getbbox()
+    _until(qapp, lambda: not QToolTip.isVisible())
+    assert help_before == [field.toolTip() for field in fields]
+    assert window._current_options() == options
+    assert files == {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
+    assert not (window._root / "logs" / "gui-runs").exists()
+    assert not window._runner.busy
 
 
 @pytest.mark.parametrize("encoder_fails", [False, True])

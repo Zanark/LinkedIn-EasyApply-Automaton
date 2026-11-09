@@ -31,8 +31,19 @@ The checkbox starts unchecked: its tabs are hidden and apply no overrides.
 Checking alone does not save or start anything. A separate Dry run change can
 still require a preset. Use **?** or **Tutorial / F1** in the
 GUI for the [full control-by-control tutorial](gui-tutorial.md).
+The source GUI and Windows v0.2.2 give fields, toggles, labels, tabs and choices
+two-line hover help: purpose, then a practical **Example:**. Hovering creates
+no overrides or files. Reopen the updated GUI to load it; older v0.2.1 EXEs
+remain unchanged.
+The top toolbar cannot be hidden through a right-click **Main**
+checkbox. This needs no YAML or preference reset; text fields retain editing menus.
+Run counters need no YAML setting: the GUI opts its own child
+into status-only telemetry. This is separate from logging verbosity and does
+not add fields to saved preferences or the database. See
+[live counter meanings](gui.md#live-run-counters-current-source), including why
+drafts and completed dry runs are not sends.
 `apply.py gui --tutorial` reads only that guide, without private setup/history.
-Windows v0.2.1 supports `EasyApplyAutomaton.exe --tutorial` and
+Windows v0.2.1 and later support `EasyApplyAutomaton.exe --tutorial` and
 `lea.exe gui --tutorial` with the same non-initializing behavior. Older v0.2.0
 EXEs do not include the tutorial.
 
@@ -401,9 +412,10 @@ auto-submits and can only *soft-skip* a job — it cannot force an application.
 | `enabled`    | `true`        | Master switch.                             |
 | `directory`  | `screenshots` | Output directory.                          |
 | `on_error`   | `true`        | Capture on failures.                       |
-| `each_step`  | `true`        | Capture each Easy Apply step.              |
+| `each_step`  | `true`        | Stored; not separately enforced by the current workflow. |
 | `cleanup`    | `true`        | Delete unreferenced captures at run end.     |
 
+Step captures currently follow `enabled`, even with `each_step: false`.
 With `cleanup: true`, step/unknown screenshots that are not referenced by an
 application record are deleted at the end of the run. After-submit evidence and
 aborted-state screenshots are kept. Set `cleanup: false` when you want to keep
@@ -430,6 +442,11 @@ every screenshot for debugging. Cleanup is gated by `enabled` too.
 > pass `-v` / `--verbose` **before** any command to force `DEBUG` for that run
 > (e.g. `apply.py -v apply --dry-run`). Logs are written to
 > `logs/easy_apply_<date>.log` (git-ignored).
+
+The current source desktop console shortens these prefixes to a timestamp plus
+colored severity/activity labels. **Details** restores the original prefix;
+it is a display toggle, not a logging setting. File logs and CLI output retain
+their full diagnostics, and theme changes recolor the retained GUI history.
 
 ### `run`
 

@@ -199,6 +199,15 @@ models, Spring `@ConfigurationProperties` + JSR-303, JSON Schema validation,
 protobuf/Avro schemas. This is the "**make illegal states unrepresentable**"
 idea in practice.
 
+`progress.py::ProgressSnapshot` applies the same boundary principle to
+GUI-child telemetry, but deliberately uses strict types: no boolean-as-count
+or string-to-number coercion, no negative counters, no unknown fields, and
+an exact counter-key set. `Metric` is a fixed `Literal` vocabulary, not arbitrary
+labels. `ProgressReporter` sends deep copies of complete snapshots so a sink
+cannot mutate its accumulated totals. This small, fixed-size model separates
+confirmed outcomes from drafts and dry runs; it is not a database record or
+an acknowledgement that an observed outcome has been persisted.
+
 ---
 
 ## 7. Sorted list for longest-match

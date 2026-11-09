@@ -4,9 +4,15 @@ Open **Tutorial** in the desktop GUI, or press **F1**. Back/Next follows
 the sequence; the topic list jumps directly to an option. The **?** beside
 **Customize settings for this run** opens its explanation.
 
+In the source GUI or Windows v0.2.2, hover a field, toggle, button or label for its
+purpose followed by an **Example:** line. Tabs, saved searches and dropdown
+choices have the same help; action/tool explanations follow the current
+selection. Hovering does not save, change values or start a command.
+Reopen the updated GUI to load this update; older v0.2.1 EXEs are unchanged.
+
 For the guide alone, run `apply.py gui --tutorial`. No configuration or
 database is loaded, and no browser or automation command is started.
-Windows v0.2.1 bundles the same guide: use `EasyApplyAutomaton.exe --tutorial`
+Windows v0.2.1 and later bundle the same guide: use `EasyApplyAutomaton.exe --tutorial`
 or `lea.exe gui --tutorial` from its extracted folder. Older v0.2.0 EXEs do not
 contain this feature.
 
@@ -33,6 +39,11 @@ unless files are missing or the session has expired.
 ## Workspace, toolbar and themes
 
 **Where:** the top toolbar and left sidebar.
+
+In source and Windows v0.2.2, right-clicking the toolbar or Tutorial cannot hide the
+bar through a **Main** checkbox. Text fields still offer normal editing menus.
+If an older window has already hidden the bar, finish its run, save editor
+changes and reopen it; your saved setup does not need resetting.
 
 - **Config** selects the main YAML used by commands. A relative path is
   resolved from the workspace, not the YAML's own folder. Finishing a path edit
@@ -242,8 +253,9 @@ resume content.
 - **Resume review** adds a delay after logging the selected resume. Zero
   disables the delay. It is not a resume-approval dialog.
 - **Capture screenshots** enables runtime screenshots.
-- **Capture each step** additionally captures individual form steps when
-  screenshots are enabled.
+- **Capture each step** stores `screenshots.each_step`, but the current
+  workflow does not enforce it separately: step captures follow **Capture
+  screenshots** even when this option is unchecked.
 - **Clean unreferenced screenshots** removes unreferenced runtime captures
   during normal cleanup while retaining referenced evidence.
 
@@ -290,8 +302,28 @@ needs its own real Python environment.
 - **Copy command** copies a PowerShell command. It does not run it, but can
   create a validated private preset, just like Start.
 - **READY / RUNNING** and the status bar describe command state.
+- **Live counters** (source and v0.2.2) update above the console for this command:
+  Scanned, Applied, Skipped, Failed and HR sent. Applied requires workflow
+  confirmation; HR sent excludes drafts and invitations. Scan-only jobs and
+  completed dry runs are also Skipped, as in the final summary. The footer
+  keeps drafts, dry runs and unconfirmed submissions separate from sends.
+  Connect instead shows Profiles, Invites, Already, Skipped and Failed.
+  Target progress counts inspected jobs for Scan, completed forms for
+  Apply/Reapply, and checked profiles during a connection pass.
+  The header shows the actual child action/run and elapsed time, not an ETA.
+  Counts remain after Stop, Clear log or selector/theme changes; only an
+  accepted new command resets them. Before data arrives, `--` is unavailable,
+  not zero. A stream warning preserves the last good totals. List-only and
+  unsupported tools hide the strip. Older v0.2.1 EXEs do not include the counters.
 - **Console** streams output and prompts, including prompts without a newline.
-  Completion and shortfall messages explain the actual outcome.
+  Source and v0.2.2 use compact times and colored severity/activity badges;
+  messages wrap at word boundaries. Amber SKIP/DRY-RUN are not errors,
+  SUBMIT is an attempt, and green SUBMITTED requires confirmed submission.
+  DONE means only that the child exited successfully; STOPPED is cancellation.
+  Scrolling up pauses automatic tail following until you return to the bottom.
+- **Details** (source and v0.2.2) restores original dates and module/function/line
+  prefixes for the same retained history. Compact entries expose them on hover.
+  This does not change logging verbosity or saved files.
 - **Clear log**, also available on the console's context menu, clears the
   window's displayed backlog. It does not delete saved log files or history.
 - **Splitter / setup scroll** let you resize the console and reach options
@@ -302,6 +334,9 @@ reload them first. Per-run presets are separate from those saved inputs.
 Only one child command can run in the desktop at a time.
 Successful child exit is not by itself proof that an application was sent;
 look for confirmed submission results.
+Counters report observed outcomes before potentially delayed persistence.
+After a hard stop, verify LinkedIn/history before retrying; live totals can be
+ahead of database records or the final summary.
 
 ## Stop and recovery
 

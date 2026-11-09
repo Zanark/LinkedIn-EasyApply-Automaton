@@ -180,7 +180,7 @@ def log_palette(palette: Palette) -> Mapping[str, str]:
         {
             "TRACE": palette["muted"],
             "DEBUG": palette["muted"],
-            "INFO": palette["text"],
+            "INFO": palette["accent"],
             "SUCCESS": palette["document"],
             "WARNING": palette["warning"],
             "ERROR": palette["error"],
@@ -213,6 +213,28 @@ QLabel[role="badge"] {{
     padding: 5px 10px;
     font-weight: 600;
 }}
+QLabel#MetricsCaption {{ color: {muted}; font-size: 11px; }}
+QFrame#RunMetrics {{
+    background-color: {raised};
+    border: 1px solid {separator};
+    border-radius: 8px;
+}}
+QWidget#MetricsRow {{ background: transparent; }}
+QFrame#RunMetric {{ background-color: {surface}; border-radius: 5px; }}
+QLabel#MetricValue {{ font-size: 22px; font-weight: 600; }}
+QLabel#MetricValue[tone="accent"] {{ color: {accent}; }}
+QLabel#MetricValue[tone="document"] {{ color: {document}; }}
+QLabel#MetricValue[tone="warning"] {{ color: {warning}; }}
+QLabel#MetricValue[tone="error"] {{ color: {error}; }}
+QLabel#MetricValue[tone="muted"] {{ color: {muted}; }}
+QLabel#MetricTitle {{ color: {muted}; font-size: 11px; }}
+QLabel#MetricsDetails {{ color: {muted}; font-size: 11px; }}
+QProgressBar#RunTarget {{
+    background-color: {selection};
+    border: none;
+    border-radius: 1px;
+}}
+QProgressBar#RunTarget::chunk {{ background-color: {accent}; border-radius: 1px; }}
 
 /* Sidebar ------------------------------------------------------------- */
 QFrame#Sidebar {{

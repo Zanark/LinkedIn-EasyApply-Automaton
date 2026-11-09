@@ -1,5 +1,116 @@
 # Development ledger
 
+## 2026-11-10 - Windows v0.2.2 release follow-through
+
+- The new request authorizes reviewed source publication, a matching release
+  tag and a side-by-side local package installation. It does not authorize
+  driving or restarting an independently running GUI or starting live actions.
+- The existing source launcher directly invokes the checkout and configured
+  workspace; it does not fetch a hosted EXE. Preserve that command and setup.
+- Selected unused patch version v0.2.2 after verifying owner/repository access,
+  remote main and both earlier releases. Align package metadata, concise README,
+  tutorial, affected guides and bundled first-run instructions.
+- The initial tracking preview rejected a placeholder backlink without remote
+  writes. Removed the placeholder; use only the actual synchronizer-created URL.
+- Qualification, reviewed commit/tag, hosted publication and downloaded local
+  installation remain distinct pending gates. Existing media need no recapture.
+- The first full source gate passed Ruff, Black and mypy, then found two
+  order-dependent theme-reopen failures (770 tests passed). The Qt-free import
+  test had reloaded shared palette classes. Run that import in a fresh process
+  to preserve the stronger real reopen assertions and avoid suite pollution.
+- Corrected full release gates pass Ruff, Black (117 files), mypy (72 source
+  files) and 772 tests with native exit zero. Source version and the unchanged
+  source launcher help check pass without starting a GUI or automation.
+  The new release issue is #22 with its actual durable backlink and one
+  In Progress item; publication and installed-asset checks remain pending.
+
+## 2026-11-10 - Prevent accidental hiding of the essential toolbar
+
+- An isolated context-menu event reproduced Qt's native Main checkbox and
+  visibility action before the production change. Disabling toolbar movement
+  does not prevent hiding through that menu.
+- MainWindow.createPopupMenu now returns None. This removes the default
+  main-window visibility popup, not the normal editing menus in text controls.
+  No new setting, layout migration or configuration reset is introduced.
+- Eight focused cases cover Tutorial/toolbar context events, native field
+  editing and reopening an older hidden toolbar in both themes. All 167
+  cases across the five GUI suites passed with native exit zero. Black/Ruff
+  passed the two changed Python files; mypy passed ten GUI source files.
+- Updated seven affected guides without regenerating unchanged screenshots.
+  Recovery is a manual reopen after finishing the current run and saving
+  editor changes; an existing instance does not hot-load the fix.
+- The first scoped tracking preview correctly rejected an omitted Publication
+  field without remote writes. Corrected the declaration and passed preview.
+  Independent completion verified lea-21/#21 CLOSED/COMPLETED, exact managed
+  content, one Done item and persistent backlink. Settled apply returned one
+  no-op without content/timestamp churn; all twenty older records and original
+  #2/#9 review gaps remain unchanged.
+- Final preservation retains 53 unrelated public fingerprints, all fifteen
+  media hashes, selected private/native metadata, HEAD and empty staging.
+- Checks use fictional temporary state and INI settings. The independently
+  opened user GUI is not a test fixture and is neither inspected nor driven.
+  Sources remain local; no build, release, commit, push or live action.
+
+## 2026-11-09 - Live per-command desktop metrics
+
+- Started lea-20 to make current-command outcomes visible while the console
+  runs. Trace actual confirmed applications, inspected jobs, skips, failures,
+  hiring-message/draft outcomes and connection invitations rather than
+  inferring them from human log text.
+- Preserve the shared source checkout's existing changes and the independently
+  running user instance. All development checks use fictional disposable state;
+  no live automation, user-process manipulation or source/release publication.
+- Added strict Qt-free snapshots, a bounded framed stream and optional
+  authoritative engine hooks. The GUI opts in only its own child, removes
+  frames from human output and reports malformed/truncated data without
+  exposing rejected payloads or clearing valid totals. Ordinary CLI/file
+  logging remains unchanged.
+- Five color-coded cards expose job outcomes and actual hiring-message sends.
+  Standalone Connect uses profile/invitation outcomes. Secondary totals keep
+  drafts, completed dry runs, uncertainty and invitations distinct. Targets
+  follow the actual child phase; elapsed time starts on process-start and
+  freezes at finish. Clear log/theme/selector edits retain totals; only an
+  accepted new command resets them. Failed startup does not invent zeroes.
+- Submission observation precedes outreach approval and existing persistence.
+  The display is ephemeral, not a transactional ledger or delivery receipt;
+  interruption can leave live totals ahead of the database/final summary.
+  This task does not change application/outreach durability.
+- Early compact checks exposed both missing fonts and actual header clipping.
+  Reused capture font registration in window tests, tightened running-state
+  geometry, compressed spacing and made the caption wrap when narrow. All
+  four compact/expanded dark/light cases then passed without shrinking digits
+  or weakening width assertions.
+- The final affected integration passed 308 cases with native exit zero.
+  The first full attempt passed 307 with one incorrect media-fixture assertion:
+  a Reapply-only checkbox retained its value when Connect was selected.
+  Corrected only the assertion's action guard. Black/Ruff passed fifteen
+  scoped Python files; mypy passed sixteen source files including capture
+  tooling after replacing ambiguous Qt API spellings with typed equivalents.
+- Updated thirteen affected guides, retaining the concise README. Run-only
+  capture refreshes seven PNGs/one GIF; its explicit fictional snapshots
+  start neither a process nor a timer. The Run GIF remains nine frames and
+  17.8 seconds. Directly inspected compact light and expanded dark stills;
+  geometry checks separately cover both sizes/themes. These are offscreen
+  fixtures, not a native installed-release or live-site acceptance claim.
+- Pre-bookkeeping immutable-baseline checks preserve thirty public fingerprints,
+  nineteen older durable mappings, selected private/native metadata, HEAD
+  and the empty staged diff. No private contents/registry values were read
+  for that comparison. Prior console/tooltips/README work remains intact.
+- Final preservation retains twenty-eight unrelated fingerprints and allows
+  the index/ledger completion updates explicitly. All fifteen media hashes
+  still match qualification. Reviewed the Run GIF's first frame as well as
+  the two stills, not a complete animation replay.
+- Scoped preview/apply and independent read-back verify lea-20/#20
+  CLOSED/COMPLETED, exact managed content, one Done issue-backed Project item
+  and persistent backlink. Settled apply produced one no-op with unchanged
+  remote/local content and timestamps. All nineteen older issues/items/
+  mappings and original #2/#9 OPEN/In review gaps remain intact. Final
+  bookkeeping wording was separately previewed/applied and read back;
+  another settled no-op verified no content or timestamp churn. The first
+  settlement receipt is retained separately rather than overwritten.
+  Sources remain local and uncommitted; existing release binaries and the
+  independently running user window are untouched.
+
 Status: CONTINUOUS_LEDGER
 Milestone: Evidence-grounded repository engineering history
 Dependencies: None
@@ -21,6 +132,144 @@ approval or publishing private continuity. This perpetual ledger is not an issue
 Ongoing record; individual bounded outcomes belong to numbered workstreams.
 
 ## Completion log
+
+### 2026-11-09 - Two-line desktop option help
+- Inventoried the five pages, per-run tabs, saved-search checkboxes, changing
+  command options and read-only tutorial. Existing help is sparse and uses
+  inconsistent formats; reuse native Qt tooltips without widening the layout.
+- Keep each explanation to a purpose line and a practical-example line.
+  Verify actual semantics before describing safety, limits and persistence.
+- Preserve existing console improvements and README curation. Development
+  windows use isolated preferences and fictional workspaces; an independently
+  opened user GUI is not a development fixture and must not be stopped.
+- Added a shared purpose/example formatter and typed descriptions across all
+  desktop pages, settings fields, labels, choices, saved searches, path controls
+  and tutorial navigation. Action/target and tool-input help follows changing
+  selections; existing console diagnostic hover text is retained.
+- Five GUI suites passed 150 cases with native exit zero. Scoped Black/Ruff
+  passed seven Python files; GUI mypy passed nine source files. Tightened the
+  two-theme capture regression to catch overwritten path descriptions; both
+  cases passed separately with native exit zero after that test-only change.
+- Native help events exercise internal, disabled, label and viewport targets.
+  Checks preserve options, unsaved text, configuration bytes, preset absence
+  and an idle runner. No execution or persistence behavior was changed.
+- Ordinary widget grabs exclude native tooltips. The capture helper now
+  triggers the real help event, verifies the visible popup, rejects clipping
+  or missing help and composites only owned widget grabs. Fictional display
+  path conversion no longer replaces useful help with an unexplained path.
+- Directly inspected four popup crops across dark/light and expanded/compact
+  windows, plus the full dark Limits still. Both logical lines remain readable
+  without clipping. This is sampled offscreen rendering, not ordinary desktop
+  popup-position qualification or human aesthetic acceptance.
+- Refreshed only the matching README Limits PNG and eight affected guides.
+  All fifteen GUI assets remain valid, animations are unchanged and all
+  twenty-four retained README relative references resolve. Current-source
+  versus released-EXE behavior and the existing each-step flag limitation
+  are explicit; the automation engine was not expanded to fix that limitation.
+- Original selected private size/mtime and native preference key metadata
+  match the immutable baseline; no private contents or registry values were
+  read for that comparison. Preserved 33 unrelated public files, eighteen
+  older mappings, HEAD and the empty cached diff. The user window is untouched.
+- Initial independent reconciliation verified #19 OPEN with exact managed
+  content, one In Progress item and backlink; eighteen earlier issues/items
+  and their timestamps are unchanged. Final scoped completion/no-churn
+  settlement is a separate receipt outside the managed workstream body.
+- Sources remain local and uncommitted. No new configured GUI, live command,
+  package build, push, release, tag change or tracking-service activation.
+- Scoped completion reused #19 and its existing item. Independent read-back
+  verified exact managed content, CLOSED/COMPLETED, one Done item and backlink.
+  Settled apply verified one no-op with unchanged remote content/timestamps
+  and local mapping/workstream bytes/mtimes. All eighteen earlier records and
+  original #2/#9 OPEN/In review gaps remain unchanged. This receipt stays
+  outside the settled managed workstream body.
+
+### 2026-11-09 - Narrow desktop-console readability
+- Traced raw Loguru prefixes and the renderer's conversion of every space to
+  a nonbreaking space. Keep the existing child execution and full file logs;
+  improve only desktop presentation and labeled GUI notices.
+- Preserve all prior uncommitted README/tracking curation, private setup and
+  unrelated work. Verification uses isolated fictional output, not LinkedIn.
+- Replaced HTML/nonbreaking-space insertion with plain cursor spans and
+  word-boundary wrapping, including long-token fallback. Recognized Loguru
+  lines use compact time, severity/activity badges and source tooltips;
+  Details restores their original prefixes without changing verbosity.
+- Retained literal markup, indentation, streaming prompts, split ANSI/CRLF,
+  bounded history, theme repainting and the reader's selection/scroll position.
+  GUI notices distinguish configuration, input, command and errors; process
+  DONE, STOPPED and ERROR are not application-submission confirmations.
+- Initial focused verification passed 106 cases; final integration passed
+  145 across widgets, themes, window, tutorial and command suites, with process
+  exit zero. Scoped Ruff/Black passed for six changed Python files and GUI
+  mypy passed for nine source files. Product code was unchanged afterward.
+- Refreshed directly affected guides and fictional Loguru-format captures.
+  The first small-window sample clipped the last illustrative message;
+  shortened only two fictional messages, regenerated and rechecked the final
+  compact light layout. Ordinary resized output remains vertically scrollable.
+- Direct sampled visual review covers expanded dark Run, compact light Run
+  and a paired 360-pixel dark/light console sheet. Independent narrow checks
+  confirm no horizontal overflow and reversible original text in Details.
+  This is not a full animation replay, installed release or human acceptance.
+- Regenerated thirteen PNGs and two looping GIFs; only seven Run-related PNGs
+  and the run GIF differ. The run GIF is nine frames, 17.8 seconds and
+  1026086 bytes. Fifteen assets remain valid and all twenty-four retained
+  README relative references resolve. The tutorial animation is unchanged.
+- Selected original private file size/mtime metadata and native registry
+  preferences metadata match their immutable baseline; private contents were
+  not read or hashed for this check. HEAD, empty cached diff and prior dirty
+  entries are retained. The physical index checksum differs, so preservation
+  is stated for index content, not byte-identical Git stat-cache storage.
+- Initial scoped reconciliation verified #18 OPEN with one In Progress item,
+  exact managed content and persistent backlink. All seventeen earlier
+  mappings, remote content/timestamps and workstream bytes/mtimes are intact.
+  The first session-only verifier attempt used an incorrect baseline key;
+  corrected it to the existing tracking_state key before successful read-back,
+  without resetting any baseline or changing synchronizer safeguards.
+- No live application, browser/login, commit, push, package build or release
+  replacement occurred. Existing v0.2.1 binaries remain unchanged; current
+  source users load the new renderer after restarting the GUI.
+- Scoped completion reused #18 and its existing item. Independent read-back
+  verified exact managed content, CLOSED/COMPLETED, one Done item and backlink.
+  Settled apply verified one no-op with unchanged remote content/timestamps
+  and local mapping/workstream bytes/mtimes. All seventeen earlier records
+  and original #2/#9 OPEN/In review gaps remain unchanged. Settlement receipts
+  stay here and in the navigation index, not another managed-body update.
+
+### 2026-11-08 - README curation and visual selection
+- Reviewed the current landing page and two existing contact sheets, then
+  full-size compact light Run, expanded Limits and light tutorial captures.
+  Selected the compact Run and expanded Limits stills for readability and
+  distinct content; omit plain editors, empty statistics and repeated variants.
+- Promoted the existing run GIF above setup, removed the redundant separate
+  logo and replaced repeated instructions with maintained guide links.
+  Kept account risk, manual sign-in, portable-folder/browser requirements,
+  existing-workspace guidance and optional-dependency limitations.
+- Retained every source image and capture tool unchanged. Dependent GUI and
+  developer guides now explain selected stills and the deliberate subset.
+  No recapture, product test rerun, source push or new release is implied.
+- Initial local layout inspection found the inherited banner pushing the
+  first GIF to 433 pixels from the preview's top. Reduced only its display
+  width; preserve the SVG itself rather than weakening the placement gate.
+- Initial scoped synchronization verified #17 OPEN with one In Progress
+  Project item, exact managed content and backlink. All sixteen prior
+  mappings, source workstreams and remote content/timestamps remain unchanged.
+- Corrected GitHub Markdown rendering measures 82 lines and 347 text words,
+  down from 319/1,912; collapsed source instructions are included. All
+  twenty-four retained relative references and required fragments resolve.
+  GIF placement is now 373 pixels on desktop and 307 on mobile.
+- Isolated Edge desktop light, mobile light and desktop dark checks passed:
+  all media loads, GIF is before setup outside the disclosure, instructions
+  expand and there is no page-wide overflow. Directly reviewed three full-page
+  snapshots. These are locally styled GitHub-Markdown previews, not a hosted
+  README, complete animation replay or human aesthetic acceptance.
+- All fifteen GUI asset bytes, the original banner SVG, native preferences
+  and selected private-input size/mtime metadata match their curation baseline.
+  HEAD/index are unchanged and unrelated work is preserved.
+- Scoped completion and independent reconciliation verified #17
+  CLOSED/COMPLETED, exact managed content, one Done item and persistent
+  backlink. A settled apply verified one no-op with unchanged remote
+  content/timestamps and local mapping/workstream bytes/mtimes. All sixteen
+  earlier records and original #2/#9 review gaps are preserved. The receipt
+  stays outside the managed body; no new source publication or release.
 
 ### 2026-11-08 - README media source publication separately authorized
 - Reviewed the completed README media, capture tooling, focused regressions,

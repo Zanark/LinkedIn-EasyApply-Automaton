@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from linkedin_easy_apply.gui.widgets import heading, muted
+from linkedin_easy_apply.gui.widgets import heading, muted, tooltip
 from linkedin_easy_apply.runtime import resource_root
 
 CUSTOMIZE_TOPIC = "Customize this run"
@@ -67,18 +67,37 @@ class TutorialDialog(QDialog):
         content = QHBoxLayout()
         self._topic_list = QListWidget()
         self._topic_list.setAccessibleName("Tutorial topics")
+        self._topic_list.setToolTip(
+            tooltip(
+                "Choose a tutorial topic without changing application settings.",
+                "Select Customize this run to read about private presets.",
+            )
+        )
         self._topic_list.setWordWrap(True)
         self._topic_list.setMinimumWidth(215)
         self._topic_list.setMaximumWidth(270)
         self._topic_list.addItems(
             [f"{index + 1}. {topic.title}" for index, topic in enumerate(topics)]
         )
+        for index, topic in enumerate(topics):
+            self._topic_list.item(index).setToolTip(
+                tooltip(
+                    "Open this read-only tutorial topic.",
+                    f"Select {topic.title} to read its explanation without starting automation.",
+                )
+            )
         content.addWidget(self._topic_list, 1)
 
         explanation = QVBoxLayout()
         self._title = heading("")
         self._body = QTextBrowser()
         self._body.setAccessibleName("Tutorial explanation")
+        self._body.setToolTip(
+            tooltip(
+                "Read the selected reference topic; links and commands are not executed.",
+                "Scroll or copy an example, then close the tutorial to return to your setup.",
+            )
+        )
         self._body.setOpenLinks(False)
         self._body.setOpenExternalLinks(False)
         explanation.addWidget(self._title)
@@ -92,6 +111,12 @@ class TutorialDialog(QDialog):
         navigation.addWidget(self._progress)
         navigation.addStretch(1)
         self._back = QPushButton("Back")
+        self._back.setToolTip(
+            tooltip(
+                "Read the previous topic without changing your setup.",
+                "Return to an earlier explanation; this is disabled on the first topic.",
+            )
+        )
         self._back.clicked.connect(
             lambda: self._topic_list.setCurrentRow(self._topic_list.currentRow() - 1)
         )
@@ -100,6 +125,12 @@ class TutorialDialog(QDialog):
         self._next.setDefault(True)
         self._next.clicked.connect(self._advance)
         close = QPushButton("Close tutorial")
+        close.setToolTip(
+            tooltip(
+                "Close the read-only tutorial without saving or starting anything.",
+                "Return to the desktop with your unsaved fields and options intact.",
+            )
+        )
         close.clicked.connect(self.reject)
         for button in (self._back, self._next, close):
             navigation.addWidget(button)
@@ -118,6 +149,17 @@ class TutorialDialog(QDialog):
         self._progress.setText(f"{index + 1} / {len(self._topics)}")
         self._back.setEnabled(index > 0)
         self._next.setText("Finish" if index == len(self._topics) - 1 else "Next")
+        self._next.setToolTip(
+            tooltip(
+                "Close the tutorial after the last topic.",
+                "Finish returns to the desktop without starting a run or saving settings.",
+            )
+            if index == len(self._topics) - 1
+            else tooltip(
+                "Read the next topic without changing your setup.",
+                "Continue through the guide; the last topic changes this button to Finish.",
+            )
+        )
 
     def _advance(self) -> None:
         index = self._topic_list.currentRow()

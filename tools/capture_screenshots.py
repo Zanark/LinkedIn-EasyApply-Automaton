@@ -18,6 +18,8 @@ lines are identical rectangles and the ratio is 1.00.
 from __future__ import annotations
 
 import sys
+from argparse import ArgumentParser
+from collections.abc import Mapping
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -28,15 +30,32 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from PIL import Image, ImageDraw, ImageFont  # noqa: E402
-from PySide6.QtCore import QBuffer, QCoreApplication, QEvent, QIODevice, QSettings  # noqa: E402
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter  # noqa: E402
-from PySide6.QtWidgets import QApplication, QLineEdit, QScrollArea, QSpinBox, QWidget  # noqa: E402
+from PySide6.QtCore import (  # noqa: E402
+    QBuffer,
+    QCoreApplication,
+    QEvent,
+    QIODevice,
+    QPoint,
+    QRect,
+    QSettings,
+    Qt,
+)
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QHelpEvent, QImage, QPainter  # noqa: E402
+from PySide6.QtWidgets import (  # noqa: E402
+    QApplication,
+    QLineEdit,
+    QScrollArea,
+    QSpinBox,
+    QToolTip,
+    QWidget,
+)
 
 from linkedin_easy_apply.gui import commands  # noqa: E402
 from linkedin_easy_apply.gui.main_window import _APP, _ORG, MainWindow  # noqa: E402
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
 from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog  # noqa: E402
 from linkedin_easy_apply.gui.widgets import PathRow  # noqa: E402
+from linkedin_easy_apply.progress import Metric, ProgressReporter, RunAction  # noqa: E402
 
 OUT = ROOT / "docs" / "images"
 DEMO_ROOT = Path(r"C:\EasyApplyDemo")
@@ -55,12 +74,20 @@ FONT_FILES = (
 
 SAMPLE_LOG = (
     "OFFLINE DEMO - illustrative output only; no automation command was started.\n"
-    "DEMO | DEBUG    | logging - Verbose output explains each decision.\n"
-    "DEMO | INFO     | run - Example target: 5 applications, dry run enabled.\n"
-    "DEMO | INFO     | search - Example saved search: Backend engineering.\n"
-    "DEMO | INFO     | scoring - [SCORE PASS] 42/20 | Backend Engineer at Example Company\n"
-    "DEMO | SUCCESS  | form - A dry run would stop at Submit; nothing is sent.\n"
-    "DEMO | WARNING  | answers - An unknown required answer would pause for your input.\n"
+    "2026-01-15 09:12:01 | INFO     | linkedin_easy_apply.orchestrator:run:100"
+    " - Example target: 5 applications, dry run enabled.\n"
+    "2026-01-15 09:12:02 | INFO     | linkedin_easy_apply.jobs.search:search:100"
+    " - Example saved search: Backend engineering.\n"
+    "2026-01-15 09:12:03 | INFO     | linkedin_easy_apply.orchestrator:_process_job:100"
+    " - [SCORE PASS] 42/20 | Backend Engineer at Example Company\n"
+    "2026-01-15 09:12:04 | DEBUG    | linkedin_easy_apply.forms.detector:detect:100"
+    " - Detected 4 required fields.\n"
+    "2026-01-15 09:12:05 | INFO     | linkedin_easy_apply.answers.resolver:resolve:100"
+    " - Example answer resolved from saved YAML.\n"
+    "2026-01-15 09:12:06 | WARNING  | linkedin_easy_apply.forms.easy_apply:_finalize_submit:100"
+    " - DRY-RUN: Stop at Submit; nothing is sent.\n"
+    "2026-01-15 09:12:07 | ERROR    | linkedin_easy_apply.forms.filler:fill:100"
+    " - Example only: required option missing.\n"
 )
 
 # (page index, file-name stem, theme key)
@@ -102,7 +129,7 @@ def ensure_fonts() -> list[str]:
 
 def _ink(text: str, font: QFont) -> int:
     """Count dark pixels produced by drawing *text*."""
-    image = QImage(640, 64, QImage.Format_RGB32)
+    image = QImage(640, 64, QImage.Format.Format_RGB32)
     image.fill(QColor("white"))
     painter = QPainter(image)
     painter.setFont(font)
@@ -136,7 +163,6 @@ def _demo_paths(window: MainWindow) -> None:
         if path.is_relative_to(window._root):
             displayed = str(DEMO_ROOT / path.relative_to(window._root))
             field.setText(displayed)
-            field.setToolTip(displayed)
             field.setCursorPosition(0)
         elif not path.is_relative_to(DEMO_ROOT):
             raise RuntimeError("A capture location is outside the fictional workspace.")
@@ -150,12 +176,45 @@ def _demo_paths(window: MainWindow) -> None:
     window._command_preview.setPlainText(preview)
 
 
-def _save_screenshot(widget: QWidget, target: Path) -> None:
+def _save_screenshot(
+    widget: QWidget, target: Path, *, tooltip_target: QWidget | None = None
+) -> None:
     if isinstance(widget, MainWindow):
         _demo_paths(widget)
-    if not widget.grab().save(str(target)):
+    capture = widget.grab()
+    if tooltip_target is not None:
+        point = tooltip_target.rect().center()
+        try:
+            QApplication.sendEvent(
+                tooltip_target,
+                QHelpEvent(QEvent.Type.ToolTip, point, tooltip_target.mapToGlobal(point)),
+            )
+            QCoreApplication.processEvents()
+            popup = next(
+                (
+                    candidate
+                    for candidate in QApplication.topLevelWidgets()
+                    if candidate.isVisible() and candidate.windowType() == Qt.WindowType.ToolTip
+                ),
+                None,
+            )
+            if popup is None or QToolTip.text() != tooltip_target.toolTip():
+                raise RuntimeError("The requested native tooltip did not appear.")
+            offset = popup.mapToGlobal(QPoint()) - widget.mapToGlobal(QPoint())
+            if not widget.rect().contains(QRect(offset, popup.size())):
+                raise RuntimeError("The tooltip would be clipped; adjust the capture layout.")
+            # Native tooltips are separate windows; grab only our two owned widgets.
+            painter = QPainter(capture)
+            try:
+                painter.drawPixmap(offset, popup.grab())
+            finally:
+                painter.end()
+        finally:
+            QToolTip.hideText()
+            QCoreApplication.processEvents()
+    if not capture.save(str(target)):
         raise OSError(f"Could not save {target}")
-    print(f"saved {target.relative_to(ROOT)}  ({target.stat().st_size // 1024} KB)")
+    print(f"saved {target.resolve()}  ({target.stat().st_size // 1024} KB)")
 
 
 def _walkthrough_frame(widget: QWidget, caption: str) -> Image.Image:
@@ -164,7 +223,7 @@ def _walkthrough_frame(widget: QWidget, caption: str) -> Image.Image:
     try:
         if not widget.grab().save(buffer, "PNG"):
             raise OSError("Could not render the walkthrough widget.")
-        with Image.open(BytesIO(bytes(buffer.data()))) as rendered:
+        with Image.open(BytesIO(buffer.data().data())) as rendered:
             image = rendered.convert("RGB")
     finally:
         buffer.close()
@@ -216,6 +275,27 @@ def _select_action(window: MainWindow, action: str) -> None:
     window._action_box.setCurrentText(label)
 
 
+def _demo_metrics(window: MainWindow, action: RunAction, counts: Mapping[Metric, int]) -> None:
+    """Render explicitly fictional outcomes without starting a child or timer."""
+    window._metrics.prepare(action)
+    reporter = ProgressReporter(window._metrics.update_progress)
+    reporter.start(
+        action,
+        run_id=11 if action != "connect" else None,
+        dry_run=action != "scan",
+        target=window._limit_spin.value(),
+    )
+    if action == "connect":
+        reporter.connections(3, dry_run=True)
+    reporter.increment(
+        counts,
+        phase=(
+            "connecting" if action == "connect" else "reviewing" if action == "scan" else "applying"
+        ),
+    )
+    window._metrics.finish("Offline demo")
+
+
 def _capture_run_walkthrough(window: MainWindow, application: QApplication, target: Path) -> None:
     window.resize(1200, 860)
     window._run_splitter.setSizes([470, 510])
@@ -240,8 +320,10 @@ def _capture_run_walkthrough(window: MainWindow, application: QApplication, targ
         frames.append(_walkthrough_frame(window, caption))
 
     _select_action(window, "scan")
+    _demo_metrics(window, "scan", {"scanned": 3, "skipped": 3})
     capture("1. Scan discovers and scores; it never applies")
     _select_action(window, "apply")
+    _demo_metrics(window, "apply", {"scanned": 4, "skipped": 4, "dry_runs": 1})
     window._verbose.click()
     capture("2. Choose Apply; keep Dry run and review the command")
     window._run_settings.customize.click()
@@ -252,6 +334,7 @@ def _capture_run_walkthrough(window: MainWindow, application: QApplication, targ
     if not isinstance(daily_cap, QSpinBox):
         raise TypeError("The daily cap must be a numeric control.")
     daily_cap.setValue(15)
+    _demo_metrics(window, "apply", {"scanned": 8, "skipped": 7, "failed": 1, "dry_runs": 2})
     capture("4. Change a cap; saved YAML is not rewritten", expanded=True)
     window._run_settings.tabs.setCurrentIndex(2)
     capture("5. Browser, profile, timing and resume options", expanded=True)
@@ -259,12 +342,17 @@ def _capture_run_walkthrough(window: MainWindow, application: QApplication, targ
     capture("6. Prompts, screenshots, outreach and builder options", expanded=True)
     _select_action(window, "reapply")
     window._list_only.setChecked(True)
+    window._metrics.prepare(None)
     capture("7. Reapply can list retry targets without a browser")
     _select_action(window, "connect")
     window._connect_run.setValue(11)
+    _demo_metrics(
+        window, "connect", {"connect_processed": 3, "connect_already": 1, "connect_dry_runs": 2}
+    )
     capture("8. Connect can filter pending drafts by run ID")
     _select_action(window, "apply")
     window._run_settings.customize.click()
+    _demo_metrics(window, "apply", {"scanned": 10, "skipped": 9, "failed": 1, "dry_runs": 4})
     capture("9. Review before Start; this walkthrough executes nothing")
     _save_gif(frames, target)
 
@@ -308,8 +396,10 @@ def _capture_tutorial_walkthrough(
         _dispose_widget(tutorial)
 
 
-def main() -> int:
+def main(*, run_only: bool = False) -> int:
     application = QApplication.instance() or QApplication(sys.argv)
+    if not isinstance(application, QApplication):
+        raise RuntimeError("Screenshot capture requires a QApplication.")
 
     families = ensure_fonts()
     if not families:
@@ -335,6 +425,8 @@ def main() -> int:
         return 3
 
     OUT.mkdir(parents=True, exist_ok=True)
+    shots = [shot for shot in SHOTS if not run_only or shot[0] == 0]
+    tutorial_themes = () if run_only else TUTORIAL_THEMES
     build = ROOT / "build"
     build.mkdir(exist_ok=True)
     with TemporaryDirectory(prefix="gui-demo-", dir=build) as temporary:
@@ -383,7 +475,8 @@ def main() -> int:
             window._limit_spin.setValue(5)
             window._console.append_text(SAMPLE_LOG)
             window._console.flush()
-            for page, stem, theme in SHOTS:
+            _demo_metrics(window, "apply", {"scanned": 8, "skipped": 7, "failed": 1, "dry_runs": 2})
+            for page, stem, theme in shots:
                 window.resize(980, 680) if stem == "small" else window.resize(1340, 860)
                 window._run_settings.customize.setChecked(stem in SETTINGS_TABS)
                 window._run_settings.tabs.setCurrentIndex(SETTINGS_TABS.get(stem, 0))
@@ -397,8 +490,16 @@ def main() -> int:
                     scroll.verticalScrollBar().maximum() if stem.startswith("settings") else 0
                 )
                 application.processEvents()
-                _save_screenshot(window, OUT / f"gui-{stem}-{theme}.png")
-            for theme in TUTORIAL_THEMES:
+                _save_screenshot(
+                    window,
+                    OUT / f"gui-{stem}-{theme}.png",
+                    tooltip_target=(
+                        window._run_settings._fields["jobs.max_daily"]
+                        if stem == "settings"
+                        else None
+                    ),
+                )
+            for theme in tutorial_themes:
                 window._apply_theme(THEMES[theme])
                 tutorial = TutorialDialog(window, start_topic=CUSTOMIZE_TOPIC)
                 try:
@@ -408,19 +509,26 @@ def main() -> int:
                 finally:
                     _dispose_widget(tutorial)
             _capture_run_walkthrough(window, application, OUT / "gui-run-walkthrough.gif")
-            window._apply_theme(THEMES["deepseafoam"])
-            _capture_tutorial_walkthrough(window, application, OUT / "gui-tutorial-walkthrough.gif")
+            if not run_only:
+                window._apply_theme(THEMES["deepseafoam"])
+                _capture_tutorial_walkthrough(
+                    window, application, OUT / "gui-tutorial-walkthrough.gif"
+                )
             if window._runner.busy:
                 raise RuntimeError("A documentation capture must never start a command.")
         finally:
             window._settings.sync()
             _dispose_widget(window)
     print(
-        f"\nDone. {len(SHOTS) + len(TUTORIAL_THEMES)} screenshots and 2 GIFs "
+        f"\nDone. {len(shots) + len(tutorial_themes)} screenshots and {1 if run_only else 2} GIFs "
         f"in {OUT.relative_to(ROOT)}"
     )
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--run-only", action="store_true", help="Refresh only Run-page PNGs and GIF."
+    )
+    raise SystemExit(main(run_only=parser.parse_args().run_only))

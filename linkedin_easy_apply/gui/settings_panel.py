@@ -23,7 +23,146 @@ from PySide6.QtWidgets import (
 )
 
 from linkedin_easy_apply.config import AppConfig
-from linkedin_easy_apply.gui.widgets import muted
+from linkedin_easy_apply.gui.widgets import muted, tooltip
+
+_FIELD_HELP: dict[str, tuple[str, str]] = {
+    "jobs.max_per_company": (
+        "Cap confirmed submissions to one company across this database's history.",
+        "With 2 already submitted and a cap of 2, another job at that company is skipped.",
+    ),
+    "jobs.max_daily": (
+        "Cap confirmed submissions for the local calendar day, across runs.",
+        "20 allows up to 20 submissions today, including earlier runs in this database.",
+    ),
+    "jobs.max_search_pages": (
+        "Limit result pages visited for each enabled saved search.",
+        "4 visits at most four pages per search; discovery can stop sooner.",
+    ),
+    "jobs.search_page_size": (
+        "Set the increment used for LinkedIn search-result page offsets.",
+        "25 advances through start=0, 25, 50; it is not the total run target.",
+    ),
+    "jobs.pause_after": (
+        "Take a timed break after every N confirmed submissions; 0 disables it.",
+        "5 requests a break after submission 5, then 10, using Pause seconds.",
+    ),
+    "jobs.pause_seconds": (
+        "Choose the duration of each automatic submission break.",
+        "15 waits fifteen seconds when Pause every N triggers.",
+    ),
+    "scoring.threshold": (
+        "Set the minimum job score when score enforcement is enabled.",
+        "10 skips a score of 8 unless Ignore the minimum score is enabled.",
+    ),
+    "browser.engine": (
+        "Choose the browser used with a persistent automation profile.",
+        "edge uses installed Edge; chromium needs the optional browser download.",
+    ),
+    "browser.profile_path": (
+        "Use a dedicated browser profile to preserve your LinkedIn sign-in.",
+        ".browser-profile reuses its session; do not share it between running browsers.",
+    ),
+    "browser.headless": (
+        "Run the browser without a visible window.",
+        "Leave this off to sign in or inspect an unknown form manually.",
+    ),
+    "browser.slow_mo_ms": (
+        "Delay Playwright browser actions by this many milliseconds.",
+        "500 adds a half-second action delay, not a break between jobs.",
+    ),
+    "browser.default_timeout_ms": (
+        "Limit how long ordinary browser actions wait for a target.",
+        "30000 allows up to thirty seconds for a form field to become available.",
+    ),
+    "browser.navigation_timeout_ms": (
+        "Limit how long page navigation waits before timing out.",
+        "45000 allows up to forty-five seconds for navigation, not for the whole run.",
+    ),
+    "resume.directory": (
+        "Locate static resume files; relative paths use the workspace.",
+        "generated\\resume contains the PDFs referenced by saved resume mappings.",
+    ),
+    "resume.default": (
+        "Choose the fallback PDF when no static role mapping matches.",
+        "default.pdf is looked up inside the configured Resume folder.",
+    ),
+    "run.pause_on_unknown_question": (
+        "Pause for unresolved fields when interactive answering is also enabled.",
+        "Enable both controls to type an answer here or fill it in the browser.",
+    ),
+    "run.resume_review_pause": (
+        "Wait after logging the chosen resume before attempting the application.",
+        "3 gives you three seconds to read the pick; 0 disables this delay.",
+    ),
+    "screenshots.enabled": (
+        "Allow browser screenshot capture during automation.",
+        "Turn this off to stop new step and unknown-question captures.",
+    ),
+    "screenshots.each_step": (
+        "Store the per-step preference; the current workflow does not enforce it separately.",
+        "Use Capture screenshots to enable or disable actual step captures.",
+    ),
+    "screenshots.cleanup": (
+        "Delete unreferenced PNG screenshots after runs when screenshot capture is enabled.",
+        "Temporary images are removed; images referenced by application records are kept.",
+    ),
+    "outreach.mode": (
+        "Choose draft-only recruiter outreach or approval-before-send mode.",
+        "draft writes a report; send needs interactive approval or falls back to drafts.",
+    ),
+    "outreach.send_connection_notes": (
+        "Optionally send this run's pending connection notes after Apply or Reapply.",
+        "Enabled can open another browser and send real invitations after the run.",
+    ),
+    "outreach.connect_max_per_run": (
+        "Cap pending connection invitations selected for each pass.",
+        "5 processes at most five notes; Run target overrides this for Connect.",
+    ),
+    "resume.builder.enabled": (
+        "Enable per-job resume generation using the separately configured builder.",
+        "A matching job uses the builder; unmatched jobs or errors fall back to static PDFs.",
+    ),
+}
+
+_TAB_HELP: dict[str, tuple[str, str]] = {
+    "Search": (
+        "Choose saved searches or an exact-job batch for this run.",
+        "Uncheck a saved search to leave it out without editing the saved YAML.",
+    ),
+    "Limits": (
+        "Adjust caps, discovery depth, pauses and the score threshold for this run.",
+        "Lower Daily cap for a shorter day while keeping the saved configuration unchanged.",
+    ),
+    "Browser": (
+        "Adjust the browser profile, timing and static resume paths for this run.",
+        "Keep Headless off when you want to inspect forms in the browser.",
+    ),
+    "Behavior": (
+        "Adjust question pauses, screenshots, outreach and the optional resume builder.",
+        "Choose draft outreach to collect recruiter contacts without sending messages.",
+    ),
+}
+
+_CHOICE_HELP: dict[str, dict[str, tuple[str, str]]] = {
+    "browser.engine": {
+        "edge": ("Use the installed Microsoft Edge browser.", "Choose this for an Edge profile."),
+        "chrome": ("Use the installed Google Chrome browser.", "Choose this for a Chrome profile."),
+        "chromium": (
+            "Use Playwright's separately installed Chromium browser.",
+            "Run Install optional Chromium in Tools before using this engine.",
+        ),
+    },
+    "outreach.mode": {
+        "draft": (
+            "Collect recruiter outreach drafts without sending messages.",
+            "After a confirmed application, review contacts in the end-of-run report.",
+        ),
+        "send": (
+            "Ask for approval before sending available recruiter messages.",
+            "Approve a draft interactively; without interactive approval it stays draft-only.",
+        ),
+    },
+}
 
 
 class RunSettings(QWidget):
@@ -36,15 +175,22 @@ class RunSettings(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.customize = QCheckBox("Customize settings for this run")
         self.customize.setToolTip(
-            "The saved YAML stays unchanged. Start or Copy creates a private preset "
-            "in logs\\gui-runs, usable by the CLI."
+            tooltip(
+                "Enable changed-only overrides for this run; saved YAML stays unchanged.",
+                "Change Daily cap, then Start or Copy creates a private preset in logs\\gui-runs.",
+            )
         )
         customize_row = QHBoxLayout()
         customize_row.addWidget(self.customize, 1)
         self.help_button = QPushButton("?")
         self.help_button.setFixedWidth(32)
         self.help_button.setAccessibleName("Explain per-run settings")
-        self.help_button.setToolTip("Explain this checkbox in the guided tutorial")
+        self.help_button.setToolTip(
+            tooltip(
+                "Open the read-only tutorial at Customize this run.",
+                "Read how private presets work without starting a command or saving settings.",
+            )
+        )
         self.help_button.clicked.connect(self.help_requested)
         customize_row.addWidget(self.help_button)
         layout.addLayout(customize_row)
@@ -60,13 +206,29 @@ class RunSettings(QWidget):
 
         search = QWidget()
         search_layout = QVBoxLayout(search)
-        search_layout.addWidget(muted("Enabled saved searches"))
+        searches_label = muted("Enabled saved searches")
+        search_layout.addWidget(searches_label)
         self.searches = QListWidget()
+        self.searches.setToolTip(
+            tooltip(
+                "Choose which saved searches participate in discovery for this run.",
+                "Uncheck a search to skip it; Apply exact jobs or Search URL can override discovery.",
+            )
+        )
+        searches_label.setToolTip(self.searches.toolTip())
         self.searches.setMaximumHeight(125)
         self.searches.itemChanged.connect(self.changed)
         search_layout.addWidget(self.searches)
-        search_layout.addWidget(muted("Exact job URLs (Apply only, one per line)"))
+        urls_label = muted("Exact job URLs (Apply only, one per line)")
+        search_layout.addWidget(urls_label)
         self.job_urls = QPlainTextEdit()
+        self.job_urls.setToolTip(
+            tooltip(
+                "Apply to these exact job URLs instead of crawling saved searches.",
+                "Paste one jobs/view URL per line; a Run Search URL overrides this batch.",
+            )
+        )
+        urls_label.setToolTip(self.job_urls.toolTip())
         self.job_urls.setPlaceholderText("https://www.linkedin.com/jobs/view/1234567890/")
         self.job_urls.setMaximumHeight(90)
         self.job_urls.textChanged.connect(self.changed)
@@ -110,6 +272,8 @@ class RunSettings(QWidget):
         self._check(behavior, "Send connection notes after run", "outreach.send_connection_notes")
         self._number(behavior, "Connection cap", "outreach.connect_max_per_run", 1, 100000)
         self._check(behavior, "Dynamic resume builder", "resume.builder.enabled")
+        for index in range(self.tabs.count()):
+            self.tabs.setTabToolTip(index, tooltip(*_TAB_HELP[self.tabs.tabText(index)]))
         self.load(AppConfig())
 
     def _form_tab(self, label: str) -> QFormLayout:
@@ -123,6 +287,7 @@ class RunSettings(QWidget):
 
     def _add(self, form: QFormLayout, label: str, key: str, field: QWidget) -> None:
         self._fields[key] = field
+        field.setToolTip(tooltip(*_FIELD_HELP[key]))
         if isinstance(field, (QSpinBox, QDoubleSpinBox)):
             field.valueChanged.connect(self.changed)
         elif isinstance(field, QComboBox):
@@ -135,6 +300,7 @@ class RunSettings(QWidget):
             form.addRow(field)
         else:
             form.addRow(label, field)
+            form.labelForField(field).setToolTip(field.toolTip())
 
     def _number(self, form: QFormLayout, label: str, key: str, low: int, high: int) -> None:
         field = QSpinBox()
@@ -147,6 +313,10 @@ class RunSettings(QWidget):
     def _choice(self, form: QFormLayout, label: str, key: str, choices: list[str]) -> None:
         field = QComboBox()
         field.addItems(choices)
+        for index, choice in enumerate(choices):
+            field.setItemData(
+                index, tooltip(*_CHOICE_HELP[key][choice]), Qt.ItemDataRole.ToolTipRole
+            )
         self._add(form, label, key, field)
 
     def _check(self, form: QFormLayout, label: str, key: str) -> None:
@@ -172,7 +342,12 @@ class RunSettings(QWidget):
         self.searches.clear()
         for entry in self._searches:
             item = QListWidgetItem(entry["name"])
-            item.setToolTip(entry["url"])
+            item.setToolTip(
+                tooltip(
+                    "Include this saved search in discovery when checked.",
+                    f"Scan visits {entry['url']} when this search is enabled.",
+                )
+            )
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(
                 Qt.CheckState.Checked if entry["enabled"] else Qt.CheckState.Unchecked

@@ -1,0 +1,76 @@
+# Two-line hover help for desktop options
+Workstream-ID: lea-19
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/19
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed desktop controls and fictional offline fixtures
+Status: DONE
+Milestone: Explain every desktop field and toggle at the point of use
+Dependencies: lea-11, lea-14
+
+## Purpose
+Give each application-owned desktop field and toggle hover help containing
+one purpose line and one practical-example line. Include changing action/tool
+options, per-run settings, saved-search checkboxes, editor controls and tutorial
+navigation. Keep the existing layout, CLI behavior and persistence unchanged.
+
+## Tasks
+- [x] Inventory fields, toggles, labels and action-dependent semantics.
+- [x] Add consistent two-line native tooltips and useful label hover targets.
+- [x] Exercise coverage, changing options and real tooltip display offline.
+- [x] Review representative dark/light popups using fictional fixtures.
+- [x] Update directly affected guides and visual references.
+- [x] Independently verify the scoped issue, Project item and backlink.
+
+## Acceptance criteria
+- [x] Every application-owned input and toggle has a purpose and practical example.
+- [x] Form labels and saved-search entries expose the corresponding help.
+- [x] Changing actions/tools cannot leave misleading help on their fields.
+- [x] Hovering does not start commands, create presets, save files or edit settings.
+- [x] Native help remains readable in both existing themes and compact layouts.
+- [x] Existing console diagnostics, settings, prior work and releases are preserved.
+- [x] Offline evidence remains distinct from live qualification and human acceptance.
+
+## Completion evidence
+- A shared formatter supplies one purpose line and one Example line. Main
+  window controls, all 24 dotted settings controls, labels, tabs, dropdown
+  choices, saved searches, paths and tutorial navigation expose native help.
+  Target/action and tool-input explanations update with their selected meaning.
+- Five GUI suites passed 150 cases with native process exit zero. Scoped
+  Black/Ruff passed seven changed Python files; GUI mypy passed nine source
+  files. A tightened two-theme capture regression also passed with exit zero,
+  checking that fictional path conversion cannot overwrite meaningful help.
+- Actual native help events cover ordinary, internal, disabled and viewport
+  targets. Checks preserve options, unsaved text, configuration bytes, private
+  preset absence and an idle runner. Console diagnostic tooltips are retained.
+- Captured and directly inspected dark/light native popup crops at expanded
+  and compact sizes, plus the full expanded dark Limits still. Purpose and
+  example remain readable on separate lines without clipping. Captures use
+  owned offscreen widgets, temporary INI preferences and fictional workspaces;
+  no shared desktop or independently running user window is captured.
+- Refreshed the single affected README Limits PNG and eight directly affected
+  guides. All fifteen GUI assets remain valid and all twenty-four retained
+  README relative references resolve. Existing animations are unchanged.
+  Documentation distinguishes current-source help from released v0.2.1 and
+  accurately discloses the existing screenshot each-step flag limitation.
+- Immutable-baseline comparison preserves 33 unrelated public files, all
+  eighteen earlier tracking mappings, selected private size/mtime metadata,
+  native preference registry metadata, HEAD and an empty staged diff.
+  Private contents and preference values were not read for this comparison.
+- Initial independent reconciliation verified the existing issue's exact
+  managed content, one In Progress Project item and persistent backlink.
+  Final completion settlement belongs in the index/ledger, outside this
+  managed body, so its no-op rerun cannot create evidence churn.
+- This is local source implementation and sampled offscreen rendering, not
+  normal-desktop placement qualification, live automation, human aesthetic
+  acceptance or publication. No user process restart, package build, commit,
+  push, release replacement or tracking-service activation occurred.
+
+## Completion log
+- 2026-11-09: Started bounded two-line desktop hover help. Inspect actual
+  run-option semantics and preserve the already-open user window, private
+  inputs, prior console improvements and concise README curation.
+- 2026-11-09: Implemented native purpose/example help across application-owned
+  fields and changing options without modifying execution or persistence.
+- 2026-11-09: Completed the 150-case GUI integration, tightened two-theme
+  capture regression, direct popup review and affected documentation/media.
+  Preserved earlier work and settings; the distributed executable is unchanged.

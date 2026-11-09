@@ -1,0 +1,82 @@
+# Live desktop run metrics
+Workstream-ID: lea-20
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/20
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed execution paths and fictional offline fixtures
+Status: DONE
+Milestone: Show current-command outcomes while automation is running
+Dependencies: lea-11, lea-18, lea-19
+
+## Purpose
+Show readable, color-coded per-command counters beside the running console
+instead of requiring the final summary. Cover Apply, Scan, Reapply and Connect;
+distinguish confirmed applications, inspected jobs, skips, failures, actual
+hiring-team messages, drafts, dry-run outcomes and connection invitations.
+Keep existing automation decisions, prompts, saved configuration and history
+unchanged. Do not attach to or manipulate an independently running window.
+
+## Tasks
+- [x] Trace authoritative outcomes and define an explicit progress contract.
+- [x] Stream progress separately from human-readable log formatting.
+- [x] Add responsive themed counters, target progress and elapsed time.
+- [x] Preserve counters after completion/stop and reset only for a new command.
+- [x] Exercise producer-to-window updates and important negative cases offline.
+- [x] Update directly affected guides and fictional visual references.
+- [x] Independently verify the scoped issue, Project item and backlink.
+
+## Acceptance criteria
+- [x] Counters update before a long-running command finishes.
+- [x] All four run actions expose their appropriate current-command metrics.
+- [x] Attempts, dry runs, drafts and uncertain submissions never inflate sent totals.
+- [x] Clear log, theme changes and command-selector edits do not corrupt live totals.
+- [x] Compact layouts remain readable without squeezing out the run controls.
+- [x] Streaming prompts, input forwarding and existing log presentation are preserved.
+- [x] Tests use disposable state and do not manipulate the user's active instance.
+- [x] Existing work, tracking records, private settings and released binaries remain intact.
+- [x] Offline evidence is distinct from live qualification, human acceptance and publication.
+
+## Completion evidence
+Local implementation and bounded offline qualification are complete.
+Strict status-only snapshots connect authoritative engine outcomes to five
+responsive themed cards, target progress and elapsed time. Apply, Scan and
+Reapply show scanned/applied/skipped/failed/HR-sent totals; Connect shows
+profiles/invitations/already/skipped/failed. Drafts, completed dry runs,
+uncertainty and invitation outcomes remain separate from actual sends.
+
+The affected engine, child-process, five GUI suites and desktop integration
+passed 308 tests with native exit zero. Black/Ruff passed fifteen scoped
+Python files; mypy passed sixteen source files. Real-child fixtures verify
+updates before exit, input forwarding, finish/stop/reset and invalid-frame
+recovery. Font-aware geometry/help checks pass compact and expanded sizes in
+both themes. These tests are not live automation or installed-build qualification.
+
+Thirteen affected guides are synchronized without expanding the short README.
+Seven Run PNGs and the nine-frame, 17.8-second Run GIF use explicit fictional
+snapshots; no child or elapsed timer starts for media. Sampled offscreen
+inspection covers compact light and expanded dark layouts. Twenty-eight unrelated
+public fingerprints, nineteen previous durable mappings, selected private/native
+metadata, HEAD and the empty staged diff match the immutable baseline.
+
+The initial issue/Project/backlink was independently verified; completion
+settlement is a separate receipt outside this managed body. The source remains
+local and uncommitted. The existing released executable and user window are
+not rebuilt, replaced, inspected or restarted. A shared source checkout is not
+a frozen protected build. Human acceptance and new live qualification remain
+unclaimed. Existing application/outreach persistence and final-summary ordering
+are preserved: live observed outcomes can precede their durable recording.
+
+## Completion log
+- 2026-11-09: Completed typed telemetry, responsive counters and lifecycle
+  handling. Final integrated qualification passed 308 cases after correcting
+  a capture-fixture assertion that treated a stale Reapply-only option as
+  active during Connect. Earlier compact checks exposed missing headless
+  fonts and then genuine header clipping; registered real fonts and made
+  the caption responsive instead of weakening geometry assertions.
+- 2026-11-09: Refreshed directly affected guides and fictional Run media.
+  Preserved prior source work, selected private/native metadata and tracking.
+  No live browsing, application, outreach, invitation, release, commit, push
+  or user-process manipulation was performed.
+- 2026-11-09: Started bounded live desktop metrics. Preserve the existing
+  tooltip, console and README work; inspect actual execution outcomes before
+  choosing counters. Scope includes local source, focused checks, affected
+  documentation/media and reviewed issue/Project tracking, not publication.

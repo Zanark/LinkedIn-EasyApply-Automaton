@@ -53,6 +53,12 @@
     "lea-13": "13_PRIVATE_SETUP_HANDOFF.todo",
     "lea-14": "14_GUIDED_GUI_TUTORIAL.todo",
     "lea-15": "15_TUTORIAL_WINDOWS_RELEASE.todo",
-    "lea-16": "16_README_GUI_MEDIA.todo"
+    "lea-16": "16_README_GUI_MEDIA.todo",
+    "lea-17": "17_README_CURATION.todo",
+    "lea-18": "18_GUI_LOG_READABILITY.todo",
+    "lea-19": "19_GUI_OPTION_TOOLTIPS.todo",
+    "lea-20": "20_LIVE_RUN_METRICS.todo",
+    "lea-21": "21_FIXED_MAIN_TOOLBAR.todo",
+    "lea-22": "22_DESKTOP_POLISH_WINDOWS_RELEASE.todo"
   }
 }

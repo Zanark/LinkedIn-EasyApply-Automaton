@@ -242,6 +242,96 @@
       "number": 16,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/16",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG9WwI"
+    },
+    "lea-17": {
+      "baseline": {
+        "title": "[lea-17] Concise README and selected desktop media",
+        "managed": "98f07d1751cb2286fb950d1e4087b241184f70a5d9b01af77d9af2391800b7ec",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdfP9mw",
+      "number": 17,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/17",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhG_6GM"
+    },
+    "lea-18": {
+      "baseline": {
+        "title": "[lea-18] Compact and semantically colored desktop logs",
+        "managed": "4bff3612f8e8f7f6d056d3587a8b3ee8c898a274dc82358084c6065688aafe5e",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdshSaw",
+      "number": 18,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/18",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHNhNM"
+    },
+    "lea-19": {
+      "baseline": {
+        "title": "[lea-19] Two-line hover help for desktop options",
+        "managed": "9fea5c605ca398868b59090e3082a951b953a4ae9c82674bbd3585779a2931c7",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdvUmsA",
+      "number": 19,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/19",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHQahU"
+    },
+    "lea-20": {
+      "baseline": {
+        "title": "[lea-20] Live desktop run metrics",
+        "managed": "7d8556ebadd9040d8557f764e6734c5faf45bb9dab393cdae9ad68726276f97a",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdv_uEg",
+      "number": 20,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/20",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHRH2M"
+    },
+    "lea-21": {
+      "baseline": {
+        "title": "[lea-21] Keep the essential desktop toolbar visible",
+        "managed": "0b39a7aadad2049dedcce8a48b7bb1a63f20ebb82eec84348fa80fda92ca4444",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdw7VvA",
+      "number": 21,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/21",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHSBaw"
+    },
+    "lea-22": {
+      "baseline": {
+        "title": "[lea-22] Desktop polish Windows v0.2.2 release",
+        "managed": "ace9724d11533b0abc6871ddaa9a4e6bfae3614b50aafdea31508e01e99cd188",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdxTieA",
+      "number": 22,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/22",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHScTc"
     }
   }
 }

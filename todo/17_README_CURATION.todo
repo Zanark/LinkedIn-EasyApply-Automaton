@@ -1,0 +1,76 @@
+# Concise README and selected desktop media
+Workstream-ID: lea-17
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/17
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed public landing page and existing fictional desktop captures
+Status: DONE
+Milestone: Make the desktop walkthrough immediately visible and the landing page concise
+Dependencies: lea-16
+
+## Purpose
+Promote the existing run walkthrough GIF, retain two distinct readable screenshots
+and replace repeated landing-page explanations with links to maintained guides.
+Preserve setup prerequisites, account-risk warnings and existing-workspace guidance.
+This is local documentation curation, not another product build or source publication.
+
+## Tasks
+- [x] Review the current README and existing desktop captures.
+- [x] Select expanded run settings and the compact light-theme view.
+- [x] Put the run GIF first and shorten the README.
+- [x] Repair dependent guide references and retain original media files.
+- [x] Verify GitHub Markdown rendering, retained links and selected-image presentation.
+- [x] Verify preservation and scoped issue, Project and backlink reconciliation.
+
+## Acceptance criteria
+- [x] The run GIF is visible before setup and outside any collapsed disclosure.
+- [x] Only two purposeful static GUI screenshots remain in the README.
+- [x] Short captions and meaningful alt text explain fictional offline media.
+- [x] Setup, tutorial, configuration and engineering guides remain discoverable.
+- [x] Windows folder/browser requirements and manual sign-in remain explicit.
+- [x] Existing private setup, source media and unrelated work stay unchanged.
+- [x] Prior workstream identities and original qualification boundaries are preserved.
+- [x] Technical visual review is distinguished from human approval and publication.
+
+## Completion evidence
+Reviewed contact sheets covering thirteen desktop PNGs and representative run
+and tutorial animation states. Full-size comparison covered the compact light
+window, expanded Limits controls and light tutorial. Selected the first two:
+they show a readable main workflow and otherwise hidden customization controls.
+Plain editors, empty statistics and repeated theme/page variants are not
+front-page highlights. Original media hashes still match the prior publication.
+GitHub Markdown rendering succeeded for the original and curated sources:
+319 to 82 lines and 1,912 to 347 rendered text words, an 81.9 percent reduction.
+The word count includes the collapsed source-install instructions.
+The README has one prominent walkthrough and exactly two static GUI views.
+All twenty-four retained relative references and required heading fragments resolve.
+
+The first local desktop placement check found the inherited banner pushing
+the GIF to 433 pixels from the top. Reduced only the banner's display width;
+corrected placement is 373 pixels on desktop and 307 pixels on mobile.
+Isolated headless Edge checks passed in desktop light, mobile light and
+desktop dark layouts: all media loads, the GIF precedes setup outside the
+disclosure, source-install instructions open, and no page-wide overflow occurs.
+Directly inspected those three full-page snapshots. This uses GitHub-rendered
+Markdown with local presentation styling, not the actual published README.
+No unchanged GIF was recaptured or completely replayed during this curation.
+
+All fifteen GUI assets remain byte-exact and the banner SVG is unchanged.
+Native preferences and selected private-input size/mtime metadata match the
+separate curation baseline; this is not a complete private-content audit.
+HEAD and the unstaged index are unchanged, with only scoped documentation
+and tracking edits and the preserved unrelated untracked file.
+Initial independent reconciliation verified the scoped issue, one Project
+item, exact managed content and persistent backlink, while preserving all
+sixteen earlier local/remote records. Completion settlement receipts belong
+in the excluded index and ledger, not another managed-body update.
+Technical curation is complete locally; human approval and source publication
+are not claimed. No product, release, installed/native or live qualification
+was repeated.
+
+## Completion log
+- 2026-11-08: Started a separate bounded curation task using existing safe media.
+  Preserve the settled media-production workstream and immutable Windows release.
+  No recapture, dependency change, automation run, commit, push or release is requested.
+- 2026-11-08: Completed local curation and actual Markdown/layout/link checks.
+  Preserved source assets and selected original inputs; retain scoped settlement
+  separately. No fresh commit, push, release or human aesthetic acceptance.
