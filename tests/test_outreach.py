@@ -149,6 +149,7 @@ def _outreach(
     skip_if_messaged=True,
     on_outcome=None,
     dry_run=False,
+    progress=None,
 ) -> HiringTeamOutreach:
     def _record(**kwargs: Any) -> None:
         if records is not None:
@@ -164,6 +165,7 @@ def _outreach(
         skip_if_messaged=skip_if_messaged,
         on_outcome=on_outcome,
         dry_run=dry_run,
+        progress=progress,
     )
 
 
@@ -203,6 +205,44 @@ def test_live_outreach_metrics_distinguish_drafts_sends_and_unsent_outcomes(
     assert snapshots[-1].counts[metric] == 1
     assert snapshots[-1].counts["hr_sent"] == (1 if metric == "hr_sent" else 0)
     assert snapshots[-1].counts["connect_sent"] == 0
+
+
+@pytest.mark.parametrize(
+    ("mode", "decision", "dry_run", "sends"),
+    [
+        ("draft", None, False, False),
+        ("send", None, False, False),
+        ("send", "Hello", True, False),
+        ("send", "Hello", False, True),
+    ],
+)
+def test_outreach_activity_does_not_claim_send_while_drafting_or_waiting(
+    mode, decision, dry_run, sends
+):
+    events = []
+    reporter = ProgressReporter(activity_sink=events.append)
+
+    def approve(_name, _message):
+        assert events[-1].activity == "awaiting_input"
+        return decision
+
+    flow = _outreach(approve, mode=mode, dry_run=dry_run, progress=reporter)
+    page = _page([_card("Example recruiter")])
+    original_send = page.send.click
+
+    def send():
+        assert events[-1].activity == "sending_message"
+        original_send()
+
+    page.send.click = send
+    flow.reach_out(page, _CTX)
+    activities = [event.activity for event in events]
+    assert activities[0] == "finding_contacts"
+    assert "drafting_message" in activities
+    assert ("awaiting_input" in activities) == (mode == "send")
+    assert ("sending_message" in activities) == sends
+    assert bool(page.send.clicks) == sends
+    assert all(event.resume_name is None for event in events)
 
 
 # -- messenger ----------------------------------------------------------------
@@ -354,6 +394,35 @@ def test_outreach_drafts_includes_submitted_resume(tmp_path):
     assert draft["job_company"] == "Acme"
     assert draft["resume_name"] == "FullStack"
     assert draft["resume_path"].endswith("FullStack.pdf")
+
+
+@pytest.mark.parametrize("status", ["submitted", "failed", "dry_run", "unconfirmed"])
+@pytest.mark.parametrize("finished", [True, False])
+def test_outreach_drafts_expose_only_the_matching_submitted_application_date(
+    tmp_path, status, finished
+):
+    db = Database(tmp_path / "fictional-application-date.db")
+    db.initialize()
+    run = db.start_run("apply")
+    other_run = db.start_run("apply")
+    job = db.upsert_job({"url": "https://example.invalid/job", "title": "Fictional Engineer"}, run)
+    app = db.create_application(job, run, None, status)
+    other_app = db.create_application(job, other_run, None, "submitted")
+    with db.connect() as conn:
+        conn.execute(
+            "UPDATE applications SET started_at=?, finished_at=? WHERE id=?",
+            ("2026-10-25T09:00:00", "2026-10-25T09:05:00" if finished else None, app),
+        )
+        conn.execute(
+            "UPDATE applications SET finished_at=? WHERE id=?",
+            ("2026-11-09T15:00:00", other_app),
+        )
+    db.record_outreach(person_key="fictional-date", status="drafted", run_id=run, job_id=job)
+    [draft] = db.outreach_drafts(run)
+    expected = "2026-10-25T09:05:00" if finished else "2026-10-25T09:00:00"
+    assert draft["applied_at"] == (expected if status == "submitted" else None)
+    db.record_outreach(person_key="fictional-no-application", status="drafted", run_id=run)
+    assert db.outreach_drafts(run)[1]["applied_at"] is None
 
 
 def test_db_outreach_records_and_returns_note(tmp_path):

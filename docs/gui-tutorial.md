@@ -302,6 +302,19 @@ needs its own real Python environment.
 - **Copy command** copies a PowerShell command. It does not run it, but can
   create a validated private preset, just like Start.
 - **READY / RUNNING** and the status bar describe command state.
+- **Current action** (source and Windows v0.2.3) shows an icon above the operation
+  name beside the counters. Searching, building, filling, uploading, checking
+  submission and outreach have distinct labels; **Waiting for you** means
+  answer the current prompt. Completion/Stop/error describe the child command,
+  not whether an application succeeded. Tools without detailed stages show
+  their command lifecycle.
+- **Resume** (source and Windows v0.2.3) beside the run buttons shows the final
+  application choice, including a replacement tailored PDF. It moves below
+  the buttons when narrow. Hover a shortened name to inspect the full filename.
+  It changes only on a later explicit application choice, not a scan, missing
+  choice, tool, finished run, theme change or Clear log. Closing the window
+  forgets it. Selection alone confirms neither attachment nor submission.
+  Older v0.2.2 EXEs do not include these two indicators.
 - **Live counters** (source and v0.2.2) update above the console for this command:
   Scanned, Applied, Skipped, Failed and HR sent. Applied requires workflow
   confirmation; HR sent excludes drafts and invitations. Scan-only jobs and

@@ -1,0 +1,75 @@
+# Current GUI action and retained resume filename
+Workstream-ID: lea-29
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/29
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded native Run-page status improvement
+Status: DONE
+Milestone: See the current operation and last selected application resume
+Dependencies: lea-20
+
+## Purpose
+Show an operation-specific icon above the current action name beside live run
+counters. Show the last resume filename chosen for an application beside the
+run controls, retaining it until another application resume is selected.
+
+## Tasks
+- [x] Trace native layout, process lifecycle and authoritative selection boundaries.
+- [x] Preserve preceding work and establish an isolated fictional development lane.
+- [x] Add bounded opt-in activity updates without weakening existing metrics.
+- [x] Implement themed action and retained filename indicators with native help.
+- [x] Qualify process streaming, engine boundaries, lifecycle and narrow layouts.
+- [x] Update affected guides and reconcile only this workstream's tracking.
+
+## Acceptance criteria
+- [x] An icon above its action name identifies the actual current operation.
+- [x] Stages, interactive waits and process completion/stop/error remain distinct.
+- [x] The filename reflects the final static or tailored application choice.
+- [x] Other jobs, missing choices, scans, tools and run completion do not clear it.
+- [x] A later authoritative selection replaces it; long names remain inspectable.
+- [x] Malformed/partial status records do not corrupt logs, prompts or counters.
+- [x] Existing metrics clients and ordinary terminal output remain compatible.
+- [x] Both themes and compact/expanded layouts work with two-line hover help.
+- [x] Fictional qualification preserves private inputs and independent applications.
+- [x] One issue, one Project item and a persistent backlink represent this workstream.
+
+## Completion evidence
+The source Run page now shows a themed operation icon above its action name
+beside the counters. Actual browser, search, resume, form, upload, approval,
+submission checking, outreach, invitation and result boundaries emit finite
+activity updates. Command lifecycle and unavailable status remain distinct.
+
+Separate version-two metadata requires both GUI capability flags; unchanged
+version-one counters remain compatible. Invalid activity is reported without
+disabling counters. Only the final static-or-tailored application choice emits
+a basename. The native filename display retains it for this window's lifetime,
+supports middle elision and full escaped hover text, and does not imply upload
+or submission. Scans, tools, missing choices and finished runs never clear it.
+
+An isolated public-source candidate passes all 449 coupled GUI, process,
+protocol and workflow regressions. Black and Ruff pass all seventeen changed
+Python files; mypy passes seventy-three implementation files. Four actual
+fictional dark/light scenes at minimum and expanded sizes were reviewed.
+Compact counters, action, command controls, logs and prompt input fit without
+overlap; geometry assertions cover the actual minimum height and text sizes.
+
+Exactly twenty qualified source, test and guide files were promoted and
+byte-verified. Earlier additions in shared files, unaffected public payloads,
+selected private metadata, unchanged HEAD and empty staging are preserved.
+Only dashboard commands were observed before promotion; no independent
+application was controlled. Affected GUI, tutorial and lifecycle guides
+distinguish this source update from existing release screenshots and downloads.
+
+This is bounded local technical completion. The issue/Project settlement is
+independently recorded in the excluded index and development ledger.
+No live application, human acceptance, restart, commit, push or release is claimed.
+
+## Completion log
+- 2026-11-10: Started bounded native activity and last-selected-resume indicators.
+  Preserve earlier local work and independent applications. No restart, live
+  automation, commit, push or release is authorized by this workstream.
+- 2026-11-10: Completed and promoted the qualified source update. Initial tests
+  exposed compact layout clipping; an intermediate render then exposed overlap
+  despite passing narrower assertions. Reclaim vertical space and assert actual
+  child containment instead of enlarging the minimum window or weakening checks.
+  Final combined qualification passes 449 cases; both final theme/size pairs
+  are directly reviewed. Prepare only this workstream's completion settlement.

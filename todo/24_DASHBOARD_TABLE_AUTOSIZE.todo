@@ -1,0 +1,66 @@
+# Default dashboard column autosizing
+Workstream-ID: lea-24
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/24
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded dashboard table-layout improvement
+Status: DONE
+Milestone: Size dashboard columns to their content on first display
+Dependencies: lea-09
+
+## Purpose
+Use native content-based column sizing throughout the dashboard, including
+read-only tables and the resume-correction and outreach editors. Remove fixed
+review-column widths without changing data, approvals or outreach behavior.
+
+## Tasks
+- [x] Inventory dashboard table renderers and verify the installed sizing API.
+- [x] Apply content-sized layouts consistently and remove fixed column widths.
+- [x] Cover initial sizing and retained editing behavior with fictional fixtures.
+- [x] Check real-browser sizing, reruns and narrow-view horizontal scrolling.
+- [x] Update directly affected guides and reconcile scoped tracking.
+
+## Acceptance criteria
+- [x] Every dashboard table starts with native content-based column widths.
+- [x] Resume review no longer fixes Question or Why to preset widths.
+- [x] Checkbox types, links, disabled columns, row identity and save actions remain intact.
+- [x] Wide tables stay usable with horizontal scrolling and manual resizing.
+- [x] Qualification uses fictional data without driving independent user applications.
+- [x] Existing report controls, private inputs, older workstreams and releases are preserved.
+- [x] One repository issue, one correctly staged Project item and a durable backlink represent the workstream.
+
+## Completion evidence
+All twelve read-only dataframe and two editable table renderers now use native
+content-width layouts. The two fixed resume-review column presets are removed;
+types, disabled columns, keys, row identity and persistence actions are unchanged.
+
+Black, Ruff and mypy pass. All 35 affected cases pass, including four focused
+table cases and the existing Reports/focus regressions. Three sizing regressions
+reproduce the old stretch/preset behavior.
+
+A fresh headless browser verifies all fourteen actual table layouts, fourteen
+native sizing interactions, ordinary header resizing, reload defaults and
+horizontal scrolling at a narrow viewport without page overflow. Ordinary
+text editing, approval and save persist a fictional correction; an ordinary
+outreach checkbox/completion action removes only the fictional draft. Rendering
+and sizing alone leave database bytes unchanged. Both layout screenshots were
+reviewed.
+
+Native automatic sizing has a limit: in the tested Streamlit 1.60 grid, a long
+column initially measures 500 pixels while manual Autosize measures 565.
+Default content sizing is not a promise to expose arbitrarily long text.
+Eight directly affected guides explain native sizing, scrolling and adjustments.
+
+The existing local Reports repair, older workstream records, private setup and
+published release remain preserved. Declare bounded technical completion for
+scoped tracking reconciliation; retain final settlement separately from this
+managed description. No commit, push, new release, live-site qualification or
+human acceptance is claimed.
+
+## Completion log
+- 2026-11-10: Started the bounded default-autosizing improvement. Preserve the
+  completed local Reports repair, private setup and independently running
+  applications. Use a disposable loopback fixture and fresh browser context.
+- 2026-11-10: Completed native sizing, focused source gates, actual fictional
+  browser edit/save qualification and eight affected guides. Browser checks
+  respect the native automatic-width cap and await actual backend reruns;
+  frontend-only checkbox state is not evidence that a save has completed.

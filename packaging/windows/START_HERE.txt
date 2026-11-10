@@ -20,6 +20,10 @@ The Run page has live outcome counters, per-submit confirmation and an input
 field for CLI prompts. Drafts, dry runs and uncertain submissions are separate
 from confirmed applications or messages. Counts describe the current command,
 not lifetime history, and remain visible after it finishes or stops.
+The current-action tile shows an icon above the actual operation name.
+The Resume field keeps the last application filename until a later application
+selects another; selection alone confirms neither upload nor submission.
+Scans, tools and finished commands do not clear it. Closing the window does.
 The wrapped console uses colored severity/activity labels; Details restores
 original diagnostic prefixes. Hover controls for their purpose and an example.
 The essential toolbar cannot be hidden by a right-click visibility checkbox.

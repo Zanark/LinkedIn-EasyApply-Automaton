@@ -1,0 +1,68 @@
+# Updated GUI media and Windows v0.2.3 release
+Workstream-ID: lea-30
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/30
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed publication follow-through for completed dashboard and desktop work
+Status: IN_PROGRESS
+Milestone: Publish illustrated current source and a verified side-by-side Windows release
+Dependencies: lea-22, lea-23, lea-24, lea-25, lea-26, lea-27, lea-28, lea-29
+
+## Purpose
+Refresh the concise README and fictional GUI media to show the current action
+and retained resume filename. Publish all completed dashboard and desktop
+updates, qualify the matching Windows release and install it side by side.
+Preserve private setup, earlier releases and independently running applications.
+
+## Tasks
+- [x] Establish explicit publication authority, an unused version and exact preservation boundaries.
+- [x] Update existing fictional captures, screenshots and both walkthrough GIFs.
+- [x] Review the actual media and align README, current guides and versioned release notes.
+- [x] Review the complete public payload and run source release qualification.
+- [ ] Commit and push only reviewed files with verified repository-local attribution and required trailers.
+- [ ] Publish the matching version tag through the existing qualification-gated Windows pipeline.
+- [ ] Verify exact hosted source, qualification runs, notes and release assets.
+- [ ] Download and verify the actual assets and every extracted file before a new side-by-side installation.
+- [ ] Exercise the installed frozen GUI and CLI offline without using private runtime data.
+- [ ] Verify source-launcher, private-metadata and earlier-release preservation.
+- [ ] Reconcile the issue, Project status and persistent backlink.
+
+## Acceptance criteria
+- [x] Current fictional media visibly show operation icons/names and retained or replaced resume filenames.
+- [x] README remains concise, captioned and explicit about offline demonstrations and source-only dashboard extras.
+- [ ] Package metadata, tag, hosted run and downloaded manifest identify the same exact release source.
+- [ ] Published source includes all completed dashboard improvements; the Windows package includes the native desktop updates.
+- [ ] All source release gates and actual installed-asset offline checks pass.
+- [ ] No private configuration, applicant values, runtime data, continuity or unrelated work is published.
+- [ ] Existing launcher/configuration and earlier installations remain intact; no independent application is restarted.
+- [ ] Publication and offline qualification are not presented as live LinkedIn, clean-machine or human acceptance.
+- [ ] One exact repository issue, one correctly staged Project item and a durable backlink represent this workstream.
+
+## Completion evidence
+At the start, cloud and checkout heads agreed. The prior stable releases were
+v0.2.0, v0.2.1 and v0.2.2; the v0.2.3 tag and local version directory were absent.
+The exact forty-six accumulated public payloads, twenty-nine prior tracking
+records, selected private-file/native-preference metadata and six earlier
+installed public entrypoints are baselined. Both effective Git identities are
+the repository-local identity. The existing source launcher runs the checkout;
+it does not fetch or select a release.
+Thirteen PNGs and both looping GIFs are regenerated from fictional owned
+widgets. Five focused capture cases pass. Actual media review catches and
+corrects filename elision so the replacement resume is visibly different.
+The final run GIF has nine frames over 17.8 seconds; the tutorial has seven
+over 14.2 seconds. README links resolve, and existing counter anchors remain
+stable. Updated guides and versioned release notes preserve source-extra and
+offline-qualification boundaries.
+An isolated public-source candidate passes Ruff, Black over 119 files, mypy
+over 73 implementation files and all 868 tests. No private runtime inputs or
+unrelated plugin are copied into that lane.
+Publication and installed-asset checks remain separate pending gates.
+
+## Completion log
+- 2026-11-10: Reviewed refreshed fictional media and current public source.
+  Correct the actual walkthrough filename-fit failure and preserve the failed
+  presentation evidence. All four source release gates pass in isolation;
+  do not infer hosted publication or installed-asset qualification.
+- 2026-11-10: Started the explicitly authorized illustrated release follow-through.
+  Keep the existing source launcher and install a new portable version without
+  replacing private setup, previous releases or active applications. Preserve
+  all settled preceding workstreams and their original qualification gaps.

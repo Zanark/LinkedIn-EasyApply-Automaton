@@ -164,6 +164,8 @@ flowchart TD
 | **HiringTeamOutreach** | `forms/outreach.py` | Post-apply: detect "Meet the hiring team" cards; default `draft` mode reads name + profile URL and records a draft (no clicking), `send` mode drafts + (approved) messages on LinkedIn; dedupe + cap. | I/O |
 | **Database** | `database/db.py` | Repository over SQLite; intention-revealing methods. | I/O |
 | **Dashboard theme** | `.streamlit/config.toml` + `dashboard/theme.py` · `build_stylesheet` | Native DeepSeaFoam widget/chart/dataframe colors plus scoped CSS using the Qt-free GUI palettes; no database or automation changes. | pure |
+| **Dashboard tables** | `dashboard/app.py` · dataframe and editor renderers | Native content-width layouts and unspecified column widths let the grid auto-size headers/values without surplus stretching. Wide tables scroll; existing types, editing and persistence are unchanged. | UI |
+| **Dashboard reports** | `dashboard/app.py` · `_report_files`, `_report_browser`, `_reveal_directory` | List configured report folders, read only a selected file for preview/download, or request host-side folder opening. HTML previews use an opaque-origin iframe, not the dashboard DOM or a local-file link. | I/O |
 | **AIProvider / Factory** | `ai/*` | Optional advisor. Strategy chosen by a Factory; never submits. | I/O |
 
 The **dotted line between "pure core" and "imperative shell" is the most
@@ -196,7 +198,7 @@ sequenceDiagram
             O->>DB: upsert_job()
             O->>O: score + pre-apply gates
             alt gated or below threshold
-                O->>DB: record_score(); record_skip(reason)
+                O->>DB: record_score(); record_skip(reason, job, score, detail)
             else eligible
                 O->>O: select resume, (AI advise)
                 O->>W: apply(resume, cover)
@@ -217,6 +219,15 @@ an automatic duplicate.
 
 Read `Orchestrator.run` → `_execute` → `_process_job` in `orchestrator.py` — the
 sequence above is literally those three methods.
+
+Skipped events do not require an application row. Their nullable JSON context
+captures observed posting metadata, the available decision-time score/threshold
+and the explanation; initialization adds this column without rewriting older
+rows. Dashboard reason bars in both entry points filter the complete event
+history, preserving repeated encounters, with row details and full-list CSV.
+Captured posting details survive later job edits/deletion. Legacy rows disclose
+their current-job fallback and missing original score rather than substituting
+later observations. Inspecting the history does not revisit LinkedIn.
 
 ---
 

@@ -29,6 +29,7 @@ from loguru import logger
 from linkedin_easy_apply.answers.hiring_message import HiringTeamMessenger
 from linkedin_easy_apply.forms import selectors
 from linkedin_easy_apply.forms.dom_utils import first, first_group, is_visible, safe_text
+from linkedin_easy_apply.progress import ProgressReporter
 from linkedin_easy_apply.utils.text import normalize
 
 # Given (person_name, drafted_message) return the message to send (possibly
@@ -88,6 +89,7 @@ class HiringTeamOutreach:
         skip_if_messaged: bool = True,
         dry_run: bool = False,
         on_outcome: Callable[[str], None] | None = None,
+        progress: ProgressReporter | None = None,
     ) -> None:
         self._messenger = messenger
         # Sending needs an approval handler; without one we can only draft.
@@ -96,6 +98,7 @@ class HiringTeamOutreach:
         self._has_messaged = has_messaged
         self._record = record
         self._on_outcome = on_outcome
+        self._progress = progress or ProgressReporter()
         self._max_per_run = max_per_run
         self._skip_if_messaged = skip_if_messaged
         self._dry_run = dry_run
@@ -122,6 +125,7 @@ class HiringTeamOutreach:
             logger.info("Outreach: per-run cap ({}) reached - skipping", self._max_per_run)
             return 0
 
+        self._progress.activity("finding_contacts")
         if self._mode == SEND_MODE:
             # The post-apply upsell modal overlays the page and intercepts the
             # Message button. Give it time to appear, then clear it via "Not now"
@@ -151,6 +155,7 @@ class HiringTeamOutreach:
             if self._acted_this_run >= self._max_per_run:
                 logger.info("Outreach: per-run cap ({}) reached", self._max_per_run)
                 break
+            self._progress.activity("finding_contacts")
             recruiter = self._read_card(cards.nth(index))
             if recruiter is None:
                 continue
@@ -181,6 +186,7 @@ class HiringTeamOutreach:
             logger.info("Outreach: already messaged {} previously - skipping", recruiter.name)
             return False
 
+        self._progress.activity("drafting_message")
         message = self._messenger.render(
             {
                 **base_context,
@@ -240,11 +246,13 @@ class HiringTeamOutreach:
             "recruiter_name": recruiter.name,
             "recruiter_first_name": recruiter.first_name,
         }
+        self._progress.activity("drafting_message")
         message = self._messenger.render(context)
         note = self._messenger.render_note(context)
         logger.info("Outreach: drafted message for {} ({} chars)", recruiter.name, len(message))
 
         assert self._on_approve is not None  # send mode always has a handler
+        self._progress.activity("awaiting_input")
         decision = self._on_approve(recruiter.name, message)
         if decision is None:
             logger.info("Outreach: declined sending to {}", recruiter.name)
@@ -275,6 +283,7 @@ class HiringTeamOutreach:
             )
             return False
 
+        self._progress.activity("sending_message")
         ok = self._send(page, recruiter, message)
         self._record_safe(
             person_key=recruiter.key,

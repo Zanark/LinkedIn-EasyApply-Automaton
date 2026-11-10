@@ -214,6 +214,17 @@ QLabel[role="badge"] {{
     font-weight: 600;
 }}
 QLabel#MetricsCaption {{ color: {muted}; font-size: 11px; }}
+QFrame#RunActivity, QFrame#ResumeDisplay {{
+    background-color: {raised};
+    border: 1px solid {separator};
+    border-radius: 8px;
+}}
+QLabel#ActivityName {{ font-size: 13px; font-weight: 600; }}
+QLabel#ActivityName[tone="accent"], QLabel#ResumeName {{ color: {accent}; }}
+QLabel#ActivityName[tone="document"] {{ color: {document}; }}
+QLabel#ActivityName[tone="warning"] {{ color: {warning}; }}
+QLabel#ActivityName[tone="error"] {{ color: {error}; }}
+QLabel#ActivityName[tone="muted"] {{ color: {muted}; }}
 QFrame#RunMetrics {{
     background-color: {raised};
     border: 1px solid {separator};
@@ -222,6 +233,7 @@ QFrame#RunMetrics {{
 QWidget#MetricsRow {{ background: transparent; }}
 QFrame#RunMetric {{ background-color: {surface}; border-radius: 5px; }}
 QLabel#MetricValue {{ font-size: 22px; font-weight: 600; }}
+QFrame#RunMetrics[compact="true"] QLabel#MetricValue {{ font-size: 18px; }}
 QLabel#MetricValue[tone="accent"] {{ color: {accent}; }}
 QLabel#MetricValue[tone="document"] {{ color: {document}; }}
 QLabel#MetricValue[tone="warning"] {{ color: {warning}; }}

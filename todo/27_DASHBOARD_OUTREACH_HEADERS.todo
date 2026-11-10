@@ -1,0 +1,64 @@
+# Highlight overdue outreach contact headers
+Workstream-ID: lea-27
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/27
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded hiring-outreach presentation improvement
+Status: DONE
+Milestone: Identify overdue outreach before opening contact details
+Dependencies: lea-26
+
+## Purpose
+Highlight the collapsed contact title for the existing overdue outreach group.
+Reuse the priority table's strictly-over-seven-day, no-initial-outreach rule;
+do not invent an expiration date or change message delivery.
+
+## Tasks
+- [x] Inspect the existing priority classifier and native expander/theme APIs.
+- [x] Add scoped header emphasis and an explicit overdue text label.
+- [x] Preserve regular headers, native interaction and note/undo/completion actions.
+- [x] Qualify regression cases and actual fictional browser presentation.
+- [x] Update affected guidance and prepare scoped issue/Project/backlink completion.
+
+## Acceptance criteria
+- [x] Every priority contact has a visibly highlighted collapsed title.
+- [x] An explicit overdue label conveys urgency without relying on color alone.
+- [x] Recent, note-sent and unavailable-date contacts do not receive overdue emphasis.
+- [x] Marking/undoing a connection note removes/restores the intended header emphasis.
+- [x] Native expansion, focus and explicit completion remain functional.
+- [x] Dark/light themes and a narrow viewport retain readable, contained headers.
+- [x] Existing classification, editors, application history and prior work remain intact.
+- [x] Only fictional state is used; private inputs and independent applications are preserved.
+- [x] One repository issue, one issue-backed Project item and a durable backlink represent the workstream.
+
+## Completion evidence
+Local technical implementation is complete. Native collapsed titles reuse the
+priority contact IDs and show an explicit Overdue outreach label with red text,
+tint, border and left accent. Regular titles and message-body styling remain
+normal; neither a second age rule nor an expiration deadline is introduced.
+
+The regression fails against the old renderer. All seventeen focused dashboard
+cases, Black, Ruff and scoped mypy pass. Six actual fictional browser boundaries
+pass with six successful backend completions and no page errors or external
+requests. Actual native dark/light configuration, keyboard expansion/focus,
+contained 600-pixel titles, note/undo reclassification and per-contact completion
+with reload are verified. Application history is retained. The final dark/light
+and narrow contact-title captures were directly reviewed.
+
+Five affected guides explain the same membership and explicit priority cue.
+Both identified owned fixture processes/listeners are stopped and absent; only
+their inspected fictional database and empty root are removed. Prior local
+source, twenty-six tracking records and selected private metadata are preserved.
+Initial issue/Project/backlink read-back is independently verified. Final scoped
+completion settlement belongs in the excluded index/ledger, not a repeatedly
+rewritten managed description.
+
+This is local technical completion, not live qualification, human acceptance
+or publication. Existing sent-note decoration is unchanged and not newly
+qualified. No live outreach, independent runtime control, commit, push or release.
+
+## Completion log
+- 2026-11-10: Started bounded overdue contact-header emphasis. Keep the existing
+  age and initial-outreach semantics rather than implying an actual expiry.
+- 2026-11-10: Completed scoped native title emphasis, focused regression and
+  actual fictional dark/light/narrow qualification. Preserve explicit actions,
+  application history, earlier work and private setup; reconcile only lea-27.

@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS skips (
     run_id     INTEGER REFERENCES runs(id) ON DELETE SET NULL,
     job_id     INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
     reason     TEXT NOT NULL,                  -- below_threshold | ai_advised_against | scan_only | <gate> | ...
+    context    TEXT,                           -- JSON snapshot of job, score and decision detail
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_skips_reason ON skips(reason);

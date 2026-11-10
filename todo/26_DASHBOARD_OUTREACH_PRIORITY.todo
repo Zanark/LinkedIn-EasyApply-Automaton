@@ -1,0 +1,78 @@
+# Application dates and overdue outreach priority
+Workstream-ID: lea-26
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/26
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded hiring-outreach dashboard improvement
+Status: DONE
+Milestone: Make untouched older applications the first outreach priority
+Dependencies: lea-09
+
+## Purpose
+Show the recorded application date beside hiring-team outreach and separate
+contacts with applications more than seven days old and no outreach yet.
+Keep that priority table under the existing header with a red outline, without
+changing message delivery or treating drafted messages as sent.
+
+## Tasks
+- [x] Inspect application timestamps, outreach state and prior dirty work.
+- [x] Expose the matched submitted application's recorded date.
+- [x] Split untouched older contacts into an oldest-first red-outlined table.
+- [x] Preserve selection, completion, note marking and undo across both tables.
+- [x] Qualify fictional dates, boundary conditions and actual browser actions.
+- [x] Update affected guides and prepare the scoped completion reconciliation.
+
+## Acceptance criteria
+- [x] Both queues show a read-only application date, not the draft creation date.
+- [x] Only applications strictly older than seven days with no connection note sent enter priority.
+- [x] The priority table appears first under the same header with a red outline and explicit text.
+- [x] Recently applied, note-sent and unknown-date contacts remain in the regular queue.
+- [x] Matching application/run identity, time zones and oldest-first ordering are retained.
+- [x] Both tables retain native content sizing, profile links and correct completion targets.
+- [x] Marking or undoing a connection note reclassifies only the correct contact.
+- [x] Qualification uses fictional state and preserves private inputs and independent applications.
+- [x] Prior local work, older tracking records and existing releases remain unchanged.
+- [x] One repository issue, one issue-backed Project item and a durable backlink represent the workstream.
+
+## Completion evidence
+Both native tables show Applied on in local time from the matched submitted
+application, preferring completion time and using recorded start only when
+completion time is absent. Missing or invalid dates show Unknown and an explicit
+warning. Untouched applications strictly older than seven days appear oldest
+first in the red-outlined Prioritize first table under the existing heading.
+Connection notes already marked sent count as initial outreach, so those pending
+full messages stay in the regular queue. Classification refreshes on rerun.
+
+Black, Ruff and scoped mypy pass. All 106 focused dashboard, database, Reports
+and outreach cases pass without failures, errors or skips. The original source
+genuinely failed the new date/presentation regressions before implementation.
+Actual browser qualification passes seven boundaries and twenty successful
+backend completions using only six fictional contacts. Both tables retain
+read-only dates, native content sizing, profile links, contained scrolling at
+600 pixels, resizing and Autosize tested from fresh pages.
+
+A real-browser equal-sized queue swap exposed stale positional selections even
+after server-state clearing. Native widget keys now include ordered outreach
+IDs. Requalification confirms both old selections clear, Remove with no new
+selection deletes nothing, both-table completion deletes exactly the checked
+IDs, note/undo reclassifies the correct contact and results survive reload.
+Per-contact completion and regular-only/empty states retain application history.
+Both final layout screenshots were directly reviewed.
+
+Five affected guides document dates, classification and native identity.
+Only owned fixture processes were stopped; their inspected fictional databases
+were removed. Prior local improvements, private setup, independent applications
+and published releases are outside the fixture and remain preserved.
+This is bounded local technical completion, not live qualification, human
+acceptance, source publication or a new release. Scoped completion tracking is
+independently reconciled separately from this managed description.
+
+## Completion log
+- 2026-11-10: Completed matched application dates, red priority grouping,
+  ordered-ID editor identity and exact completion actions. Focused gates and
+  seven actual fictional browser boundaries pass; affected guides are updated.
+  Keep the earlier stale-selection failure as correction evidence. No live
+  outreach, user-runtime control, commit, push or release is included.
+- 2026-11-10: Started bounded application-date and overdue-outreach work.
+  Captured prior local source, twenty-five tracking identities and selected
+  private metadata. Preserve the running user's applications and existing
+  releases; no live action, commit, push or release is in scope.

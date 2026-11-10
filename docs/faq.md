@@ -52,7 +52,7 @@ missing skills, a recommendation); it can never submit an application.
 
 ### What do the desktop's live counters count?
 
-Source and Windows v0.2.2 show outcomes for the GUI's current command, not lifetime
+Source and Windows v0.2.2 or later show outcomes for the GUI's current command, not lifetime
 history. Applied needs workflow confirmation; HR sent excludes drafts and
 connection invitations. Scan-only jobs and completed dry runs also count as
 Skipped, as in the final summary. Dry runs, drafts and uncertain submissions
@@ -253,10 +253,21 @@ character count) — you open each profile, attach the note to your connection
 invite, and send the full message once they accept. It clicks nothing, so it runs
 fully unattended (even under `-y`). Nothing is
 collected during `--dry-run` (no submit means the cards never appear). The same
-contacts also appear on the `lea dashboard` as clickable profile links. Once
-you've actually sent one, tick its **Done** box (or press **Mark completed &
-remove** in its expander) and it's deleted from the database — message, note and
-all — so your outreach list only ever shows what's still outstanding.
+contacts also appear on the `lea dashboard` as clickable profile links beside
+**Applied on** dates. A red-outlined **Prioritize first** table puts applications
+**more than seven days old with no connection note sent** first, oldest first.
+The same contacts have red-highlighted collapsible titles labeled
+**Overdue outreach**, visible before opening their messages. This is a follow-up
+priority cue, not a confirmed expiration deadline.
+Mark **Connection note sent** after the invitation to move an overdue contact
+into regular follow-up; **Undo note sent** can restore its priority.
+Once you've sent the full message, tick **Message sent** and press **Remove
+message-sent outreach** (or use the expander's message-completion button).
+This deletes that outreach's message, note and all, not its application history.
+Dates come from the matching submitted application's recorded finish, falling
+back to its start when missing, and display in local time. Missing or invalid
+dates show **Unknown** with a warning; message creation is never used to guess
+when you applied.
 
 The connection note is kept within the 300-character limit automatically: if it
 would overflow it trims the tech-stack list first, then drops the portfolio link,
@@ -331,11 +342,19 @@ it had no answer for (and the applications they blocked, so you know what to add
 down **why every skipped job was skipped** in **Skipped** (reason breakdown plus
 trends by day / company / workplace / level), grades your submitted answers against
 your résumé in **Resume match** (with a deviation-over-time chart and one-click
-*sync* of approved corrections), and shows drafted hiring-team outreach as a table
-of clickable LinkedIn profile links with the résumé to attach, a copy-ready full
-message, and a short **≤300-char connection note** for the invitation — with a
-**Done** checkbox / **Mark completed & remove** button to delete outreach you've
-finished from the database.
+*sync* of approved corrections), and shows drafted hiring-team outreach with
+clickable LinkedIn profile links, application dates, the résumé to attach, a
+copy-ready full message and a short **≤300-char connection note** for the invite.
+Untouched applications older than seven days get a separate red-outlined
+priority table. **Message sent** / **Remove message-sent outreach** deletes only
+the completed outreach selected in either table.
+
+Table columns auto-size by default, including editable tables and KPI drill-downs.
+Scroll wide tables horizontally; manual header resizing and **Autosize** still work.
+
+For exported files, use the header's **Reports → In browser** to select, preview
+and download a report. **Open folder** requests a window on the dashboard host,
+not necessarily your browser's computer. See [report troubleshooting](troubleshooting.md#dashboard-report-buttons-appear-to-do-nothing).
 
 ### Can I click a KPI to see just that category?
 
@@ -357,10 +376,24 @@ recorded with a reason, so you can see the breakdown at a glance — e.g.
 (your filters), `company_limit` (per-company cap), `ai_advised_against`,
 `scan_only` (scan mode never applies), or a form-level `skipped` / `dry_run` /
 `aborted`. The tab shows a reason bar chart, skips over time, and breakdowns by
-company / workplace type / experience level, plus a full table (with a job link)
-and a legend explaining every reason. The headline **Skipped** metric on the
-Overview header is the all-time total across runs. (Per-reason detail is recorded
-going forward; older runs kept only the aggregate count.)
+company / workplace type / experience level, and a legend explaining every reason.
+Click a reason bar for **every matching recorded event**, newest first, including
+repeat encounters with the same job. **Skip reason** is the keyboard-friendly
+alternative; **Show all** or a chart double-click clears the filter. The Overview
+**Skipped** drilldown supports the same controls.
+
+The list includes available job title, company, location, link, timestamp,
+run/mode and decision explanation/scoring. Select a row for the saved description,
+posting metadata and available keyword weights; **Download this list (CSV)**
+exports all filtered rows, not just those visible on screen. Skipped jobs do not
+need an **Application details** record.
+
+Future skips save observed posting details and available decision-time scores.
+Legacy rows explicitly use the current saved job record, which may have changed;
+missing original scores are not replaced with later scores. Missing descriptions
+remain unavailable. Inspection does not visit LinkedIn or start applications.
+The headline **Skipped** metric is the all-time total across runs; older runs
+that kept only aggregate counts cannot be reconstructed into per-job events.
 
 ### The bot answered a question wrong — how do I correct it everywhere?
 
@@ -373,9 +406,10 @@ are shown as *not derivable* and never counted as a mistake.
 
 To fix them, either:
 
-- **Dashboard:** open the **🎯 Resume match** tab, tick *Approve* on the rows whose
-  recommended value is right (edit the value first if needed), and press *Sync
-  approved*; or
+- **Dashboard:** open **🎯 Resume match**, review or edit **Answer to save**, tick
+  **Save this answer** directly beside it, and press **Save selected answers**.
+  The previous answer and résumé reference are explicitly read-only; neither is
+  saved automatically. Select a row to enable the button; or
 - **CLI:** run `lea sync-answers` to preview the differences, then `lea
   sync-answers --apply` to store them.
 

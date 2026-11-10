@@ -78,6 +78,13 @@ The CLI (`cli/main.py`) prepares everything before any browser opens:
    For an opted-in GUI child, `ProgressReporter.start` also publishes the
    effective action, target and dry-run mode. Discovery/skip/outcome boundaries
    publish subsequent snapshots; ordinary terminal commands emit no frames.
+   Source and Windows v0.2.3 also opt into `ProgressReporter.activity` for finite
+   operation names and optional basename-only resume metadata. Both
+   `LEA_GUI_PROGRESS=1` and `LEA_GUI_ACTIVITY=1` are required for these separate
+   version-2 records; original version-1 counter clients remain compatible.
+   The GUI routes typed records separately from console text and retains its
+   last filename on null metadata. This is transient display state, not a
+   persisted result or confirmation of attachment/submission.
 8. Enter the browser context manager: **`with BrowserManager(...) as browser:`**
    launches Edge (or Chrome/Chromium) using your **persistent profile** so your
    existing LinkedIn login is reused — the tool never handles your password.
@@ -192,6 +199,11 @@ gate + score logic.)
 ---
 
 ## Phase 4 — Application attempt (`_attempt_application`)
+
+Only here, after the final static-or-tailored choice, the source GUI receives
+`Preparing application` with `resume.path.name`. An earlier static preview,
+scan, AI rejection or missing choice cannot replace the last displayed
+filename. Subsequent operation updates omit the filename and leave it intact.
 
 19. **`db.create_application(...)`** inserts an `applications` row with status
     `pending` and returns `application_id` (so a crash still leaves a record).

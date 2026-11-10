@@ -124,6 +124,7 @@ class RunMetrics(QFrame):
             )
         )
         layout = QVBoxLayout(self)
+        self._layout = layout
         layout.setContentsMargins(10, 6, 10, 6)
         layout.setSpacing(4)
         self._rows: list[QHBoxLayout] = []
@@ -313,8 +314,20 @@ class RunMetrics(QFrame):
         self._target.setVisible(bool(target))
         self._target.setValue(min(1000, done * 1000 // target) if target else 0)
         self._render_caption()
+        self._fit_height()
+
+    def _fit_height(self) -> None:
+        self.setMinimumHeight(
+            max(self.minimumSizeHint().height(), self._layout.totalHeightForWidth(self.width()))
+        )
 
     def _arrange(self) -> None:
+        compact = self.width() < 320
+        if compact != self.property("compact"):
+            self.setProperty("compact", compact)
+            for value in self._values:
+                value.style().unpolish(value)
+                value.style().polish(value)
         narrow = self.width() < 540
         if narrow == self._narrow:
             return
@@ -333,3 +346,4 @@ class RunMetrics(QFrame):
         super().resizeEvent(event)
         self._arrange()
         self._render_caption()
+        self._fit_height()

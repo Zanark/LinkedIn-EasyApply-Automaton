@@ -14,13 +14,18 @@ import pytest
 from linkedin_easy_apply.answers.resolver import AnswerResolution, AnswerResolver
 from linkedin_easy_apply.answers.store import AnswerStore
 from linkedin_easy_apply.forms.detector import FormFieldDetector
-from linkedin_easy_apply.forms.easy_apply import EasyApplyWorkflow, _resume_matches
+from linkedin_easy_apply.forms.easy_apply import (
+    EasyApplyWorkflow,
+    WorkflowSettings,
+    _resume_matches,
+)
 from linkedin_easy_apply.forms.field import FieldKind, FormField
 from linkedin_easy_apply.forms.filler import FormFiller, _infer_yes_no
 from linkedin_easy_apply.forms.matching import country_code_option, dial_code
 from linkedin_easy_apply.forms.values import current_value_of
 from linkedin_easy_apply.parser.categories import AnswerType, QuestionCategory
 from linkedin_easy_apply.parser.question_parser import QuestionParser
+from linkedin_easy_apply.progress import ProgressReporter
 
 _COUNTRY_OPTIONS = ["India (+91)", "United States (+1)", "United Kingdom (+44)"]
 
@@ -190,6 +195,38 @@ def test_unchanged_step_does_not_become_a_successful_transition():
     workflow._step_signature = MagicMock(return_value="unchanged")
 
     assert not workflow._wait_for_step_change("unchanged")
+
+
+@pytest.mark.parametrize("allow_prompt", [False, True])
+def test_activity_waits_only_during_an_actual_unknown_answer_callback(allow_prompt):
+    events = []
+    reporter = ProgressReporter(activity_sink=events.append)
+
+    def answer(_question, _shot):
+        assert events[-1].activity == "awaiting_input"
+        return "Fictional answer"
+
+    filler = MagicMock()
+    workflow = EasyApplyWorkflow(
+        MagicMock(),
+        QuestionParser(),
+        AnswerResolver(AnswerStore({})),
+        FormFieldDetector(),
+        filler,
+        MagicMock(enabled=False),
+        WorkflowSettings(pause_on_unknown=allow_prompt),
+        on_unknown=answer,
+        progress=reporter,
+    )
+    field = FormField("Fictional question", FieldKind.TEXT, control=_Text(""))
+    value, source = workflow._resolve_interactively(field)
+    assert (value, source) == (
+        ("Fictional answer", "manual") if allow_prompt else (None, "unanswered")
+    )
+    assert [event.activity for event in events] == (
+        ["awaiting_input", "filling_application"] if allow_prompt else []
+    )
+    assert filler.fill.called == allow_prompt
 
 
 def test_hidden_radio_choice_uses_its_label_and_verifies_the_checked_state():

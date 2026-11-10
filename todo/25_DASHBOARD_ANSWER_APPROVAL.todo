@@ -1,0 +1,66 @@
+# Unambiguous dashboard answer approval
+Workstream-ID: lea-25
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/25
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded dashboard correction-review improvement
+Status: DONE
+Milestone: Make the exact answer selected for saving obvious
+Dependencies: lea-09
+
+## Purpose
+Make the editable answer and its selection an obvious pair in the resume
+correction table. Distinguish the saved value from the previous answer and
+resume reference without changing question identity or override precedence.
+
+## Tasks
+- [x] Inspect the existing editor and capture the prior source/tracking baseline.
+- [x] Group the editable value with its selection and explain the read-only references.
+- [x] Cover the presentation and selected-value persistence with fictional checks.
+- [x] Verify ordinary editing, selection and saving in an isolated browser.
+- [x] Update affected guides and reconcile scoped tracking.
+
+## Acceptance criteria
+- [x] The editable answer is adjacent to its clearly named save checkbox.
+- [x] Reference answers are explicitly read-only and cannot be mistaken for the save target.
+- [x] Saving affects only selected nonempty values, retaining question identity and precedence.
+- [x] Native content sizing, manual resizing and narrow-view scrolling remain available.
+- [x] Qualification uses fictional data without driving independent user applications.
+- [x] Prior Reports/autosizing work, private inputs, older workstreams and releases are preserved.
+- [x] One repository issue, one correctly staged Project item and a durable backlink represent the workstream.
+
+## Completion evidence
+The table pairs Answer to save with Save this answer immediately after the
+question. Previous answer and Resume reference are explicitly read-only.
+Prominent instructions, two-line purpose/example help, a selected count and
+Save selected answers identify exactly which values will be saved. Internal
+editor keys, the original persistence loop and override precedence are retained.
+
+Black, Ruff and scoped mypy pass; all sixteen focused cases pass. New checks
+cover presentation, initial disabled saving, selected edited values, trimming,
+empty selected values and untouched unchecked rows. The presentation regression
+reproduced the previous column order before the change.
+
+Six isolated real-browser boundaries pass using ordinary native gestures:
+headers/read-only references, dragging/Autosize and reload defaults, contained
+narrow scrolling, editing versus explicit selection, final-value-only saving
+and persisted reload. Ten successful backend completions were observed; both
+layout screenshots were reviewed. The saved fictional value differs from both
+references; original history, an existing override and unrelated data remain.
+
+Five affected guides and the database method's obsolete button-label docstring
+are updated. Exact full-file reconstruction preserves all prior dashboard code
+outside the target renderer and all earlier table tests. Only the identified
+fictional fixture was stopped and its database removed. This is bounded local
+technical completion, not human acceptance, live qualification or publication.
+
+## Completion log
+- 2026-11-10: Started bounded correction-approval clarification. Preserve
+  existing source work, native autosizing, private setup and independent
+  applications. No commit, push, new release or live action is in scope.
+- 2026-11-10: Implemented the explicit saved-answer pair and read-only
+  comparisons. Qualified sixteen focused cases and six actual fictional
+  browser boundaries; retained native sizing and the original persistence.
+- 2026-11-10: Updated five guides, removed the obsolete docstring label,
+  proved preservation outside the renderer and cleaned only the owned
+  fixture. Declare technical DONE for scoped issue/Project reconciliation;
+  final independent settlement belongs in the excluded index and ledger.

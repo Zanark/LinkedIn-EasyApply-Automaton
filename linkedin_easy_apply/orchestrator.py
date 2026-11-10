@@ -147,6 +147,7 @@ class Orchestrator:
             max_per_run=cfg.max_per_run,
             skip_if_messaged=cfg.skip_if_messaged,
             on_outcome=self._progress.outreach,
+            progress=self._progress,
         )
 
     def _make_dynamic_resume(self) -> DynamicResumeBuilder | None:
@@ -233,6 +234,7 @@ class Orchestrator:
 
         proceed_connect = True
         try:
+            self._progress.activity("starting_browser")
             with BrowserManager(self._config.browser) as browser:
                 if reapply or direct:
                     self._execute_reapply(
@@ -242,6 +244,7 @@ class Orchestrator:
                     self._execute(
                         browser, searches, summary, mode, dry_run, interactive, max_per_run
                     )
+            self._progress.activity("saving_results")
             self._db.finish_run(
                 run_id,
                 "stopped" if summary.unconfirmed else "completed",
@@ -283,9 +286,11 @@ class Orchestrator:
             self._db.finish_run(run_id, "failed", scanned=summary.scanned, applied=summary.applied)
             raise
         finally:
+            self._progress.activity("finishing")
             self._emit_outreach_report(run_id, summary)
             if proceed_connect and mode != "scan":
                 self._maybe_send_connection_invites(run_id, summary)
+            self._progress.activity("finishing")
             self._cleanup_screenshots()
         return summary
 
@@ -327,6 +332,7 @@ class Orchestrator:
                     return
                 page_url = paginated_url(entry.url, page * page_size)
                 new_jobs = 0
+                self._progress.activity("searching_jobs")
                 for job in search_driver.iterate(page_url, entry.name, page_size):
                     key = job.external_id or job.url
                     if key and key in seen_ids:
@@ -355,6 +361,7 @@ class Orchestrator:
                             self._config.jobs.max_daily,
                         )
                         return
+                    self._progress.activity("searching_jobs")
                 if new_jobs == 0:
                     logger.info(
                         "Search '{}' exhausted after {} page(s) - no more new jobs",
@@ -434,9 +441,16 @@ class Orchestrator:
             if not url:
                 continue
             logger.info("=== Target job: {} ===", label)
+            self._progress.activity("opening_job")
             job = search_driver.open_job(url)
             if job is None:
-                self._note_skip(summary, "reapply_open_failed", target.get("job_id"))
+                self._note_skip(
+                    summary,
+                    "reapply_open_failed",
+                    target.get("job_id"),
+                    detail="Could not open the target job page during this targeted run.",
+                    job=target,
+                )
                 logger.warning("Skip (could not open) - {}", label)
                 continue
             summary.scanned += 1
@@ -457,11 +471,21 @@ class Orchestrator:
                 logger.info("Reached daily application limit ({})", self._config.jobs.max_daily)
                 return
 
-    def _note_skip(self, summary: RunSummary, reason: str, job_id: int | None = None) -> None:
-        """Count a skip on the summary *and* persist its per-job reason."""
+    def _note_skip(
+        self,
+        summary: RunSummary,
+        reason: str,
+        job_id: int | None = None,
+        *,
+        detail: str | None = None,
+        score: dict[str, Any] | None = None,
+        job: dict[str, Any] | None = None,
+    ) -> None:
+        """Count a skip and preserve the available decision-time evidence."""
+        self._progress.activity("skipping_job")
         summary.note_skip(reason)
         self._progress.increment({"skipped": 1})
-        self._db.record_skip(summary.run_id, job_id, reason)
+        self._db.record_skip(summary.run_id, job_id, reason, detail=detail, score=score, job=job)
 
     def _process_job(
         self,
@@ -472,12 +496,18 @@ class Orchestrator:
         settings: WorkflowSettings,
         max_per_run: int,
     ) -> None:
+        self._progress.activity("checking_job")
         job_id = self._db.upsert_job(job.to_db_dict(), summary.run_id)
         logger.info("Job: {}", job.summary)
 
         gate = self._pre_apply_checks(job)
         score = self._scoring.score(job.title or "", job.description)
         self._db.record_score(job_id, score.score, score.threshold, score.passed, score.breakdown)
+        score_context = {
+            "score": score.score,
+            "threshold": score.threshold,
+            "breakdown": score.breakdown,
+        }
         logger.info(
             "[SCORE {}] {}/{} | {}",
             "PASS" if score.passed else "FAIL",
@@ -495,14 +525,28 @@ class Orchestrator:
         )
 
         if gate is not None:
-            self._note_skip(summary, gate, job_id)
+            self._note_skip(
+                summary,
+                gate,
+                job_id,
+                detail=self._skip_detail(job, gate),
+                score=score_context,
+                job=job.to_db_dict(),
+            )
             logger.info("Skip ({}) - {}", gate, job.summary)
             return
         if not score.passed:
             # scoring.enforce (or --ignore-score) keeps the score as a recorded
             # signal without letting it gate the run.
             if self._config.scoring.enforce:
-                self._note_skip(summary, "below_threshold", job_id)
+                self._note_skip(
+                    summary,
+                    "below_threshold",
+                    job_id,
+                    detail=f"Match score {score.score} was below the enforced threshold {score.threshold}.",
+                    score=score_context,
+                    job=job.to_db_dict(),
+                )
                 logger.info("Skip (score {} < {}) - {}", score.score, score.threshold, job.summary)
                 return
             logger.info(
@@ -512,6 +556,7 @@ class Orchestrator:
                 job.summary,
             )
 
+        self._progress.activity("selecting_resume")
         resume = self._resume_selector.select(job.title or "", job.description)
         if resume is not None:
             logger.info(
@@ -528,24 +573,41 @@ class Orchestrator:
             )
         ai_advice = self._advise(job, job_id)
         if ai_advice is False:
-            self._note_skip(summary, "ai_advised_against", job_id)
+            self._note_skip(
+                summary,
+                "ai_advised_against",
+                job_id,
+                detail="The configured AI advisor explicitly recommended against applying.",
+                score=score_context,
+                job=job.to_db_dict(),
+            )
             return
 
         if mode == "scan":
-            self._note_skip(summary, "scan_only", job_id)
+            self._note_skip(
+                summary,
+                "scan_only",
+                job_id,
+                detail="Scan mode catalogued this job without starting an application.",
+                score=score_context,
+                job=job.to_db_dict(),
+            )
             return
 
         tailored = self._tailor_resume(job)
         if tailored is not None:
             resume = tailored
 
-        self._attempt_application(browser, job, job_id, resume, summary, settings)
+        self._attempt_application(
+            browser, job, job_id, resume, summary, settings, score=score_context
+        )
 
     def _pause_for_resume_review(self) -> None:
         """Hold briefly after logging the resume pick so it is readable in the
         live log before the application starts (configurable; 0 disables)."""
         seconds = self._config.run.resume_review_pause
         if seconds and seconds > 0:
+            self._progress.activity("reviewing_resume")
             logger.debug("Pausing {:.0f}s so the resume pick is readable", seconds)
             time.sleep(seconds)
 
@@ -558,6 +620,7 @@ class Orchestrator:
         """
         if self._dynamic_resume is None or not self._dynamic_resume.enabled:
             return None
+        self._progress.activity("building_resume")
         try:
             choice = self._dynamic_resume.tailor_for(job)
         except Exception as exc:  # pragma: no cover - defensive
@@ -601,10 +664,34 @@ class Orchestrator:
             return "company_limit"
         return None
 
+    def _skip_detail(self, job: Job, reason: str) -> str:
+        cfg = self._config.jobs
+        if reason == "excluded_keyword":
+            text = f"{(job.title or '').lower()} {(job.description or '').lower()}"
+            matched = [keyword for keyword in cfg.exclude_keywords if keyword in text]
+            return f"Title/description matched excluded keyword(s): {', '.join(matched)}."
+        if reason == "missing_include_keyword":
+            return f"No required keyword matched: {', '.join(cfg.include_keywords)}."
+        if reason == "company_limit":
+            return f"The per-company application cap ({cfg.max_per_company}) had been reached."
+        return {
+            "not_easy_apply": "No usable Easy Apply button was detected.",
+            "already_applied": (
+                "LinkedIn marked this job as already applied."
+                if job.already_applied
+                else "A prior submitted application exists for this job URL."
+            ),
+            "submission_unconfirmed": "A prior submission for this URL still needs verification.",
+            "duplicate_company_role": "A prior submission exists for this company and role.",
+            "not_whitelisted": "This company was not in the configured company whitelist.",
+            "blacklisted": "This company was in the configured company blacklist.",
+        }.get(reason, f"Pre-application check: {reason}.")
+
     def _advise(self, job: Job, job_id: int) -> bool | None:
         """Run the AI advisor. Returns ``False`` only when it advises against."""
         if self._ai.name == "none":
             return None
+        self._progress.activity("ai_review")
         try:
             result = self._ai.evaluate_job(
                 job_title=job.title or "", job_description=job.description or ""
@@ -662,7 +749,12 @@ class Orchestrator:
         resume: ResumeChoice | None,
         summary: RunSummary,
         settings: WorkflowSettings,
+        *,
+        score: dict[str, Any] | None = None,
     ) -> None:
+        self._progress.activity(
+            "preparing_application", resume_path=resume.path if resume is not None else None
+        )
         resume_id = self._db.register_resume(resume.name, str(resume.path)) if resume else None
         application_id = self._db.create_application(job_id, summary.run_id, resume_id, "pending")
 
@@ -682,6 +774,7 @@ class Orchestrator:
             ),
             answer_lookup=self._db.get_known_answer,
             override_lookup=self._db.get_answer_override,
+            progress=self._progress,
         )
 
         try:
@@ -716,7 +809,7 @@ class Orchestrator:
             if self._outreach is not None:
                 self._reach_out_to_hiring_team(browser, job, job_id, summary.run_id)
             workflow.dismiss_confirmation()
-        self._persist_result(application_id, result, summary, job, job_id)
+        self._persist_result(application_id, result, summary, job, job_id, score=score)
 
     def _reach_out_to_hiring_team(
         self, browser: BrowserManager, job: Job, job_id: int, run_id: int | None
@@ -760,6 +853,7 @@ class Orchestrator:
         if not drafts:
             logger.info("Outreach: no hiring-team contacts to report this run")
             return
+        self._progress.activity("writing_report")
         report = render_outreach_report(drafts, run_id=run_id)
         report_dir = Path(self._config.outreach.report_dir)
         ensure_dir(report_dir)
@@ -809,8 +903,16 @@ class Orchestrator:
         )
 
     def _persist_result(
-        self, application_id: int, result: ApplyResult, summary: RunSummary, job: Job, job_id: int
+        self,
+        application_id: int,
+        result: ApplyResult,
+        summary: RunSummary,
+        job: Job,
+        job_id: int,
+        *,
+        score: dict[str, Any] | None = None,
     ) -> None:
+        self._progress.activity("saving_results")
         self._db.update_application(
             application_id,
             status=result.status.value,
@@ -845,7 +947,14 @@ class Orchestrator:
                 # budgeting purposes, so --limit bounds a dry run too.
                 summary.dry_runs += 1
                 self._progress.increment({"dry_runs": 1})
-            self._note_skip(summary, result.status.value, job_id)
+            self._note_skip(
+                summary,
+                result.status.value,
+                job_id,
+                detail=result.reason,
+                score=score,
+                job=job.to_db_dict(),
+            )
 
     def _record_answers(self, application_id: int, answers: list[AnsweredQuestion]) -> None:
         for answer in answers:
@@ -893,6 +1002,7 @@ class Orchestrator:
             )
 
     def _maybe_cover_letter(self, job: Job) -> RenderedCoverLetter | None:
+        self._progress.activity("generating_cover_letter")
         try:
             context = {
                 "company": job.company or "your company",
@@ -920,6 +1030,7 @@ class Orchestrator:
     def _maybe_pause(self, summary: RunSummary) -> None:
         pause_after = self._config.jobs.pause_after
         if pause_after and summary.applied % pause_after == 0:
+            self._progress.activity("pausing")
             logger.info(
                 "Pausing {:.0f}s after {} applications",
                 self._config.jobs.pause_seconds,

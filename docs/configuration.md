@@ -31,7 +31,7 @@ The checkbox starts unchecked: its tabs are hidden and apply no overrides.
 Checking alone does not save or start anything. A separate Dry run change can
 still require a preset. Use **?** or **Tutorial / F1** in the
 GUI for the [full control-by-control tutorial](gui-tutorial.md).
-The source GUI and Windows v0.2.2 give fields, toggles, labels, tabs and choices
+The source GUI and Windows v0.2.2 or later give fields, toggles, labels, tabs and choices
 two-line hover help: purpose, then a practical **Example:**. Hovering creates
 no overrides or files. Reopen the updated GUI to load it; older v0.2.1 EXEs
 remain unchanged.
@@ -72,6 +72,41 @@ The `[dashboard]` extra requires **Streamlit 1.60 or newer**. Launch the dashboa
 from the repository root so Streamlit reads the project theme, and restart an
 already-running dashboard once after adding the theme file. Application config,
 answers and database paths are unchanged.
+
+Every dashboard table auto-sizes columns to their content, including the review
+and outreach editors. This needs no YAML setting. Wide tables scroll horizontally;
+very long values remain subject to Streamlit's native sizing limits. Drag a header
+edge or choose its **Autosize** menu item to adjust the layout without editing data.
+
+**Skipped** and the Overview **Skipped** drilldown need no extra configuration.
+Click a reason bar or use **Skip reason** to inspect all matching recorded events,
+including repeat encounters. **Show all** or a chart double-click clears the
+filter; **Download this list (CSV)** exports the complete current list. Select a
+row for saved posting details and available decision-time scoring. New skips
+retain this context; legacy rows explicitly use current saved job metadata, with
+no score guessed from later runs. Initialization adds the nullable context column
+to existing databases; dashboard inspection itself is read-only and does not
+revisit LinkedIn.
+
+Outreach's read-only **Applied on** uses the matching submitted application's
+finish time (recorded start if no finish exists), shown in the dashboard host's
+local time. Applications **more than seven days old with no connection note
+sent** appear oldest-first in a red-outlined **Prioritize first** table under
+the same heading. Note-sent follow-ups stay in the regular table; unknown or
+invalid dates show **Unknown** with a warning and are not prioritized by age.
+The same priority contacts have red-highlighted collapsible titles labeled
+**Overdue outreach**; this does not assert an expiration deadline.
+Marking/undoing a note refreshes the grouping. The seven-day rule needs no YAML
+setting, and merely displaying a priority never sends anything.
+
+**Reports → In browser** previews and downloads files without browser-blocked
+`file://` links. Analysis uses `reports` under the project root inferred from the
+active config's parent `configs` directory. A relative `outreach.report_dir`
+uses that same root; an absolute path is preserved. Only supported files directly
+inside the selected folder are listed, not subfolders or symbolic links. HTML,
+Markdown and UTF-8 TXT/CSV/JSON preview in the dashboard; PDF/XLSX are download-only.
+**Open folder** requests a file-browser window on the dashboard host. It cannot
+confirm that the window appeared or open a remote browser computer's folder.
 
 ## Environment-variable expansion
 
@@ -266,9 +301,15 @@ derivable* and never counted as a deviation.
 Two front-ends, one effect:
 
 - the dashboard's **🎯 Resume match** tab (metrics, a deviation-over-time chart, a
-  differences-by-category bar, and an editable *approve → Sync* table); and
+  differences-by-category bar, and an editable correction table); and
 - the **`lea sync-answers`** CLI (`--apply` to store, `--list` to review, `-y` to
   skip the prompt).
+
+In the dashboard, edit **Answer to save**, tick the adjacent **Save this answer**
+checkbox, then press **Save selected answers**. Only that editable value is
+saved. **Previous answer (read-only)** and **Résumé reference (read-only)** are
+comparisons, not alternative approval targets. The button stays disabled until
+a row is selected; unselected rows are left alone.
 
 Approved values are stored as **overrides** in the `answer_overrides` table and
 take top priority in the answer-resolution order at fill time:

@@ -1,0 +1,82 @@
+# Drill into skipped jobs by reason
+Workstream-ID: lea-28
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/28
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded skip-history inspection improvement
+Status: DONE
+Milestone: Inspect every job counted by a skip-reason bar
+Dependencies: lea-09
+
+## Purpose
+Make skip-reason bars open their complete matching event list in both dashboard
+entry points. Show useful job identity and recorded decision context without
+requiring an application record or revisiting LinkedIn.
+
+## Tasks
+- [x] Trace chart rendering, skip persistence, scoring and existing metadata.
+- [x] Preserve preceding local work, tracking records and private runtime boundaries.
+- [x] Add scoped bar selection, an accessible reason filter and complete matching lists.
+- [x] Capture immutable job metadata, available decision-time scores and skip explanations.
+- [x] Qualify migration, legacy/missing data, repeated events and real browser interaction.
+- [x] Update affected guides and prepare only this workstream's completion projection.
+
+## Acceptance criteria
+- [x] Clicking a reason lists every corresponding recorded skip, newest first.
+- [x] Bar counts and list membership agree beyond the former 5,000-event cutoff.
+- [x] Repeated job skips remain distinct events, with timestamps and run identity.
+- [x] Basic job information, links and available saved descriptions are inspectable.
+- [x] Future decisions retain captured metadata and available scores/explanations.
+- [x] Existing databases migrate additively; legacy or unavailable details are identified honestly.
+- [x] Both skip-chart entry points work without stale selections or fixed column widths.
+- [x] Dashboard inspection is read-only and does not create applications or browse LinkedIn.
+- [x] Fictional fixtures preserve prior work, private inputs and independent applications.
+- [x] One repository issue, one issue-backed Project item and a durable backlink represent the workstream.
+
+## Completion evidence
+Both dashboard entry points expose complete newest-first event lists through
+selectable bars, a reason picker and Show all. Row checkboxes reveal recorded
+posting details, decision explanations, available original scores and literal
+descriptions; CSV downloads follow the selected reason. Counts retain repeated
+events rather than silently deduplicating jobs.
+
+An additive nullable context column preserves future observed posting metadata
+and available decision-time evidence without requiring an application record.
+Failed targets retain their available URL/title and form skips retain the
+actual result reason. Legacy joins are labeled as current metadata; absent
+historical fields stay unknown. Aggregate-only history cannot be reconstructed.
+
+The initial focused batch passed 107 cases. After browser testing exposed
+truthy missing-value inference, two failing-before-fix regressions were added
+and all 22 dashboard cases passed with the object-dtype fix. Scoped Black,
+Ruff and mypy passed. These are separate observed batches, not a claim that
+109 combined cases were rerun after the final change.
+
+Actual fictional browser qualification passed ten boundaries and 21 successful
+backend completions across 5,006 events. A selected reason exported all 5,003
+matching rows. Filtering, clearing, reselection, repeated captured decisions,
+legacy/orphan/unknown records, both entry points and contained 430-pixel
+scrolling were exercised. Selected/narrow captures were inspected. Fictional
+database bytes stayed identical; no application, page error or external
+request occurred.
+
+Six affected guides are updated without expanding the short README. Bounded
+source comparison preserves 114 original definitions outside the required
+edits, ten unaffected prior public fingerprints, all 27 preceding workstream
+sources/mappings, selected private metadata, unchanged HEAD and empty staging.
+Both exact owned fixture processes are absent; only the inspected fictional
+database and empty fixture directory were removed.
+
+This is bounded local technical completion. Scoped tracking settlement is
+recorded separately in the excluded index/ledger. Independent user applications
+were not controlled. Live LinkedIn qualification, human acceptance and
+source/release publication are not claimed or newly authorized.
+
+## Completion log
+- 2026-11-10: Started bounded reason-to-job drilldown and future skip-context
+  capture. Use isolated fictional state; preserve earlier work and runtime
+  ownership. No live automation, commit, push or release is authorized.
+- 2026-11-10: Completed and technically qualified the bounded drilldown,
+  immutable future context, honest legacy presentation and affected guides.
+  Corrected the browser-discovered missing-value bug and removed only owned
+  fictional runtime state. Prepare scoped completion without claiming live
+  qualification, human acceptance or source publication.

@@ -55,7 +55,7 @@ from linkedin_easy_apply.gui.main_window import _APP, _ORG, MainWindow  # noqa: 
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
 from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog  # noqa: E402
 from linkedin_easy_apply.gui.widgets import PathRow  # noqa: E402
-from linkedin_easy_apply.progress import Metric, ProgressReporter, RunAction  # noqa: E402
+from linkedin_easy_apply.progress import Activity, Metric, ProgressReporter, RunAction  # noqa: E402
 
 OUT = ROOT / "docs" / "images"
 DEMO_ROOT = Path(r"C:\EasyApplyDemo")
@@ -275,10 +275,19 @@ def _select_action(window: MainWindow, action: str) -> None:
     window._action_box.setCurrentText(label)
 
 
-def _demo_metrics(window: MainWindow, action: RunAction, counts: Mapping[Metric, int]) -> None:
+def _demo_metrics(
+    window: MainWindow,
+    action: RunAction,
+    counts: Mapping[Metric, int],
+    *,
+    activity: Activity | None = None,
+    resume_name: str | None = None,
+) -> None:
     """Render explicitly fictional outcomes without starting a child or timer."""
     window._metrics.prepare(action)
-    reporter = ProgressReporter(window._metrics.update_progress)
+    reporter = ProgressReporter(
+        window._metrics.update_progress, activity_sink=window._runner.activity.emit
+    )
     reporter.start(
         action,
         run_id=11 if action != "connect" else None,
@@ -293,12 +302,21 @@ def _demo_metrics(window: MainWindow, action: RunAction, counts: Mapping[Metric,
             "connecting" if action == "connect" else "reviewing" if action == "scan" else "applying"
         ),
     )
+    reporter.activity(
+        activity
+        or (
+            "connecting"
+            if action == "connect"
+            else "searching_jobs" if action == "scan" else "filling_application"
+        ),
+        resume_path=Path(resume_name) if resume_name is not None else None,
+    )
     window._metrics.finish("Offline demo")
 
 
 def _capture_run_walkthrough(window: MainWindow, application: QApplication, target: Path) -> None:
-    window.resize(1200, 860)
-    window._run_splitter.setSizes([470, 510])
+    window.resize(1340, 860)
+    window._run_splitter.setSizes([330, 750])
     window._nav_buttons[0].click()
     window._apply_theme(THEMES["deepseafoam"])
     window._limit_spin.setValue(5)
@@ -323,7 +341,12 @@ def _capture_run_walkthrough(window: MainWindow, application: QApplication, targ
     _demo_metrics(window, "scan", {"scanned": 3, "skipped": 3})
     capture("1. Scan discovers and scores; it never applies")
     _select_action(window, "apply")
-    _demo_metrics(window, "apply", {"scanned": 4, "skipped": 4, "dry_runs": 1})
+    _demo_metrics(
+        window,
+        "apply",
+        {"scanned": 4, "skipped": 4, "dry_runs": 1},
+        resume_name="Example_Backend_Resume.pdf",
+    )
     window._verbose.click()
     capture("2. Choose Apply; keep Dry run and review the command")
     window._run_settings.customize.click()
@@ -334,12 +357,21 @@ def _capture_run_walkthrough(window: MainWindow, application: QApplication, targ
     if not isinstance(daily_cap, QSpinBox):
         raise TypeError("The daily cap must be a numeric control.")
     daily_cap.setValue(15)
-    _demo_metrics(window, "apply", {"scanned": 8, "skipped": 7, "failed": 1, "dry_runs": 2})
-    capture("4. Change a cap; saved YAML is not rewritten", expanded=True)
+    _demo_metrics(
+        window,
+        "apply",
+        {"scanned": 8, "skipped": 7, "failed": 1, "dry_runs": 2},
+        activity="awaiting_input",
+    )
+    capture("4. Waiting for you: the action icon identifies an input pause", expanded=True)
     window._run_settings.tabs.setCurrentIndex(2)
-    capture("5. Browser, profile, timing and resume options", expanded=True)
+    ProgressReporter(activity_sink=window._runner.activity.emit).activity(
+        "uploading_document", resume_path=Path("Example_Backend_Tailored.pdf")
+    )
+    capture("5. A new application resume replaces the displayed filename", expanded=True)
     window._run_settings.tabs.setCurrentIndex(3)
-    capture("6. Prompts, screenshots, outreach and builder options", expanded=True)
+    ProgressReporter(activity_sink=window._runner.activity.emit).activity("reviewing_application")
+    capture("6. Later actions keep the last selected resume visible", expanded=True)
     _select_action(window, "reapply")
     window._list_only.setChecked(True)
     window._metrics.prepare(None)
@@ -475,7 +507,13 @@ def main(*, run_only: bool = False) -> int:
             window._limit_spin.setValue(5)
             window._console.append_text(SAMPLE_LOG)
             window._console.flush()
-            _demo_metrics(window, "apply", {"scanned": 8, "skipped": 7, "failed": 1, "dry_runs": 2})
+            _demo_metrics(
+                window,
+                "apply",
+                {"scanned": 8, "skipped": 7, "failed": 1, "dry_runs": 2},
+                activity="awaiting_input",
+                resume_name="Example_Backend_Resume.pdf",
+            )
             for page, stem, theme in shots:
                 window.resize(980, 680) if stem == "small" else window.resize(1340, 860)
                 window._run_settings.customize.setChecked(stem in SETTINGS_TABS)

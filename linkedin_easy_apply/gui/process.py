@@ -13,7 +13,9 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Signal
 
 from linkedin_easy_apply.progress import (
+    ACTIVITY_ENV,
     PROGRESS_ENV,
+    ActivitySnapshot,
     ProgressError,
     ProgressSnapshot,
     ProgressStream,
@@ -36,6 +38,7 @@ def child_environment() -> QProcessEnvironment:
     environment.insert("NO_COLOR", "1")
     environment.insert("TERM", "dumb")
     environment.insert(PROGRESS_ENV, "1")
+    environment.insert(ACTIVITY_ENV, "1")
     return environment
 
 
@@ -56,6 +59,7 @@ class CommandRunner(QObject):
     started_command = Signal(str)  # the full command line
     output = Signal(str)  # one chunk of combined stdout/stderr
     progress = Signal(object)
+    activity = Signal(object)
     progress_error = Signal(str)
     finished = Signal(int, str)  # exit code, human-readable status
 
@@ -125,6 +129,8 @@ class CommandRunner(QObject):
         for record in self._progress_stream.feed(text):
             if isinstance(record, ProgressSnapshot):
                 self.progress.emit(record)
+            elif isinstance(record, ActivitySnapshot):
+                self.activity.emit(record)
             elif isinstance(record, ProgressError):
                 self.progress_error.emit(record.message)
             else:

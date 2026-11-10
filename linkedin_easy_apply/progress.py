@@ -1,4 +1,4 @@
-"""Private-data-free, GUI-only progress snapshots on the child process stream."""
+"""GUI-only counters and separately opted-in transient activity records."""
 
 from __future__ import annotations
 
@@ -6,12 +6,15 @@ import os
 import sys
 from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated, Literal
+from unicodedata import category
 
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 
 PROGRESS_ENV = "LEA_GUI_PROGRESS"
+ACTIVITY_ENV = "LEA_GUI_ACTIVITY"
 FRAME_START = "\x1eLEA_METRICS:"
 FRAME_END = "\x1f"
 MAX_FRAME = 16_384
@@ -58,6 +61,37 @@ METRICS: tuple[Metric, ...] = (
 )
 RunAction = Literal["apply", "scan", "reapply", "connect"]
 RunPhase = Literal["starting", "reviewing", "applying", "outreach", "connecting"]
+Activity = Literal[
+    "starting_browser",
+    "searching_jobs",
+    "opening_job",
+    "checking_job",
+    "skipping_job",
+    "selecting_resume",
+    "reviewing_resume",
+    "ai_review",
+    "building_resume",
+    "preparing_application",
+    "generating_cover_letter",
+    "opening_application",
+    "filling_application",
+    "selecting_attachment",
+    "uploading_document",
+    "reviewing_application",
+    "awaiting_input",
+    "submitting_application",
+    "verifying_submission",
+    "discarding_application",
+    "finding_contacts",
+    "drafting_message",
+    "sending_message",
+    "loading_connections",
+    "connecting",
+    "saving_results",
+    "writing_report",
+    "pausing",
+    "finishing",
+]
 Count = Annotated[int, Field(strict=True, ge=0)]
 
 
@@ -90,26 +124,88 @@ class ProgressSnapshot(BaseModel):
         return version
 
 
-def encode_progress(snapshot: ProgressSnapshot) -> str:
+class ActivitySnapshot(BaseModel):
+    """Local display metadata, not counters or proof of attachment/submission."""
+
+    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+
+    version: Literal[2] = 2
+    activity: Activity
+    resume_name: Annotated[str, Field(min_length=1, max_length=512)] | None = None
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def exact_version_type(cls, version: object) -> object:
+        if type(version) is not int:
+            raise ValueError("The protocol version must be an integer.")
+        return version
+
+    @field_validator("resume_name")
+    @classmethod
+    def filename_only(cls, name: str | None) -> str | None:
+        if name is not None and (
+            name in {".", ".."}
+            or any(char in "/\\" or category(char) in {"Cc", "Zl", "Zp"} for char in name)
+        ):
+            raise ValueError("Only a filename is allowed, never a path or control characters.")
+        return name
+
+
+_RECORD: TypeAdapter[ProgressSnapshot | ActivitySnapshot] = TypeAdapter(
+    ProgressSnapshot | ActivitySnapshot
+)
+
+
+def encode_progress(snapshot: ProgressSnapshot | ActivitySnapshot) -> str:
     return FRAME_START + snapshot.model_dump_json() + FRAME_END
 
 
-def _write_progress(snapshot: ProgressSnapshot) -> None:
+def _write_progress(snapshot: ProgressSnapshot | ActivitySnapshot) -> None:
     sys.stderr.write(encode_progress(snapshot))
     sys.stderr.flush()
 
 
 def gui_progress() -> ProgressReporter | None:
     """Opt in only for a GUI-owned child, leaving normal CLI/file logs unchanged."""
-    return ProgressReporter(_write_progress) if os.environ.get(PROGRESS_ENV) == "1" else None
+    if os.environ.get(PROGRESS_ENV) != "1":
+        return None
+    return ProgressReporter(
+        _write_progress,
+        activity_sink=_write_progress if os.environ.get(ACTIVITY_ENV) == "1" else None,
+    )
 
 
 class ProgressReporter:
     """Accumulate outcomes independently of delayed database/summary persistence."""
 
-    def __init__(self, sink: Callable[[ProgressSnapshot], None] | None = None) -> None:
+    def __init__(
+        self,
+        sink: Callable[[ProgressSnapshot], None] | None = None,
+        *,
+        activity_sink: Callable[[ActivitySnapshot], None] | None = None,
+    ) -> None:
         self._sink = sink
+        self._activity_sink = activity_sink
         self._snapshot: ProgressSnapshot | None = None
+
+    def activity(self, activity: Activity, *, resume_path: Path | None = None) -> None:
+        """Report an operation; only an explicit filename changes the retained display."""
+        if self._activity_sink is None:
+            return
+        try:
+            snapshot = ActivitySnapshot(
+                activity=activity,
+                resume_name=resume_path.name if resume_path is not None else None,
+            )
+        except ValidationError:
+            self._activity_sink = None
+            logger.warning("Live activity unavailable: invalid display metadata.")
+            return
+        try:
+            self._activity_sink(snapshot)
+        except OSError as exc:
+            self._activity_sink = None
+            logger.warning("Live activity unavailable: {}", exc)
 
     def start(
         self,
@@ -184,7 +280,9 @@ class ProgressStream:
         self._pending = ""
         self._discarding = False
 
-    def feed(self, text: str) -> Iterator[str | ProgressSnapshot | ProgressError]:
+    def feed(
+        self, text: str
+    ) -> Iterator[str | ProgressSnapshot | ActivitySnapshot | ProgressError]:
         self._pending += text
         while self._pending:
             if self._discarding:
@@ -229,8 +327,8 @@ class ProgressStream:
                 yield ProgressError("Live-metrics record exceeded its size limit.")
                 continue
             try:
-                snapshot = ProgressSnapshot.model_validate_json(payload)
-                if snapshot.model_fields_set != ProgressSnapshot.model_fields.keys():
+                snapshot = _RECORD.validate_json(payload)
+                if snapshot.model_fields_set != type(snapshot).model_fields.keys():
                     yield ProgressError(
                         "Incomplete live-metrics snapshot; previous counters retained."
                     )

@@ -78,6 +78,7 @@ class ConnectionInviteService:
 
     def run(self, run_id: int | None = None, *, limit: int | None = None) -> ConnectSummary:
         """Send every pending connection note (optionally scoped to *run_id*)."""
+        self._progress.activity("loading_connections")
         cap = limit if limit is not None else (self._max or None)
         targets = self._load_targets(run_id, cap)
         summary = ConnectSummary(total=len(targets), dry_run=self._dry_run)
@@ -91,6 +92,7 @@ class ConnectionInviteService:
             " [dry-run]" if self._dry_run else "",
         )
         try:
+            self._progress.activity("starting_browser")
             with self._browser_factory() as browser:
                 self._process(browser, targets, summary)
         except BrowserLaunchError as exc:
@@ -132,6 +134,7 @@ class ConnectionInviteService:
         for index, target in enumerate(targets):
             if index:  # human-like pause between invites (not before the first)
                 self._pace()
+            self._progress.activity("connecting")
             outcome = self._connector.send_invite(browser.page, target)
             self._tally(outcome, target, summary)
             if outcome is ConnectOutcome.LIMIT_REACHED:
@@ -173,5 +176,6 @@ class ConnectionInviteService:
         if self._max_delay <= 0:
             return
         delay = random.uniform(self._min_delay, self._max_delay)
+        self._progress.activity("pausing")
         logger.debug("Connect: pausing {:.1f}s before next invite", delay)
         self._sleep(delay)

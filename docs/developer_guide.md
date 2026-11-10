@@ -171,6 +171,75 @@ Optional extras: `.[ai]` (OpenAI), `.[dashboard]` (Streamlit), `.[export]`
 (XLSX export). The full suite imports dashboard helpers, so its environment
 needs the dashboard extra even though the portable build excludes it.
 
+Report-control tests use disposable fictional files and stub native openers.
+AppTest exercises corner-button events and standalone dialog widget reruns;
+it does not reproduce browser dialog-fragment reruns. Qualify actual iframe
+rendering and downloads through an isolated loopback fixture with a fresh browser,
+never private reports, a user's running dashboard or real file-browser windows.
+Keep the Reports popover keyed and stateful, close it in the browser-button
+callback, and render the dialog outside it. An open popover can intercept dialog
+clicks even when AppTest passes; the browser check must use ordinary clicks.
+
+`tests/test_dashboard_tables.py` exercises every dataframe/editor renderer with
+a fictional database. Keep `width="content"` and leave column widths unspecified
+so native content sizing is not replaced by stretching or fixed presets.
+AppTest covers configuration, control types and unchanged data, not actual canvas
+measurements or frontend editor gestures. Verify initial widths against native
+Autosize subject to the grid's automatic width cap; manual Autosize can be wider.
+Check narrow-view scrolling and real edit/save clicks in an isolated browser,
+waiting for actual backend reruns between edits and saves.
+
+The resume editor retains its internal column keys and question identity while
+displaying **Answer to save** beside **Save this answer**. Keep both reference
+columns disabled and explicitly labeled read-only. Qualification must edit the
+saved value to something different from both references, select only that row,
+and verify that only its final edited value persists. Empty selected values are
+skipped; unselected rows stay unchanged.
+
+Outreach dates must come from the submitted application matched by job and run,
+not the draft's creation or another run's application. Prefer its recorded finish
+and document the legacy start fallback. Normal application writes are naive
+local ISO timestamps; normalize them and offset-aware records to local aware
+times before the strict seven-day comparison. Unknown/invalid dates must remain
+visible and unaged. Only untouched contacts enter the oldest-first priority
+table; note-sent follow-ups remain regular.
+
+Collapsed contact titles reuse that same priority membership, with an explicit
+Overdue outreach label and semantic-red header emphasis. Scope styling to keyed
+native expanders and their summary only; do not color the message body or create
+a second age rule. Note marking and undo must remove/restore the correct title's
+emphasis. Qualify actual collapsed headers, keyboard expansion and dark/light/
+narrow layouts in a fictional browser; AppTest alone does not prove CSS rendering.
+
+Both outreach editors must preserve `width="content"` and actual outreach IDs.
+Streamlit's fixed-row editor can retain positional edits across equal-sized data
+changes. Key each editor by its ordered outreach IDs so both frontend and backend
+selection reset when IDs/order change; clearing server state alone is insufficient.
+Qualify equal-sized
+queue swaps, note marking/undo, completion from both tables, the real themed red
+outline and narrow scrolling in an isolated fictional browser. Neither a note
+mark nor a priority classification sends anything; these checks do not qualify
+live invitations, messages or the original outreach workstream's acceptance.
+
+Both skip entry points reuse `_skipped_section` with independent widget prefixes
+and `skip_events(limit=None)`: bar counts, row membership and CSV must cover the
+same complete event history, not a capped sample or deduplicated job list. Keep
+the native reason picker and explicit clear action alongside chart selection.
+Reset chart identity after picker/clear actions, and key row selection by reason
+and ordered event IDs so equal-sized list changes cannot reuse positional state.
+Retain content-sized columns. Qualify actual bar clicks, keyboard filtering,
+double-click clearing, repeated rows, CSV downloads and narrow scrolling in an
+isolated fictional browser, not just AppTest.
+
+`record_skip` stores optional observed job, exact score/threshold/breakdown and
+detail as nullable JSON context. Add the column idempotently; never rewrite
+legacy events. Explicit observed `None` values must not borrow a different
+observation's metadata. Do not join a later score to explain a prior decision.
+Captured posting fields must survive later job updates/deletion; legacy current-
+job fallback and unavailable context need explicit UI provenance. Preserve
+form-result reasons and available targeted-open identity even without a saved
+job. Reading this dashboard must neither scrape LinkedIn nor write applications.
+
 ## Desktop and Windows release
 
 The GUI builds CLI argv; it does not duplicate the automation engine.
@@ -256,8 +325,10 @@ can reuse `_save_screenshot(..., tooltip_target=field)` without regenerating
 unchanged media. Display-path fictionalization preserves option-help text.
 Review the rendered media and captions before any separately authorized push;
 these captures do not qualify a live run, installed release or human acceptance.
-The Run captures inject explicit **Offline demo** snapshots using the same
-reporter; neither a process nor an elapsed timer starts. Geometry tests register
+The Run captures inject explicit **Offline demo** counter and activity snapshots
+using the same reporter and typed activity signal. The walkthrough demonstrates
+an input pause, a replacement tailored filename and retention across later
+actions; neither a process nor an elapsed timer starts. Geometry tests register
 the same usable fonts before judging digits, wrapping and compact header fit.
 
 Desktop preferences use the explicit `QSettings.defaultFormat()` / UserScope

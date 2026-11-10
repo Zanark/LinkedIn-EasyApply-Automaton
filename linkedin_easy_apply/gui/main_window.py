@@ -55,6 +55,7 @@ from linkedin_easy_apply import __version__
 from linkedin_easy_apply.config import AppConfig, ConfigError, load_config
 from linkedin_easy_apply.config.loader import parse_config
 from linkedin_easy_apply.gui import commands
+from linkedin_easy_apply.gui.activity import ResumeDisplay, RunActivity
 from linkedin_easy_apply.gui.metrics import RunMetrics
 from linkedin_easy_apply.gui.process import CommandRunner, start_detached
 from linkedin_easy_apply.gui.settings import write_run_config
@@ -478,7 +479,7 @@ class MainWindow(QMainWindow):
         execution.setMinimumWidth(300)
         execution_layout = QVBoxLayout(execution)
         execution_layout.setContentsMargins(8, 0, 0, 0)
-        execution_layout.setSpacing(8)
+        execution_layout.setSpacing(6)
         state_row = QHBoxLayout()
         self._run_state = QLabel("READY")
         self._run_state.setToolTip(
@@ -508,7 +509,13 @@ class MainWindow(QMainWindow):
         )
         state_row.addWidget(clear_button)
         execution_layout.addLayout(state_row)
-        execution_layout.addWidget(self._metrics)
+        self._activity = RunActivity(self._palette)
+        live_status = QHBoxLayout()
+        live_status.setContentsMargins(0, 0, 0, 0)
+        live_status.setSpacing(8)
+        live_status.addWidget(self._activity, 0, Qt.AlignmentFlag.AlignTop)
+        live_status.addWidget(self._metrics, 1)
+        execution_layout.addLayout(live_status)
         self._command_preview = QPlainTextEdit()
         self._command_preview.setReadOnly(True)
         self._command_preview.setToolTip(
@@ -518,9 +525,11 @@ class MainWindow(QMainWindow):
             )
         )
         self._command_preview.setObjectName("CommandPreview")
-        self._command_preview.setMaximumHeight(76)
+        self._command_preview.setMaximumHeight(32)
         execution_layout.addWidget(self._command_preview)
-        buttons = QHBoxLayout()
+        button_panel = QWidget()
+        buttons = QHBoxLayout(button_panel)
+        buttons.setContentsMargins(0, 0, 0, 0)
         self._start_button = QPushButton("Start scan")
         self._start_button.setToolTip(
             tooltip(
@@ -551,17 +560,22 @@ class MainWindow(QMainWindow):
         buttons.addWidget(self._start_button)
         buttons.addWidget(self._stop_button)
         buttons.addWidget(copy_button)
-        buttons.addStretch(1)
-        execution_layout.addLayout(buttons)
+        self._resume_display = ResumeDisplay()
+        command_controls = QFormLayout()
+        command_controls.setContentsMargins(0, 0, 0, 0)
+        command_controls.setSpacing(6)
+        command_controls.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+        command_controls.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        command_controls.addRow(button_panel, self._resume_display)
+        execution_layout.addLayout(command_controls)
 
         self._console = Console(self._palette)
+        self._console.setMinimumHeight(82)
         self._log_details.toggled.connect(self._console.set_details)
         clear_button.clicked.connect(self._console.clear)
         execution_layout.addWidget(self._console, 1)
         execution_layout.addWidget(
-            muted(
-                "Prompt input: type an answer, y or n. Send Enter accepts a prompt's displayed default."
-            )
+            muted("Answer below. Enter uses the prompt's displayed default.")
         )
         input_row = QHBoxLayout()
         self._input = QLineEdit()
@@ -596,7 +610,7 @@ class MainWindow(QMainWindow):
         for field in (self._input, self._send_button, self._enter_button):
             field.setEnabled(False)
         self._run_splitter.addWidget(execution)
-        self._run_splitter.setSizes([410, 670])
+        self._run_splitter.setSizes([330, 750])
         self._run_splitter.setStretchFactor(0, 0)
         self._run_splitter.setStretchFactor(1, 1)
         column.addWidget(self._run_splitter, 1)
@@ -907,6 +921,7 @@ class MainWindow(QMainWindow):
         if isinstance(application, QApplication):
             application.setStyleSheet(build_stylesheet(palette))
         self._console.apply_palette(palette)
+        self._activity.apply_palette(palette)
         other = self._other_theme().label
         self._theme_button.setText("Light mode" if palette.is_dark else "Dark mode")
         self._theme_button.setIcon(theme_icon(palette))
@@ -1138,20 +1153,28 @@ class MainWindow(QMainWindow):
         self._nav_buttons[page_index].setChecked(True)
         argv = commands.full_argv(args)
         self._metrics.prepare(metrics_action)
+        self._activity.set_state("starting")
         self._console.note(f"$ {commands.describe(argv)}", "accent", label="COMMAND")
         if not self._runner.start(argv):
+            self._activity.set_state("error")
             self._console.note("Could not start the command.", "error", label="ERROR")
 
     def _connect_runner(self) -> None:
         self._runner.output.connect(self._console.append_text)
         self._runner.progress.connect(self._metrics.update_progress)
+        self._runner.activity.connect(self._activity.update_activity)
+        self._runner.activity.connect(self._resume_display.update_activity)
         self._runner.progress_error.connect(self._metrics.warn)
+        self._runner.progress_error.connect(self._activity.warn)
         self._runner.progress_error.connect(
-            lambda message: self._console.note(message, "warning", label="METRICS")
+            lambda message: self._console.note(message, "warning", label="STATUS")
         )
         self._runner.finished.connect(self._on_finished)
         self._runner.started_command.connect(lambda _cmd: self._set_running(True))  # noqa: ARG005
         self._runner.started_command.connect(lambda _cmd: self._metrics.begin())  # noqa: ARG005
+        self._runner.started_command.connect(
+            lambda _cmd: self._activity.set_state("running")  # noqa: ARG005
+        )
 
     def _set_running(self, running: bool) -> None:
         self._start_button.setEnabled(not running)
@@ -1166,12 +1189,15 @@ class MainWindow(QMainWindow):
     def _on_finished(self, exit_code: int, message: str) -> None:
         self._console.flush()
         if message == "Stopped.":
+            self._activity.set_state("stopped")
             self._metrics.finish("Stopped")
             self._console.note(message, "warning", label="STOPPED")
         elif exit_code == 0:
+            self._activity.set_state("finished")
             self._metrics.finish("Finished")
             self._console.note(message, "document", label="DONE")
         else:
+            self._activity.set_state("error")
             self._metrics.finish("Error")
             self._console.note(message, "error", label="ERROR")
         self._set_running(False)

@@ -1,0 +1,69 @@
+# Working dashboard report controls
+Workstream-ID: lea-23
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/23
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded repair of the dashboard Reports controls
+Status: DONE
+Milestone: Make exported reports accessible from the dashboard
+Dependencies: lea-09
+
+## Purpose
+Replace browser-blocked local-file links with usable report browsing inside the
+dashboard. Keep native folder opening as a host-side convenience without claiming
+that a window was observed. Preserve private inputs and independently running
+automation; source-dashboard reload is explicitly permitted for this repair.
+
+## Tasks
+- [x] Trace both report controls and distinguish browser access from host-side opening.
+- [x] Add an in-dashboard report picker, previews and original-file downloads.
+- [x] Check native opener failures and make dispatch-only feedback accurate.
+- [x] Exercise both report categories and failure paths with fictional files.
+- [x] Update affected usage, architecture and troubleshooting guidance.
+- [x] Maintain one issue, Project item and persistent backlink through scoped synchronization.
+
+## Acceptance criteria
+- [x] Analysis and Outreach In browser buttons open usable report selection without file:// links.
+- [x] Supported text and HTML reports can be previewed; selected original files can be downloaded.
+- [x] Missing folders, empty folders and list/read failures have explicit useful feedback.
+- [x] Native launch failures are reported; launch dispatch is not described as an observed open window.
+- [x] Checks do not open user folders, inspect private reports, restart automation or alter saved setup.
+- [x] Existing release binaries, unrelated changes and older tracking mappings remain intact.
+- [x] One repository issue, one correctly staged Project item and a durable backlink represent the workstream.
+
+## Completion evidence
+Both categories now open a Streamlit dialog with explicit file selection,
+HTML/Markdown/UTF-8 previews and original-byte downloads. PDF/XLSX and
+non-UTF-8 files remain downloadable. Listing is flat, excludes symbolic links
+and rechecks containment before reading only the selected file. Errors are
+shown inline. Native feedback confirms a host-side request, not an observed
+window; non-Windows commands now check their exit status.
+
+The first real-browser check found a popover overlay blocking dialog clicks
+despite passing AppTest cases. The browser-button callback now closes the keyed,
+stateful popover before the dialog renders outside it. A fresh headless Edge
+context subsequently passes ordinary selection clicks, actual HTML rendering
+and opaque-origin separation, Markdown fragment reruns, Outreach text and three
+byte-identical downloads. Both fictional dialog screenshots were reviewed.
+
+Final Black, Ruff and mypy gates pass; all 22 focused tests pass, including
+opening each category from an initially open popover. Tests use fictional files
+and stub native openers. Owned fixture processes and disposable files are
+cleaned up. All twenty-two older workstream files/mappings, selected private
+input/launcher metadata, HEAD and empty staging are preserved.
+
+The issue/item/backlink identity is independently verified. Declare this
+bounded technical repair complete for scoped status reconciliation; final
+settled read-back is recorded separately in the index and development ledger.
+No live LinkedIn qualification, human acceptance, observed file-browser window,
+commit, push or new release is claimed.
+
+## Completion log
+- 2026-11-10: Started the bounded dashboard repair. Source-dashboard reload is
+  explicitly permitted; use fictional disposable reports and stub OS openers.
+  Keep the independently running GUI/automation and all private runtime data alone.
+- 2026-11-10: Replaced blocked file links and inaccurate native feedback;
+  added focused helper/button/dialog coverage and eight affected guide updates.
+- 2026-11-10: Retained the real-browser overlay failure and corrected the
+  popover lifecycle without forced clicks or styling workarounds. The corrected
+  browser check, three actual downloads and final 22-case focused gates pass.
+  Complete only the bounded source repair; preserve original live-review gaps.

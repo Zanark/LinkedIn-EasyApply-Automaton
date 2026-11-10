@@ -10,14 +10,18 @@ import html
 import os
 import subprocess
 import sys
+from base64 import b64encode
 from collections import Counter
 from collections.abc import Callable
+from datetime import datetime, timedelta
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
 import altair as alt
 import pandas as pd
 import streamlit as st
+from streamlit.components.v1 import iframe
 
 from linkedin_easy_apply.answers.resume_expectations import (
     GradedAnswer,
@@ -62,7 +66,14 @@ def _chart_series(data: Any) -> pd.Series | None:
     return series if not series.empty else None
 
 
-def _hbar(data: Any, *, value_title: str | None = None, max_bars: int | None = None) -> None:
+def _hbar(
+    data: Any,
+    *,
+    value_title: str | None = None,
+    max_bars: int | None = None,
+    selection_key: str | None = None,
+    on_select: Callable[[], None] | None = None,
+) -> None:
     """Render a **horizontal** bar chart so category labels read left-to-right.
 
     Drop-in replacement for ``st.bar_chart`` on categorical data: the category
@@ -97,7 +108,24 @@ def _hbar(data: Any, *, value_title: str | None = None, max_bars: int | None = N
         )
         .properties(height=height)
     )
-    st.altair_chart(chart, width="stretch")
+    if selection_key is None:
+        st.altair_chart(chart, width="stretch")
+    else:
+        selection = alt.selection_point(
+            name="category_pick", fields=["category"], toggle=False, clear="dblclick"
+        )
+        chart = (
+            chart.mark_bar(cursor="pointer")
+            .add_params(selection)
+            .encode(opacity=alt.condition(selection, alt.value(1), alt.value(0.35)))
+        )
+        st.altair_chart(
+            chart,
+            width="stretch",
+            key=selection_key,
+            on_select=on_select or "rerun",
+            selection_mode="category_pick",
+        )
 
 
 def _line(data: Any, *, value_title: str | None = None) -> None:
@@ -138,12 +166,21 @@ def _line(data: Any, *, value_title: str | None = None) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Reports folder — a first-page corner control that opens the folders where
-# exported reports are written (offline analysis reports + per-run outreach
-# reports). Browsers block file:// links served from an http origin, so the
-# reliable action opens the folder in the host's own file browser; a file://
-# link is offered too for browsers that still allow it.
+# Reports — browser previews/downloads and optional host-side folder opening.
 # --------------------------------------------------------------------------- #
+_REPORT_MIME_TYPES = {
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".md": "text/markdown",
+    ".markdown": "text/markdown",
+    ".txt": "text/plain",
+    ".csv": "text/csv",
+    ".json": "application/json",
+    ".pdf": "application/pdf",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+
+
 def resolve_report_dirs(
     config_path: str | Path, outreach_report_dir: str | Path
 ) -> tuple[Path, Path]:
@@ -163,19 +200,19 @@ def resolve_report_dirs(
 
 
 def _default_opener(path: Path) -> None:
-    """Open *path* in the host operating system's file browser."""
+    """Request the host operating system's file browser; do not verify its window."""
     if sys.platform.startswith("win"):
-        os.startfile(str(path))  # type: ignore[attr-defined]  # Windows only
+        os.startfile(str(path.resolve()), "explore")  # type: ignore[attr-defined]
     elif sys.platform == "darwin":
-        subprocess.run(["open", str(path)], check=False)
+        subprocess.run(["open", str(path)], check=True)
     else:
-        subprocess.run(["xdg-open", str(path)], check=False)
+        subprocess.run(["xdg-open", str(path)], check=True)
 
 
 def _reveal_directory(
     path: Path, *, opener: Callable[[Path], None] | None = None
 ) -> tuple[bool, str]:
-    """Create *path* if missing and open it in the file browser.
+    """Create *path* if missing and request host-side folder opening.
 
     Returns ``(ok, message)`` so the caller can surface the result inline. The
     ``opener`` is injectable so tests never pop a real window.
@@ -186,38 +223,145 @@ def _reveal_directory(
         return False, f"Could not create folder {path}: {exc}"
     try:
         (opener or _default_opener)(path)
-    except Exception as exc:  # pragma: no cover - platform specific
+    except (OSError, subprocess.SubprocessError) as exc:
         return False, f"Could not open {path}: {exc}"
-    return True, f"Opened {path} in your file browser."
+    return True, (
+        f"Sent a folder-open request to the dashboard host for {path}. "
+        "If no window appears, use In browser to view and download reports here."
+    )
 
 
-def _reports_dir_row(label: str, path: Path, key: str) -> None:
-    """Render one report folder: its path, an open button, and a file:// link."""
+def _report_files(path: Path) -> list[Path]:
+    """List supported reports directly inside the configured folder, without symlinks."""
+    root = path.resolve(strict=True)
+    return sorted(
+        (
+            entry
+            for entry in root.iterdir()
+            if entry.suffix.lower() in _REPORT_MIME_TYPES
+            and not entry.is_symlink()
+            and entry.is_file()
+            and entry.resolve(strict=True).parent == root
+        ),
+        key=lambda entry: entry.name.casefold(),
+    )
+
+
+@st.dialog("Report browser", width="large")
+def _report_browser(label: str, path: Path, key: str) -> None:
+    st.markdown(f"**{label}**")
+    st.code(str(path), language=None)
+    try:
+        files = {file.name: file for file in _report_files(path)}
+    except FileNotFoundError:
+        st.info("This report folder does not exist yet. It is created when a report is written.")
+        return
+    except (OSError, RuntimeError) as exc:
+        st.error(f"Could not list reports in {path}: {exc}")
+        return
+    if not files:
+        st.info("No supported report files in this folder yet.")
+        st.caption(
+            "Supported: HTML, Markdown, TXT, CSV, JSON, PDF and XLSX. Subfolders are not scanned."
+        )
+        return
+
+    selected = st.selectbox(
+        "Choose a report",
+        list(files),
+        index=None,
+        placeholder="Select a report to preview",
+        key=f"report_file_{key}",
+        help=(
+            "Preview or download one report from this folder.\n"
+            "Example: select an outreach TXT report to read the run summary."
+        ),
+    )
+    if selected is None:
+        return
+    try:
+        report = files[selected].resolve(strict=True)
+        if report.parent != path.resolve(strict=True) or files[selected].is_symlink():
+            st.error("The selected report is no longer a regular file in this folder.")
+            return
+        data = report.read_bytes()
+    except (OSError, RuntimeError) as exc:
+        st.error(f"Could not read report {selected}: {exc}")
+        return
+
+    suffix = report.suffix.lower()
+    st.download_button(
+        "Download report",
+        data=data,
+        file_name=selected,
+        mime=_REPORT_MIME_TYPES[suffix],
+        key=f"download_report_{key}",
+        on_click="ignore",
+        width="stretch",
+    )
+    if suffix in {".pdf", ".xlsx"}:
+        st.info(
+            "This format is download-only. Open the downloaded report in its usual application."
+        )
+        return
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        st.warning(
+            "No UTF-8 preview is available for this file. Download the original report instead."
+        )
+        return
+    if suffix in {".html", ".htm"}:
+        # A data URL gives the report an opaque origin, separate from the dashboard.
+        encoded = b64encode(data).decode("ascii")
+        iframe(f"data:text/html;charset=utf-8;base64,{encoded}", height=560, scrolling=True)
+        st.caption("HTML preview: linked local files are not served. Download to use them locally.")
+    elif suffix in {".md", ".markdown"}:
+        st.markdown(text)
+    else:
+        st.code(text, language="json" if suffix == ".json" else None)
+
+
+def _close_reports_popover() -> None:
+    st.session_state["reports_popover"] = False
+
+
+def _reports_dir_row(label: str, path: Path, key: str) -> bool:
+    """Render one report folder with host-side and in-browser access."""
     st.markdown(f"**{label}**")
     st.code(str(path), language=None)
     if not path.is_dir():
         st.caption("Created when the first report is written.")
-    open_col, link_col = st.columns(2)
+    open_col, browser_col = st.columns(2)
     with open_col:
         if st.button("📂 Open folder", key=f"open_reports_{key}", width="stretch"):
             ok, message = _reveal_directory(path)
-            (st.success if ok else st.error)(message)
-    with link_col:
-        st.link_button("🌐 In browser", f"file:///{path.as_posix()}", width="stretch")
+            (st.info if ok else st.error)(message)
+    with browser_col:
+        return st.button(
+            "🌐 In browser",
+            key=f"view_reports_{key}",
+            width="stretch",
+            on_click=_close_reports_popover,
+        )
 
 
 def _reports_corner(config_path: str, config: Any) -> None:
     """First-page corner popover linking to the exported-report folders."""
     analysis_dir, outreach_dir = resolve_report_dirs(config_path, config.outreach.report_dir)
-    with st.popover("📂 Reports", width="stretch"):
+    with st.popover("📂 Reports", width="stretch", key="reports_popover", on_change="rerun"):
         st.caption(
-            "Folders where exported reports are written. 'Open folder' opens it in "
-            "your system file browser; 'In browser' uses a file:// link that some "
-            "browsers block."
+            "In browser lets you preview and download reports here. Open folder "
+            "requests a file-browser window on the computer running this dashboard, "
+            "which may differ from the computer running your browser."
         )
-        _reports_dir_row("Analysis reports", analysis_dir, "analysis")
+        analysis_requested = _reports_dir_row("Analysis reports", analysis_dir, "analysis")
         st.divider()
-        _reports_dir_row("Outreach reports", outreach_dir, "outreach")
+        outreach_requested = _reports_dir_row("Outreach reports", outreach_dir, "outreach")
+    if analysis_requested:
+        _report_browser("Analysis reports", analysis_dir, "analysis")
+    elif outreach_requested:
+        _report_browser("Outreach reports", outreach_dir, "outreach")
 
 
 def main() -> None:
@@ -316,6 +460,9 @@ def _focus_panel(db: Database) -> None:
         if close.button("✕ Close", key="focus_close", width="stretch"):
             st.session_state.pop("focus_category", None)
             st.rerun()
+        if category == "skipped":
+            _skipped_section(db, key_prefix="focus_skipped", show_header=False)
+            return
         st.caption(view.subtitle)
         if view.note:
             st.info(view.note)
@@ -353,7 +500,7 @@ def _focus_table(rows: list[dict[str, Any]]) -> None:
     if "url" in frame.columns:
         frame = frame.rename(columns={"url": "Job link"})
         column_config["Job link"] = st.column_config.LinkColumn("Job link", display_text="Open ↗")
-    st.dataframe(frame, width="stretch", hide_index=True, column_config=column_config or None)
+    st.dataframe(frame, width="content", hide_index=True, column_config=column_config or None)
 
 
 def _overview_section(db: Database, stats: dict[str, Any]) -> None:
@@ -362,7 +509,7 @@ def _overview_section(db: Database, stats: dict[str, Any]) -> None:
     with left:
         st.subheader("Top companies")
         if stats["top_companies"]:
-            st.dataframe(stats["top_companies"], width="stretch", hide_index=True)
+            st.dataframe(stats["top_companies"], width="content", hide_index=True)
         else:
             st.info("No applications yet.")
 
@@ -373,7 +520,7 @@ def _overview_section(db: Database, stats: dict[str, Any]) -> None:
             "ORDER BY seen_count DESC LIMIT 15"
         )
         if questions:
-            st.dataframe(questions, width="stretch", hide_index=True)
+            st.dataframe(questions, width="content", hide_index=True)
         else:
             st.info("No questions recorded yet.")
 
@@ -382,7 +529,7 @@ def _overview_section(db: Database, stats: dict[str, Any]) -> None:
            FROM applications a JOIN jobs j ON a.job_id = j.id
            ORDER BY a.started_at DESC LIMIT 50""")
     if applications:
-        st.dataframe(applications, width="stretch", hide_index=True)
+        st.dataframe(applications, width="content", hide_index=True)
     else:
         st.info("No applications recorded yet. Run 'lea apply' to get started.")
 
@@ -441,7 +588,7 @@ def _submitted_section(db: Database) -> None:
                 continue
             frame = pd.DataFrame(answers)[["question_text", "value", "source"]]
             frame.columns = ["Question", "Answer submitted", "Source"]
-            st.dataframe(frame, width="stretch", hide_index=True)
+            st.dataframe(frame, width="content", hide_index=True)
             st.caption(f"{len(answers)} field(s) submitted for this application.")
 
 
@@ -490,7 +637,7 @@ def _application_detail_section(db: Database) -> None:
         return
     frame = pd.DataFrame(answers)[["question_text", "value", "source"]]
     frame.columns = ["Question", "Answer submitted", "Source"]
-    st.dataframe(frame, width="stretch", hide_index=True)
+    st.dataframe(frame, width="content", hide_index=True)
     st.caption(f"{len(answers)} field(s) submitted for this application.")
 
 
@@ -533,7 +680,7 @@ def _needs_attention_section(db: Database, config_path: str) -> None:
             "Category",
             "Last seen",
         ]
-        st.dataframe(frame, width="stretch", hide_index=True)
+        st.dataframe(frame, width="content", hide_index=True)
         st.caption(
             f"{len(gaps)} distinct question(s) with no answer on record. Fixing the top rows "
             "(highest ‘In blocked apps’) prevents the most failures."
@@ -569,7 +716,7 @@ def _needs_attention_section(db: Database, config_path: str) -> None:
             ]
             st.dataframe(
                 bframe,
-                width="stretch",
+                width="content",
                 hide_index=True,
                 column_config={
                     "Job link": st.column_config.LinkColumn("Job link", display_text="Open ↗")
@@ -610,7 +757,7 @@ def _reapply_controls(db: Database, config_path: str) -> None:
     rframe.columns = ["Job", "Company", "Attempts", "Last status", "Job link"]
     st.dataframe(
         rframe,
-        width="stretch",
+        width="content",
         hide_index=True,
         column_config={"Job link": st.column_config.LinkColumn("Job link", display_text="Open ↗")},
     )
@@ -633,8 +780,9 @@ def _reapply_controls(db: Database, config_path: str) -> None:
 # Plain-English meaning for every skip reason the orchestrator can emit, so the
 # Skipped tab explains itself instead of showing raw codes.
 _SKIP_REASON_HELP: dict[str, str] = {
-    "not_easy_apply": "No Easy Apply button — external application site.",
+    "not_easy_apply": "No usable Easy Apply button was detected.",
     "already_applied": "Already applied (LinkedIn marker or a prior submit).",
+    "submission_unconfirmed": "A prior submission still needs verification before retrying.",
     "duplicate_company_role": "Already applied to the same company + role.",
     "not_whitelisted": "Company isn't in your whitelist.",
     "blacklisted": "Company is on your blacklist.",
@@ -651,10 +799,13 @@ _SKIP_REASON_HELP: dict[str, str] = {
 }
 
 
-def _skipped_section(db: Database) -> None:
+def _skipped_section(
+    db: Database, *, key_prefix: str = "skipped", show_header: bool = True
+) -> None:
     """Skip analytics: how many jobs were skipped, why, and the trends behind it."""
-    st.subheader("⏭️ Skipped jobs — how many & why")
-    events = db.skip_events(limit=5000)
+    if show_header:
+        st.subheader("⏭️ Skipped jobs — how many & why")
+    events = db.skip_events(limit=None)
     if not events:
         st.info(
             "No per-reason skip data recorded yet. Skips are captured from this version "
@@ -663,7 +814,7 @@ def _skipped_section(db: Database) -> None:
         )
         return
 
-    frame = pd.DataFrame(events)
+    frame = pd.DataFrame(events, dtype=object)
     frame["reason"] = frame["reason"].fillna("unknown")
     counts = frame["reason"].value_counts()
 
@@ -672,12 +823,122 @@ def _skipped_section(db: Database) -> None:
     cols[1].metric("Distinct reasons", int(counts.size))
     cols[2].metric("Most common", f"{counts.index[0]} ({int(counts.iloc[0])})")
     st.caption(
-        "Reason-level detail is recorded from this version onward; older runs only kept the "
-        "aggregate count (Overview → Skipped)."
+        "Each bar counts skip events, not unique jobs. Repeated encounters remain separate. "
+        "Runs predating per-reason recording only contribute to Overview's historical total."
     )
 
+    filter_key = f"{key_prefix}_reason"
+    generation_key = f"{key_prefix}_chart_generation"
+    if st.session_state.get(filter_key) not in counts.index:
+        st.session_state[filter_key] = None
+    chart_key = f"{key_prefix}_reasons_{st.session_state.get(generation_key, 0)}"
+
+    def select_reason() -> None:
+        selected = st.session_state[chart_key].selection.get("category_pick", [])
+        st.session_state[filter_key] = selected[0]["category"] if selected else None
+
+    def reset_chart() -> None:
+        st.session_state[generation_key] = st.session_state.get(generation_key, 0) + 1
+
+    def clear_reason() -> None:
+        st.session_state[filter_key] = None
+        reset_chart()
+
     st.markdown("**Why jobs were skipped**")
-    _hbar(counts)
+    st.caption("Click a bar to list its jobs below. Double-click the chart to show all reasons.")
+    _hbar(counts, selection_key=chart_key, on_select=select_reason)
+    reason_col, clear_col = st.columns([4, 1], vertical_alignment="bottom")
+    with reason_col:
+        selected_reason = st.selectbox(
+            "Skip reason",
+            [None, *counts.index],
+            format_func=lambda value: (
+                f"{value} ({int(counts[value]):,} events)"
+                if value is not None
+                else f"All reasons ({len(frame):,} events)"
+            ),
+            key=filter_key,
+            on_change=reset_chart,
+            placeholder=f"All reasons ({len(frame):,} events)",
+            help="Filter the complete recorded skip history by reason.\n\nExample: Choose below_threshold to inspect every event counted by that bar.",
+        )
+    with clear_col:
+        st.button(
+            "Show all",
+            key=f"{key_prefix}_clear_reason",
+            on_click=clear_reason,
+            disabled=selected_reason is None,
+            help="Clear the reason filter and chart selection.\n\nExample: Return from dry_run to every recorded skip.",
+        )
+    matching = frame if selected_reason is None else frame[frame["reason"] == selected_reason]
+    st.markdown(
+        f"**{'Every skip' if selected_reason is None else selected_reason} "
+        f"— {len(matching):,} events (newest first)**"
+    )
+    if selected_reason is not None:
+        st.info(_SKIP_REASON_HELP.get(selected_reason, "No standard explanation for this reason."))
+    st.caption(
+        "Select a row's checkbox for its saved description and score breakdown. "
+        "Blank fields were not recorded. "
+        "Legacy events use the current saved job record; their original score is not reconstructed."
+    )
+    detail_cols = [
+        "created_at",
+        "reason",
+        "title",
+        "company",
+        "location",
+        "score",
+        "threshold",
+        "detail",
+        "run_id",
+        "run_mode",
+        "url",
+    ]
+    detail_names = [
+        "When",
+        "Reason",
+        "Title",
+        "Company",
+        "Location",
+        "Score",
+        "Threshold",
+        "Explanation",
+        "Run",
+        "Mode",
+        "Job link",
+    ]
+    for column, label in (("workplace_type", "Workplace"), ("experience_level", "Level")):
+        if has_real_categories(matching[column].dropna()):
+            detail_cols.append(column)
+            detail_names.append(label)
+    detail = matching[detail_cols].copy()
+    detail["detail"] = [
+        row["detail"] or _SKIP_REASON_HELP.get(row["reason"], "No explanation was recorded.")
+        for row in matching.to_dict("records")
+    ]
+    detail.columns = detail_names
+    membership = sha256(",".join(str(value) for value in matching["id"]).encode()).hexdigest()
+    selection = st.dataframe(
+        detail,
+        width="content",
+        hide_index=True,
+        key=f"{key_prefix}_events_{selected_reason}_{membership}",
+        on_select="rerun",
+        selection_mode="single-row",
+        column_config={"Job link": st.column_config.LinkColumn("Job link", display_text="Open ↗")},
+    )
+    st.download_button(
+        "Download this list (CSV)",
+        data=detail.to_csv(index=False).encode("utf-8-sig"),
+        file_name="skipped_jobs.csv",
+        mime="text/csv",
+        key=f"{key_prefix}_download",
+        on_click="ignore",
+        help="Download every event in the currently filtered list.\n\nExample: Export all below-threshold jobs, including repeated encounters.",
+    )
+    if selection["selection"]["rows"]:
+        _skip_event_details(matching.iloc[selection["selection"]["rows"][0]].to_dict())
 
     frame["day"] = pd.to_datetime(frame["created_at"], errors="coerce").dt.date.astype("string")
     per_day = frame.dropna(subset=["day"]).groupby("day").size()
@@ -703,35 +964,75 @@ def _skipped_section(db: Database) -> None:
                 st.markdown(f"**{title}**")
                 _hbar(series)
 
-    st.markdown("**Every skip (newest first)**")
-    detail_cols = ["created_at", "reason", "title", "company"]
-    detail_names = ["When", "Reason", "Title", "Company"]
-    # Only surface Workplace / Level when at least one job actually recorded them
-    # (they are NULL for jobs scraped before those fields were captured).
-    if has_real_categories(frame["workplace_type"].dropna()):
-        detail_cols.append("workplace_type")
-        detail_names.append("Workplace")
-    if has_real_categories(frame["experience_level"].dropna()):
-        detail_cols.append("experience_level")
-        detail_names.append("Level")
-    detail_cols.append("url")
-    detail_names.append("Job link")
-    detail = frame[detail_cols].copy()
-    detail.columns = detail_names
-    st.dataframe(
-        detail,
-        width="stretch",
-        hide_index=True,
-        column_config={"Job link": st.column_config.LinkColumn("Job link", display_text="Open ↗")},
-    )
-
     with st.expander("What do these reasons mean?"):
         present = [r for r in counts.index if r in _SKIP_REASON_HELP]
         st.dataframe(
             pd.DataFrame({"Reason": present, "Meaning": [_SKIP_REASON_HELP[r] for r in present]}),
-            width="stretch",
+            width="content",
             hide_index=True,
         )
+
+
+def _skip_event_details(event: dict[str, Any]) -> None:
+    st.markdown("#### Saved skip details")
+    st.text(
+        f"{event['title'] or 'Title not recorded'} @ {event['company'] or 'Company not recorded'}"
+    )
+    st.caption(f"Skip event #{event['id']} · {event['created_at']} · {event['reason']}")
+    if event["captured"]:
+        st.caption(
+            "Job details were saved when this skip was recorded, not refreshed from LinkedIn."
+        )
+    else:
+        st.warning(
+            "Legacy event: job details come from the current saved job record and may have changed "
+            "since this skip. No decision-time snapshot or score was recorded."
+        )
+    st.text(
+        event["detail"] or _SKIP_REASON_HELP.get(event["reason"], "No explanation was recorded.")
+    )
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {
+                    "Job ID": event["external_id"],
+                    "Search": event["search_name"],
+                    "Employment": event["employment_type"],
+                    "Salary": event["salary"],
+                    "Applicants": event["applicants"],
+                    "Posted": event["posting_age"],
+                    "Easy Apply": event["easy_apply"],
+                    "Already applied": event["already_applied"],
+                }
+            ]
+        ),
+        width="content",
+        hide_index=True,
+    )
+    if event["score"] is None or pd.isna(event["score"]):
+        st.info("No decision-time score was captured. A later score is not substituted.")
+    else:
+        threshold = (
+            f"{event['threshold']:g}"
+            if event["threshold"] is not None and pd.notna(event["threshold"])
+            else "not recorded"
+        )
+        st.caption(f"Decision-time score: {event['score']:g} / threshold {threshold}.")
+        if event["score_breakdown"]:
+            st.dataframe(
+                pd.DataFrame(
+                    list(event["score_breakdown"].items()), columns=["Matched keyword", "Weight"]
+                ),
+                width="content",
+                hide_index=True,
+            )
+        else:
+            st.caption("No keyword weights were recorded for this score.")
+    st.markdown("**Saved job description**")
+    if event["description"]:
+        st.text(event["description"])
+    else:
+        st.info("No job description was recorded.")
 
 
 def _resume_match_section(db: Database, profile: ResumeProfile | None) -> None:
@@ -813,15 +1114,26 @@ def _resume_match_charts(
 def _resume_sync_editor(
     db: Database, mismatches: list[GradedAnswer], matches: list[GradedAnswer]
 ) -> None:
-    """Editable table: tick Approve (+ optionally edit the value), then Sync."""
-    st.markdown("### Review & sync corrections")
-    st.caption(
-        "Tick **Approve** on rows whose *Approved value* is correct (edit it if the "
-        "recommendation isn't quite right), then press **Sync approved**. Synced values are "
-        "stored in the database and used **first** — ahead of answers.yaml and the learned "
-        "bank — the next time that question is asked."
+    """Review reference answers and explicitly select the editable value to save."""
+    st.markdown("### Choose the answer to save")
+    st.info(
+        "**You approve only the editable Answer to save.** "
+        "Edit it if needed, tick **Save this answer** beside it, then click "
+        "**Save selected answers**.\n\n"
+        "**Previous answer** and **Résumé reference** are read-only comparisons."
     )
-    show_matches = st.checkbox("Also show answers that already match the résumé", value=False)
+    st.caption(
+        "Saved answers take priority over answers.yaml and learned answers the next time "
+        "the same question is asked. Previously submitted applications are not changed."
+    )
+    show_matches = st.checkbox(
+        "Also show answers that already match the résumé",
+        value=False,
+        help=(
+            "Include matching answers for optional review; nothing is selected automatically.  \n"
+            "Example: Enable this to review an answer that already agrees with the résumé."
+        ),
+    )
     candidates = mismatches + matches if show_matches else mismatches
     # Hide rows that already carry an approved override: they've been synced and
     # now live in "Approved overrides in effect" below, so they no longer need a
@@ -861,16 +1173,16 @@ def _resume_sync_editor(
     ]
     edited = st.data_editor(
         pd.DataFrame(editor_rows),
-        width="stretch",
+        width="content",
         hide_index=True,
         key="resume_sync_editor",
         column_order=[
-            "Approve",
             "Question",
-            "Category",
+            "Approved value",
+            "Approve",
             "Answered",
             "Résumé expects",
-            "Approved value",
+            "Category",
             "Verdict",
             "Why",
         ],
@@ -884,18 +1196,53 @@ def _resume_sync_editor(
         ],
         column_config={
             "Approve": st.column_config.CheckboxColumn(
-                "Approve", help="Tick to save this row's Approved value as the answer to use."
+                "Save this answer",
+                help=(
+                    "Select only the adjacent Answer to save, not either read-only reference.  \n"
+                    "Example: After editing Answer to save to '7', tick this row to save '7'."
+                ),
             ),
-            "Question": st.column_config.TextColumn("Question", width="large"),
+            "Question": st.column_config.TextColumn("Question"),
             "Approved value": st.column_config.TextColumn(
-                "Approved value", help="The value to store & use. Edit if needed."
+                "Answer to save",
+                help=(
+                    "Edit the exact answer to use when this question is asked again.  \n"
+                    "Example: Enter '7', select Save this answer, then save the selected answers."
+                ),
             ),
-            "Why": st.column_config.TextColumn("Why", width="medium"),
+            "Answered": st.column_config.TextColumn(
+                "Previous answer (read-only)",
+                help=(
+                    "The previously recorded answer is comparison history, not the save target.  \n"
+                    "Example: A previous '2' stays in history even if you save a corrected '7'."
+                ),
+            ),
+            "Résumé expects": st.column_config.TextColumn(
+                "Résumé reference (read-only)",
+                help=(
+                    "Résumé-derived context for review; this column is not selected for saving.  \n"
+                    "Example: Compare '7 years' with the question before choosing Answer to save."
+                ),
+            ),
+            "Why": st.column_config.TextColumn("Why"),
         },
     )
 
-    if st.button("💾 Sync approved answers", type="primary"):
-        approved = edited[edited["Approve"] == True]  # noqa: E712 (pandas mask)
+    approved = edited[edited["Approve"] == True]  # noqa: E712 (pandas mask)
+    st.caption(
+        f"**{len(approved)} answer(s) selected.** "
+        "Only their **Answer to save** values will be saved."
+    )
+    if st.button(
+        "💾 Save selected answers",
+        type="primary",
+        key="resume_sync_save",
+        disabled=approved.empty,
+        help=(
+            "Save the editable Answer to save values only for checked rows.  \n"
+            "Example: Check two rows to save those two answers and leave the others unchanged."
+        ),
+    ):
         synced = 0
         skipped = 0
         for _, row in approved.iterrows():
@@ -913,11 +1260,11 @@ def _resume_sync_editor(
             synced += 1
         if synced:
             st.success(
-                f"Synced {synced} approved answer(s). They'll be used the next time those "
+                f"Saved {synced} selected answer(s). They'll be used the next time those "
                 "questions are asked."
             )
         if skipped:
-            st.warning(f"Skipped {skipped} approved row(s) with an empty value.")
+            st.warning(f"Skipped {skipped} selected row(s) with an empty Answer to save.")
         if synced or skipped:
             st.rerun()
 
@@ -940,7 +1287,7 @@ def _resume_overrides_view(db: Database) -> None:
                 for o in overrides
             ]
         )
-        st.dataframe(frame, width="stretch", hide_index=True)
+        st.dataframe(frame, width="content", hide_index=True)
         labels = {
             (o.get("question") or o.get("normalized") or ""): o["normalized"] for o in overrides
         }
@@ -953,6 +1300,28 @@ def _resume_overrides_view(db: Database) -> None:
             db.delete_answer_override(labels[to_remove])
             st.success("Removed. That question will fall back to answers.yaml / learned again.")
             st.rerun()
+
+
+def _split_outreach_drafts(
+    drafts: list[dict[str, Any]], *, now: datetime | None = None
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Prioritize untouched applications older than seven days, oldest first."""
+    cutoff = (now or datetime.now()).astimezone() - timedelta(days=7)
+    priority: list[dict[str, Any]] = []
+    regular: list[dict[str, Any]] = []
+    for draft in drafts:
+        recorded = draft.get("applied_at")
+        try:
+            applied = datetime.fromisoformat(recorded).astimezone() if recorded else None
+        except (TypeError, ValueError, OverflowError, OSError):
+            applied = None
+        row = {**draft, "applied_at": applied}
+        if applied is not None and applied < cutoff and not row.get("note_sent_at"):
+            priority.append(row)
+        else:
+            regular.append(row)
+    priority.sort(key=lambda row: row["applied_at"])
+    return priority, regular
 
 
 def _outreach_section(db: Database) -> None:
@@ -970,52 +1339,98 @@ def _outreach_section(db: Database) -> None:
         parts = (draft.get("job_title"), draft.get("job_company"))
         return " @ ".join(p for p in parts if p) or "—"
 
-    editor_rows = [
-        {
-            "Message sent": False,
-            "Note sent": "✓" if d.get("note_sent_at") else "—",
-            "Name": d.get("person_name") or "Unknown",
-            "Profile": d.get("profile_url") or "",
-            "Applied to": _job(d),
-            "Résumé to attach": d.get("resume_name") or "—",
-            "_id": int(d["id"]),
-        }
-        for d in drafts
-    ]
-    edited = st.data_editor(
-        pd.DataFrame(editor_rows),
-        width="stretch",
-        hide_index=True,
-        key="outreach_done_editor",
-        column_order=[
-            "Message sent",
-            "Note sent",
-            "Name",
-            "Profile",
-            "Applied to",
-            "Résumé to attach",
-        ],
-        disabled=["Note sent", "Name", "Profile", "Applied to", "Résumé to attach"],
-        column_config={
-            "Message sent": st.column_config.CheckboxColumn(
+    priority, regular = _split_outreach_drafts(drafts)
+    drafts = priority + regular
+
+    def _editor(group: list[dict[str, Any]], key: str) -> pd.DataFrame:
+        editor_rows = [
+            {
+                "Message sent": False,
+                "Note sent": "✓" if d.get("note_sent_at") else "—",
+                "Name": d.get("person_name") or "Unknown",
+                "Profile": d.get("profile_url") or "",
+                "Applied to": _job(d),
+                "Applied on": (
+                    d["applied_at"].strftime("%Y-%m-%d %H:%M") if d["applied_at"] else "Unknown"
+                ),
+                "Résumé to attach": d.get("resume_name") or "—",
+                "_id": int(d["id"]),
+            }
+            for d in group
+        ]
+        # A new row membership/order needs a new frontend identity, not just cleared server state.
+        widget_key = f"{key}_{'-'.join(str(draft['id']) for draft in group)}"
+        return st.data_editor(
+            pd.DataFrame(editor_rows),
+            width="content",
+            hide_index=True,
+            key=widget_key,
+            column_order=[
                 "Message sent",
-                help="Tick once you've sent the full message (after they connected), then press "
-                "Remove — it deletes the outreach (message, note and all).",
-            ),
-            "Note sent": st.column_config.TextColumn(
                 "Note sent",
-                help="✓ once the free connection note has been sent (mark it per contact below).",
-            ),
-            "Profile": st.column_config.LinkColumn("Profile", display_text="Open profile ↗"),
-        },
-    )
+                "Name",
+                "Profile",
+                "Applied to",
+                "Applied on",
+                "Résumé to attach",
+            ],
+            disabled=[
+                "Note sent",
+                "Name",
+                "Profile",
+                "Applied to",
+                "Applied on",
+                "Résumé to attach",
+            ],
+            column_config={
+                "Message sent": st.column_config.CheckboxColumn(
+                    "Message sent",
+                    help="Tick once you've sent the full message (after they connected), then press "
+                    "Remove — it deletes the outreach (message, note and all).",
+                ),
+                "Note sent": st.column_config.TextColumn(
+                    "Note sent",
+                    help="✓ once the free connection note has been sent (mark it per contact below).",
+                ),
+                "Applied on": st.column_config.TextColumn(
+                    "Applied on",
+                    help="Local time of the matched submitted application; recorded start if no "
+                    "finish is available.\n\nExample: 2026-10-25 09:05 means you applied then, "
+                    "not when this message was drafted.",
+                ),
+                "Profile": st.column_config.LinkColumn("Profile", display_text="Open profile ↗"),
+            },
+        )
+
+    edited: list[pd.DataFrame] = []
+    if priority:
+        with st.container(border=True, key="outreach_priority"):
+            st.markdown(f"#### Prioritize first — {len(priority)} overdue contact(s)")
+            st.caption(
+                "Applied more than 7 days ago with no connection note or full message sent. "
+                "Oldest applications first."
+            )
+            edited.append(_editor(priority, "outreach_priority_editor"))
+    unknown_dates = sum(draft["applied_at"] is None for draft in regular)
+    if unknown_dates:
+        st.warning(
+            f"Application date unavailable for {unknown_dates} contact(s). They stay in the "
+            "regular list; their age is not inferred from the draft date."
+        )
+    if regular:
+        st.markdown(f"#### Other pending outreach — {len(regular)} contact(s)")
+        edited.append(_editor(regular, "outreach_done_editor"))
     st.caption(
         f"{len(drafts)} contact(s). **Workflow:** open a profile, send the short connection "
         "note with your invite and mark **Connection note sent** (it stays here, struck through); "
         "once they accept, send the full message and mark **Message sent** to remove it."
     )
     if st.button("🗑️ Remove message-sent outreach", type="primary"):
-        done_ids = [int(row["_id"]) for _, row in edited[edited["Message sent"]].iterrows()]
+        done_ids = [
+            int(row["_id"])
+            for frame in edited
+            for _, row in frame[frame["Message sent"]].iterrows()
+        ]
         removed = db.delete_outreach(done_ids)
         if removed:
             st.success(
@@ -1028,13 +1443,19 @@ def _outreach_section(db: Database) -> None:
                 "Tick **Message sent** on the outreach you've finished first, then press Remove."
             )
 
+    priority_ids = {draft["id"] for draft in priority}
     for index, draft in enumerate(drafts, start=1):
         name = draft.get("person_name") or "Unknown"
         job = _job(draft)
         note_sent = bool(draft.get("note_sent_at"))
+        overdue = draft["id"] in priority_ids
         marker = "   ✓ note sent" if note_sent else ""
+        if overdue:
+            marker = "   ⚠ Overdue outreach"
         header = f"{index}. {name}" + (f"  —  {job}" if job != "—" else "") + marker
-        with st.expander(header):
+        with st.expander(
+            header, key=f"outreach_{'overdue' if overdue else 'contact'}_{draft['id']}"
+        ):
             url = draft.get("profile_url")
             if url:
                 st.markdown(f"**Profile:** [{url}]({url})")

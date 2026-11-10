@@ -14,6 +14,7 @@ def build_stylesheet() -> str:
     --dsf-heading: light-dark({light["heading"]}, {dark["heading"]});
     --dsf-card: light-dark({light["raised"]}, {dark["surface"]});
     --dsf-accent: light-dark({light["accent"]}, {dark["accent"]});
+    --dsf-danger: light-dark({light["error"]}, {dark["error"]});
     --dsf-hover: light-dark({light["hover"]}, {dark["hover"]});
     --dsf-selection: light-dark({light["selection"]}, {dark["selection"]});
 }}
@@ -24,6 +25,24 @@ def build_stylesheet() -> str:
 [data-testid="stApp"] [class*="st-key-kpi_card_"] {{
     background-color: var(--dsf-card);
     border-radius: 0.75rem;
+}}
+[data-testid="stApp"] .st-key-outreach_priority {{
+    outline: 2px solid var(--dsf-danger);
+    border-radius: 0.75rem;
+}}
+[data-testid="stApp"] .st-key-outreach_priority h4 {{
+    color: var(--dsf-danger);
+}}
+[data-testid="stApp"] [class*="st-key-outreach_overdue_"] summary {{
+    background-color: color-mix(in srgb, var(--dsf-danger) 12%, transparent);
+    border: 1px solid var(--dsf-danger);
+    border-left-width: 4px;
+    border-radius: 0.5rem;
+    color: var(--dsf-danger);
+}}
+[data-testid="stApp"] [class*="st-key-outreach_overdue_"] summary p {{
+    color: var(--dsf-danger);
+    font-weight: 600;
 }}
 [data-testid="stApp"] [role="tab"][aria-selected="true"] {{
     color: var(--dsf-heading);

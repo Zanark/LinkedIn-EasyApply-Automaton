@@ -34,6 +34,7 @@ from linkedin_easy_apply.forms.matching import country_code_option, dial_code
 from linkedin_easy_apply.forms.values import current_value_of
 from linkedin_easy_apply.parser.categories import AnswerType, QuestionCategory
 from linkedin_easy_apply.parser.question_parser import QuestionParser
+from linkedin_easy_apply.progress import ProgressReporter
 from linkedin_easy_apply.utils.screenshots import ScreenshotManager
 
 # Marks the application form's container so field detection can be scoped to it.
@@ -132,6 +133,7 @@ class EasyApplyWorkflow:
         on_confirm_submit: ConfirmHandler | None = None,
         answer_lookup: AnswerLookup | None = None,
         override_lookup: AnswerLookup | None = None,
+        progress: ProgressReporter | None = None,
     ) -> None:
         self._page = page
         self._parser = parser
@@ -144,6 +146,7 @@ class EasyApplyWorkflow:
         self._on_confirm = on_confirm_submit
         self._answer_lookup = answer_lookup
         self._override_lookup = override_lookup
+        self._progress = progress or ProgressReporter()
         self._resume_selected_done = False
 
     def apply(
@@ -162,6 +165,7 @@ class EasyApplyWorkflow:
             self._settings.interactive,
             self._settings.pause_on_unknown,
         )
+        self._progress.activity("opening_application")
         if not self._open_modal():
             return ApplyResult(ApplyStatus.SKIPPED, reason="Easy Apply button not available")
 
@@ -181,6 +185,9 @@ class EasyApplyWorkflow:
             if action == "submit":
                 return self._finalize_submit(answers, step)
             if action in {"next", "review"}:
+                self._progress.activity(
+                    "reviewing_application" if action == "review" else "filling_application"
+                )
                 # Measure the click's own effect: comparing this step to the
                 # previous one aborts whenever two steps merely look alike.
                 before = self._step_signature(modal)
@@ -361,6 +368,7 @@ class EasyApplyWorkflow:
         cover_letter_text: str | None = None,
     ) -> None:
         resume_handled = self._ensure_resume_selected(modal, resume_path)
+        self._progress.activity("filling_application")
         for field_ in self._detector.detect(modal):
             self._fill_field(
                 field_,
@@ -598,7 +606,9 @@ class EasyApplyWorkflow:
             "Pausing for '{}' - type an answer here, or fill it on the page and press Enter",
             field_.label,
         )
+        self._progress.activity("awaiting_input")
         typed = self._on_unknown(field_.label, shot)
+        self._progress.activity("filling_application")
         if typed:
             self._apply_manual_value(field_, typed)
             return typed, "manual"
@@ -646,6 +656,7 @@ class EasyApplyWorkflow:
         # to "upload" again. Once handled, skip on every subsequent step.
         if self._resume_selected_done:
             return True
+        self._progress.activity("selecting_attachment")
         cards = self._resume_cards(modal)
         target = Path(resume_path).name
         target_stem = Path(resume_path).stem
@@ -663,6 +674,7 @@ class EasyApplyWorkflow:
             [name for name, _ in cards],
         )
         upload = first(modal, selectors.RESUME_UPLOAD_INPUT)
+        self._progress.activity("uploading_document")
         if upload is not None:
             upload.set_input_files(resume_path)
         elif not self._upload_via_file_chooser(modal, resume_path):
@@ -804,7 +816,9 @@ class EasyApplyWorkflow:
     def _ask_manual_upload(self, target: str) -> None:
         logger.warning("Could not upload '{}' automatically - please attach it on the page", target)
         if self._settings.pause_on_unknown and self._on_unknown:
+            self._progress.activity("awaiting_input")
             self._on_unknown(f"Attach the resume '{target}' on the page, then press Enter", None)
+            self._progress.activity("selecting_attachment")
 
     def _fill_file_field(
         self,
@@ -815,6 +829,7 @@ class EasyApplyWorkflow:
     ) -> None:
         label = field_.label.lower()
         if "cover" in label and cover_letter_path:
+            self._progress.activity("uploading_document")
             logger.info("Uploading cover letter to '{}': {}", field_.label, cover_letter_path)
             self._filler.fill(field_, _empty_resolution(), file_path=cover_letter_path)
         elif "cover" in label:
@@ -824,6 +839,7 @@ class EasyApplyWorkflow:
                 "Resume already handled via the picker - not re-uploading to '{}'", field_.label
             )
         elif resume_path:
+            self._progress.activity("uploading_document")
             logger.info("Uploading resume to '{}': {}", field_.label, resume_path)
             self._filler.fill(field_, _empty_resolution(), file_path=resume_path)
         else:
@@ -851,17 +867,21 @@ class EasyApplyWorkflow:
             return ApplyResult(
                 ApplyStatus.DRY_RUN, step, "Dry run - not submitted", answers=answers
             )
-        if self._on_confirm and not self._on_confirm():
-            logger.info("You declined submission - discarding the application")
-            self._discard()
-            return ApplyResult(
-                ApplyStatus.ABORTED, step, "User declined submission", answers=answers
-            )
+        if self._on_confirm:
+            self._progress.activity("awaiting_input")
+            if not self._on_confirm():
+                logger.info("You declined submission - discarding the application")
+                self._discard()
+                return ApplyResult(
+                    ApplyStatus.ABORTED, step, "User declined submission", answers=answers
+                )
 
+        self._progress.activity("submitting_application")
         logger.info("Submitting the application now ({} question(s) answered)", len(answers))
         modal = first(self._page, selectors.MODAL)
         if not self._click_action(modal, "submit", selectors.BTN_SUBMIT):
             return self._abort(answers, step, "Submit button vanished")
+        self._progress.activity("verifying_submission")
         status, evidence = self._submission_outcome()
         if status is ApplyStatus.LIMIT_REACHED:
             shot = self._screenshot("daily-limit")
@@ -934,6 +954,7 @@ class EasyApplyWorkflow:
         return ApplyResult(ApplyStatus.FAILED, step, reason, str(shot) if shot else None, answers)
 
     def _discard(self) -> None:
+        self._progress.activity("discarding_application")
         try:
             if not self._click(self._page, selectors.BTN_DISMISS):
                 self._click_named_button(selectors.DISMISS_BUTTON_NAME)

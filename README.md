@@ -2,7 +2,7 @@
   <img src="docs/readme-banner.svg" width="640" alt="Easy Apply Automaton — Automate your LinkedIn applications.">
 </p>
 <p align="center">
-  <a href="https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.2">Download for Windows</a> &nbsp; · &nbsp;
+  <a href="https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.3">Download for Windows</a> &nbsp; · &nbsp;
   <a href="docs/setup-and-commands.md">Setup &amp; commands</a> &nbsp; · &nbsp;
   <a href="docs/gui-tutorial.md">Tutorial</a>
 </p>
@@ -12,9 +12,9 @@
 **Find jobs, score them, fill Easy Apply from your own answers, and track the results.
 Desktop app or CLI — same engine.**
 
-<img src="docs/images/gui-run-walkthrough.gif" alt="Animated run walkthrough: live outcome counters, Scan, dry-run Apply, settings, Reapply and Connect" width="900">
+<img src="docs/images/gui-run-walkthrough.gif" alt="Animated run walkthrough: current-action icons, retained resume filenames, live counters, Scan, dry-run Apply, settings, Reapply and Connect" width="900">
 
-<sub>18-second offline walkthrough with fictional counters and inputs. No command runs or application is submitted.
+<sub>18-second offline walkthrough: action icons, changing resume selections and live counters, using fictional data. No command runs or application is submitted.
 <a href="docs/images/gui-run-walkthrough.gif">Open the GIF</a>.</sub>
 
 </div>
@@ -25,7 +25,7 @@ Desktop app or CLI — same engine.**
 
 ## Get started
 
-**Windows:** [Download v0.2.2](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.2),
+**Windows:** [Download v0.2.3](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.3),
 extract the **entire ZIP**, then open `EasyApplyAutomaton.exe`.
 Keep `lea.exe` and `_internal` beside it. No Python installation needed; installed
 Edge/Chrome is required. Browser binaries are not bundled, and the EXEs are unsigned.
@@ -56,21 +56,23 @@ Edit the example config/answers and sign in manually through Tools before runnin
 
 </details>
 
-**Optional:** Streamlit dashboard and AI need source extras; they are not in the
+**Optional:** Streamlit [dashboard](INIT.MD#dashboard) (auto-sized tables, clear answer approval,
+overdue outreach queues, clickable skip reasons and report downloads)
+and AI need source extras; they are not in the
 Windows ZIP. Dynamic resumes need the separate
 [resume builder](https://github.com/Zanark/dynamic-resume-builder) and its external Python.
 
 ## Screenshots
 
-<img src="docs/images/gui-settings-deepseafoam.png" alt="DeepSeaFoam run settings with caps, pauses and a two-line daily-cap help popup" width="900">
+<img src="docs/images/gui-settings-deepseafoam.png" alt="DeepSeaFoam limits with two-line help, current-action icon, counters and selected resume filename" width="900">
 
 <sub><b>Tune each run:</b> limits and pauses without editing YAML; hover a field for its purpose and example.</sub>
 
-<img src="docs/images/gui-small-harbor-daylight.png" alt="Compact Harbor Daylight Run page with outcome counters, dry-run controls, colored logs and prompt input" width="900">
+<img src="docs/images/gui-small-harbor-daylight.png" alt="Compact Harbor Daylight Run page with current-action icon, retained resume filename, counters, colored logs and prompt input" width="900">
 
-<sub><b>Light theme, smaller window:</b> live outcome counters, fixed toolbar, color-coded logs and prompt input.
+<sub><b>Light theme, smaller window:</b> action icon above its name, last-selected resume, counters and color-coded logs.
 Both themes come from <a href="https://github.com/Zanark/DeepSeaFoam">DeepSeaFoam</a>.
-v0.2.2 includes these desktop updates; previews use fictional offline data.</sub>
+v0.2.3 includes these desktop updates; previews use fictional offline data.</sub>
 
 ## Documentation
 

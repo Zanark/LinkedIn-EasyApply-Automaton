@@ -1,5 +1,33 @@
 # Troubleshooting
 
+## Dashboard columns look squeezed or hide text
+
+Refresh the updated source dashboard and accept its rerun prompt if shown.
+All tables now use native content sizing, including the editable review table;
+no configuration reset is needed. Scroll inside a wide table to reach its
+remaining columns. Header edges and the column menu's **Autosize** action still
+work. Native sizing caps very long values; copy a cell to inspect its full text.
+This changes the source dashboard, not the Windows ZIP, which excludes Streamlit.
+
+## Dashboard report buttons appear to do nothing
+
+In the updated source dashboard, use **Reports → In browser**, choose a report,
+then preview or **Download report**. Older dashboards used `file://` links that
+HTTP pages commonly cannot open. Reload the updated dashboard and accept its
+source-rerun prompt if shown; Windows v0.2.3 does not bundle Streamlit.
+
+**Open folder** sends a request to the computer hosting the dashboard, which may
+not be the computer running your browser. The window can also open behind the
+browser; dispatch is not confirmation that it appeared. Native launch failures
+now show an error instead of success feedback.
+
+A missing/empty folder means no supported report is available there; browsing
+does not generate one. Check the displayed absolute path and `outreach.report_dir`.
+Subfolders and symbolic links are not listed. Listing/read errors are shown
+inline. Non-UTF-8 files and PDF/XLSX remain downloadable without a preview.
+HTML previews do not serve linked local assets; download the report and keep
+any required assets together when opening it locally.
+
 ## The top toolbar disappeared
 
 Older windows expose Qt's native toolbar visibility menu when you right-click
@@ -9,7 +37,7 @@ tutorial option.
 Finish any running command, save unsaved Configuration/Answers edits, then
 close and reopen the GUI with your usual launcher. A newly opened window
 restores the bar without resetting configuration, answers or theme.
-Source and Windows v0.2.2 remove that visibility menu while preserving text-field
+Source and Windows v0.2.2 or later remove that visibility menu while preserving text-field
 editing menus. An already running instance does not hot-load the fix; older
 v0.2.1 EXEs need replacement with a separately extracted new release.
 
@@ -115,7 +143,7 @@ non-interactively with `--yes` to auto-skip instead.
 
 ## Live counters are blank, interrupted or differ from history
 
-The counters are included in source and Windows v0.2.2, not older v0.2.1 EXEs.
+The counters are included in source and Windows v0.2.2 or later, not older v0.2.1 EXEs.
 Finish any active run and save edits before reopening the updated GUI. Only its own
 Apply, Scan, Reapply and Connect children supply metrics; list-only and unrelated
 tools hide the strip. `--` means no valid snapshot arrived, not zero activity.
@@ -132,7 +160,7 @@ a durable recovery ledger. See [the reference](gui.md#live-run-counters-current-
 
 ## Reading the logs
 
-The source GUI and Windows v0.2.2 use short timestamps and colored severity/activity
+The source GUI and Windows v0.2.2 or later use short timestamps and colored severity/activity
 labels to fit its console. Enable **Details** beside Clear log for original
 prefixes, or hover a compact entry for its date/source. Scrolling up stops tail
 following until you return to the bottom. This does not affect the saved files.

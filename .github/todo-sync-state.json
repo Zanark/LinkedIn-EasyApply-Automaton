@@ -332,6 +332,126 @@
       "number": 22,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/22",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHScTc"
+    },
+    "lea-23": {
+      "baseline": {
+        "title": "[lea-23] Working dashboard report controls",
+        "managed": "e74eb40eac0383eb55ed0c9db0a9b894f42d105ce57cedd985c64156cb9251ec",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdyRTcg",
+      "number": 23,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/23",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHTd18"
+    },
+    "lea-24": {
+      "baseline": {
+        "title": "[lea-24] Default dashboard column autosizing",
+        "managed": "21cb251bfe035b0d0eac00fd45b2c90c697314285bdfac4df0ac3d23365dcbac",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdzBaEg",
+      "number": 24,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/24",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHUOQM"
+    },
+    "lea-25": {
+      "baseline": {
+        "title": "[lea-25] Unambiguous dashboard answer approval",
+        "managed": "8e03b9aca93eea85cb243cb4043b4699e50aed6518db926a82d3a366b8754cea",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABdzwEaQ",
+      "number": 25,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/25",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHU7XQ"
+    },
+    "lea-26": {
+      "baseline": {
+        "title": "[lea-26] Application dates and overdue outreach priority",
+        "managed": "5485153d16ff5ed75aca4b17aa0da7cafb9da4aecf12980dbc4bc6f986096762",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABd0KELQ",
+      "number": 26,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/26",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHVUMc"
+    },
+    "lea-27": {
+      "baseline": {
+        "title": "[lea-27] Highlight overdue outreach contact headers",
+        "managed": "525286ca0c9365ac2c51e9de236bea3ea126aa0a6faa9302dfde8a7ccab1ea83",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABd0pAdg",
+      "number": 27,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/27",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHVweY"
+    },
+    "lea-28": {
+      "baseline": {
+        "title": "[lea-28] Drill into skipped jobs by reason",
+        "managed": "36ca68fd3a3d1eb1c1d2e4a509ad638c849e9c0766b6f46775e6bb0576106d9c",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABd0_sRQ",
+      "number": 28,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/28",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHWE0Y"
+    },
+    "lea-29": {
+      "baseline": {
+        "title": "[lea-29] Current GUI action and retained resume filename",
+        "managed": "6825cc0cdb7fc9861b59638b407d28c8c0220a1ee5adf27d83fc1c46346c309b",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABd1wi5g",
+      "number": 29,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/29",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHWy5E"
+    },
+    "lea-30": {
+      "baseline": {
+        "title": "[lea-30] Updated GUI media and Windows v0.2.3 release",
+        "managed": "efee35fa3d62d725576a1bfb595f102666d5bf8d56ebcbf69fa3e1814b67cefa",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABd2TVhQ",
+      "number": 30,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/30",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHXVJQ"
     }
   }
 }

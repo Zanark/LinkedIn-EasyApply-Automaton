@@ -1001,6 +1001,14 @@ one long scroll: **📊 Overview**, **✅ Submitted**, **🔎 Application detail
 `_application_detail_section` / `_needs_attention_section` / `_skipped_section` /
 `_resume_match_section` / `_outreach_section`).
 
+**Tables — native content sizing.** All `st.dataframe` and `st.data_editor`
+renderers use `width="content"` with no prescribed column widths. This avoids
+distributing surplus container width across columns and lets the native grid
+measure headers and values, including Question and Why in resume review.
+Wide tables scroll within their container; native sizing limits and manual
+header resizing/Autosize still apply. Checkbox/link types, disabled columns,
+editor keys, row identity and persistence actions are unchanged.
+
 **Reports folder — first-page corner control.** The header is a two-column split
 (`st.columns([5, 1], vertical_alignment="center")`): the title on the left and a
 compact **📂 Reports** popover in the top-right corner. The popover surfaces the
@@ -1008,14 +1016,24 @@ two directories where exported reports are written — the offline **analysis
 reports** (repo-root `reports/`, e.g. the answer-quality and codebase-review
 reports) and the per-run **outreach reports** (`outreach.report_dir`, default
 `generated/outreach`) — each with its resolved absolute path, an **Open folder**
-button and an **In browser** `file://` link. `resolve_report_dirs` anchors both
+button and an **In browser** button. `resolve_report_dirs` anchors both
 paths to the project root (the parent of the `configs/` folder holding the active
-config) so they resolve regardless of the dashboard's working directory. Because
-browsers block `file://` links served from an `http://` origin, **Open folder** is
-the reliable action: it calls `_reveal_directory`, which creates the folder if
-missing and opens it in the host OS file browser (`os.startfile` on Windows;
-`open` / `xdg-open` elsewhere) through an injectable opener that keeps it
-unit-testable.
+config) so they resolve regardless of the dashboard's working directory.
+**In browser** calls `_report_browser`, a Streamlit dialog listing supported
+files directly in that directory, without following symbolic links or scanning
+subfolders. Its button callback closes the keyed, stateful Reports popover before
+the dialog is rendered outside that container, preventing the popover overlay
+from blocking report selection. Only an explicitly selected report is read.
+HTML uses an opaque-origin
+data-URL iframe; Markdown and UTF-8 text are rendered in the dialog. Original-byte
+downloads are available, including download-only PDF/XLSX and non-UTF-8 files.
+Local assets linked by HTML are not served. Missing/empty directories and
+listing/read failures are explained inline; no `file://` link is needed.
+**Open folder** calls `_reveal_directory`, creating the folder if missing and
+requesting host-side opening (`os.startfile` with the `explore` verb on Windows;
+checked `open` / `xdg-open` commands elsewhere). Its injectable opener keeps
+tests from opening real windows. Feedback confirms dispatch only, not a visible
+window; the dashboard host may differ from the browser's computer.
 
 **Chart rendering — horizontal bars + flat labels.** Streamlit's native
 `st.bar_chart` / `st.line_chart` rotate crowded x-axis labels to vertical, which
@@ -1104,14 +1122,26 @@ copy-paste fallback). Backed by `database.unanswered_questions`,
 a pre-apply gate (`not_easy_apply`, `already_applied`, `duplicate_company_role`,
 `blacklisted`, `excluded_keyword`, `company_limit`, …), `below_threshold`,
 `ai_advised_against`, `scan_only`, `reapply_open_failed`, or a form-level
-`skipped`/`dry_run`/`aborted`. The tab (backed by `database.skip_events`, which
-LEFT JOINs each skip to its job) shows skip-count metrics, a **reason breakdown**
-bar chart, **skips over time**, and a **top companies skipped** breakdown, plus a
-full detail table (with a job link) and a plain-English legend for every reason
-code. The **by workplace type / by experience level** breakdowns (and the
+`skipped`/`dry_run`/`aborted`. Both the tab and the Overview **Skipped** drilldown
+use `database.skip_events(limit=None)` for the complete recorded event history.
+Click a **Why jobs were skipped** bar to list every matching event, newest first;
+the keyboard-accessible reason picker provides the same filter. **Show all** or
+a chart double-click clears it. Counts represent events, not unique jobs, so
+repeated encounters remain separate. The content-sized table includes job links,
+timestamps, run/mode, available scores and explanations; its CSV download includes
+the entire filtered list. Selecting a row opens its saved description, posting
+metadata and available keyword-score breakdown without visiting LinkedIn.
+
+Future `record_skip` calls save observed job metadata, the available decision-time
+score/threshold/breakdown and the actual explanation in nullable JSON
+`skips.context`; initialization adds that column to existing databases without
+rewriting legacy rows. Captured job details survive later posting edits or job
+deletion. Legacy rows fall back to the current saved job record with an explicit
+warning; their original score is unknown, never replaced with a later score.
+The tab also shows **skips over time**, **top companies skipped** and a
+plain-English reason legend. The **by workplace type / by experience level** breakdowns (and the
 Workplace/Level columns in the detail table) are shown only when at least one job
-actually recorded those fields — because they are NULL for every job scraped so
-far, they are currently hidden rather than drawn as a lone `unknown` bar (see
+actually recorded those fields, rather than drawn as a lone `unknown` bar (see
 *Chart rendering* above). The `skips` table is deliberately separate from
 `applications`, so it never perturbs submit / reapply / stats logic; the Overview
 **Skipped** KPI is the historical `SUM(runs.jobs_skipped)` (populated even for
@@ -1127,8 +1157,11 @@ screening…) is a personal preference and is reported *not derivable*, never a
 deviation. The tab shows match/mismatch/not-derivable metrics, a **deviation-over-
 time line chart** (share of gradable answers per day that disagreed with the
 résumé — a downward trend as corrections land), a differences-by-category bar,
-and an editable **sync table**: tick *Approve* (edit the recommended value if
-needed) and press *Sync approved* to store each value as an approved override.
+and an editable **correction table**: **Question**, editable **Answer to save**,
+and its adjacent **Save this answer** checkbox come first. The **Previous answer
+(read-only)** and **Résumé reference (read-only)** columns are comparisons, not
+save targets. **Save selected answers** is disabled until a row is selected;
+it stores only selected nonempty editable values as approved overrides.
 The table lists **only rows that still need a decision** — once a differing answer
 is approved it drops out of the list and appears in the collapsible **Approved
 overrides in effect** panel below (from which it can be removed to bring it back);
@@ -1141,19 +1174,36 @@ the `answer_overrides` table and read **first** at fill time (see *Answer
 resolution*), so the next application uses the corrected value; the same set is
 also drivable from the `sync-answers` CLI.
 
-**Hiring-team outreach (web view):** the drafted "messages to send" as an
-editable table with clickable LinkedIn profile links (so you open each profile in
-one click), the résumé to attach, a read-only **Note sent** column (`✓`/`—`), and a
+**Hiring-team outreach (web view):** the drafted "messages to send" as
+content-sized editable tables with clickable LinkedIn profile links (so you open
+each profile in one click), the résumé to attach, read-only **Applied on** and
+**Note sent** columns (`✓`/`—` for the latter), and a
 **Message sent** checkbox — tick the contacts whose full message you've sent and
-press **Remove message-sent outreach** to delete them (message, note and all) via
-`database.delete_outreach`. Each contact also has an expander with the copy-ready
+press **Remove message-sent outreach** to delete selections from both lists
+(message, note and all) via `database.delete_outreach`.
+Under the same heading, **Prioritize first** puts applications strictly older
+than seven days with no connection note sent into an oldest-first red-outlined
+table. Their keyed native expander titles also show an explicit **Overdue
+outreach** label and semantic-red summary styling, using the same classified
+contact IDs. The message body and regular titles retain their normal styling;
+this is priority, not an asserted expiration deadline.
+Other contacts remain in the regular list. `applied_at` comes from the
+submitted application matched by job **and run**, preferring `finished_at` and
+falling back to its recorded `started_at` when missing. Dates are displayed in
+the dashboard host's local time; absent or invalid dates show **Unknown**, warn
+and never acquire an age from draft creation. Classification refreshes on rerun.
+Editor selections reset when row identities/order change so a migrating contact
+cannot transfer a positional checkbox to someone else.
+Each contact also has an expander with the copy-ready
 full message **and** the ≤300-char connection note (shown with its live character
 count) and **two** action buttons that mirror LinkedIn's two-step reality:
 **✉️ Connection note sent** flags the free invite note as sent
 (`database.mark_outreach_note_sent`) — the row is **kept** (the full message is
 still pending until they accept) and the note is rendered **struck through** with a
 timestamp so anyone opening the dashboard can see the connection step is done
-(an **↩️ Undo note sent** button clears it); **📨 Message sent — mark done &
+(an **↩️ Undo note sent** button clears it). Marking a note moves an overdue
+contact to the regular follow-up list; undo can restore its priority.
+**📨 Message sent — mark done &
 remove** deletes the whole outreach once the message itself has gone out. Backed by
 `database.outreach_drafts`, which joins each draft to the résumé submitted for that
 job and exposes its row `id` (and `note_sent_at`) so the UI can target it.

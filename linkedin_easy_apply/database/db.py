@@ -18,6 +18,11 @@ from typing import Any
 from loguru import logger
 
 _SCHEMA_PATH = Path(__file__).resolve().parent / "sql" / "schema.sql"
+_SKIP_JOB_FIELDS = (
+    "url external_id title company location workplace_type employment_type "
+    "experience_level applicants posting_age salary description recruiter "
+    "easy_apply already_applied search_name"
+).split()
 
 
 def _now() -> str:
@@ -72,6 +77,7 @@ class Database:
         wanted: dict[tuple[str, str], str] = {
             ("outreach_messages", "note"): "TEXT",
             ("outreach_messages", "note_sent_at"): "TEXT",
+            ("skips", "context"): "TEXT",
         }
         for (table, column), coltype in wanted.items():
             existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -109,7 +115,16 @@ class Database:
             )
 
     # -- skips ----------------------------------------------------------------
-    def record_skip(self, run_id: int | None, job_id: int | None, reason: str) -> int:
+    def record_skip(
+        self,
+        run_id: int | None,
+        job_id: int | None,
+        reason: str,
+        *,
+        detail: str | None = None,
+        score: dict[str, Any] | None = None,
+        job: dict[str, Any] | None = None,
+    ) -> int:
         """Record one skip event (a job the pipeline chose not to apply to).
 
         Mirrors ``RunSummary.note_skip`` so the per-job *reason* survives the run
@@ -117,22 +132,48 @@ class Database:
         so submit/reapply/stats logic is unaffected.
         """
         with self.connect() as conn:
+            stored = conn.execute("SELECT * FROM jobs WHERE id=?", (job_id,)).fetchone()
+            snapshot = {name: stored[name] if stored else None for name in _SKIP_JOB_FIELDS}
+            if job is not None:
+                snapshot.update({name: job[name] for name in _SKIP_JOB_FIELDS if name in job})
+            context = json.dumps({"job": snapshot, "score": score, "detail": detail})
             cur = conn.execute(
-                "INSERT INTO skips (run_id, job_id, reason, created_at) VALUES (?, ?, ?, ?)",
-                (run_id, job_id, reason, _now()),
+                "INSERT INTO skips (run_id, job_id, reason, context, created_at) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (run_id, job_id, reason, context, _now()),
             )
             return _last_id(cur)
 
-    def skip_events(self, limit: int = 5000) -> list[dict[str, Any]]:
-        """Skip events joined to their job, newest first, for the dashboard."""
-        return self.query(
-            """SELECT s.reason, s.created_at, s.run_id,
-                      j.title, j.company, j.url, j.workplace_type,
-                      j.experience_level, j.employment_type
+    def skip_events(self, limit: int | None = 5000) -> list[dict[str, Any]]:
+        """Return newest-first events; ``None`` includes the complete history.
+
+        New events use immutable captured context. Legacy events use the current
+        job record, explicitly marked as such, never an arbitrarily latest score.
+        """
+        sql = f"""SELECT s.id, s.job_id, s.reason, s.created_at, s.run_id, s.context,
+                         r.mode AS run_mode, {', '.join('j.' + name for name in _SKIP_JOB_FIELDS)}
                FROM skips s LEFT JOIN jobs j ON s.job_id = j.id
-               ORDER BY s.created_at DESC, s.id DESC LIMIT ?""",
-            (limit,),
+               LEFT JOIN runs r ON s.run_id = r.id
+               ORDER BY s.created_at DESC, s.id DESC"""
+        events = self.query(
+            sql + (" LIMIT ?" if limit is not None else ""), () if limit is None else (limit,)
         )
+        for event in events:
+            raw = event.pop("context")
+            context = json.loads(raw) if raw is not None else None
+            event["captured"] = context is not None
+            if context is not None:
+                event.update({name: context["job"].get(name) for name in _SKIP_JOB_FIELDS})
+            recorded_score = context.get("score") if context is not None else None
+            event["score"] = recorded_score.get("score") if recorded_score is not None else None
+            event["threshold"] = (
+                recorded_score.get("threshold") if recorded_score is not None else None
+            )
+            event["score_breakdown"] = (
+                recorded_score.get("breakdown") if recorded_score is not None else None
+            )
+            event["detail"] = context.get("detail") if context is not None else None
+        return events
 
     # -- jobs -----------------------------------------------------------------
     def upsert_job(self, job: dict[str, Any], run_id: int | None = None) -> int:
@@ -565,7 +606,7 @@ class Database:
         """Approve *value* as the answer for the question with *normalized* text.
 
         Upserts on the normalized text, so re-approving simply updates the value.
-        Persisting here is what the dashboard "Sync approved" button and the
+        Persisting here is what the dashboard "Save selected answers" button and the
         ``sync-answers`` CLI write to; the fill workflow reads it back via
         :meth:`get_answer_override`.
         """
@@ -706,14 +747,19 @@ class Database:
         Each row carries the recruiter's name, profile URL and drafted message,
         the job title/company (joined from ``jobs``) for context, and the résumé
         that was submitted for that job (joined via the matching application, so
-        the user knows which file to attach). When *run_id* is given, only that
-        run's drafts are returned; otherwise every draft on record is returned
-        (newest last), ordered by insertion.
+        the user knows which file to attach). ``applied_at`` is that submitted
+        application's finish time, falling back to its recorded start when no
+        finish is available; other statuses and missing applications have no
+        application date. When *run_id* is given, only that run's drafts are
+        returned; otherwise every draft on record is returned (newest last),
+        ordered by insertion.
         """
         sql = (
             "SELECT o.id, o.person_name, o.profile_url, o.message, o.note, o.note_sent_at,"
             " o.created_at, j.title AS job_title, j.company AS job_company,"
-            " r.name AS resume_name, r.path AS resume_path"
+            " r.name AS resume_name, r.path AS resume_path,"
+            " CASE WHEN a.status = 'submitted'"
+            " THEN COALESCE(a.finished_at, a.started_at) END AS applied_at"
             " FROM outreach_messages o"
             " LEFT JOIN jobs j ON o.job_id = j.id"
             " LEFT JOIN applications a ON a.job_id = o.job_id AND a.run_id IS o.run_id"
@@ -737,6 +783,7 @@ class Database:
             "job_company",
             "resume_name",
             "resume_path",
+            "applied_at",
         )
         with self.connect() as conn:
             rows = conn.execute(sql, params).fetchall()

@@ -19,14 +19,19 @@ graceful Ctrl+C. See [the full desktop guide](docs/gui.md) for limitations:
 unsigned EXEs, no bundled dashboard/OpenAI, and an external Python requirement
 for dynamic resume building.
 
-**Desktop v0.2.2 and source:** compact timestamps, colored severity/activity labels
+**Desktop v0.2.3 and source:** compact timestamps, colored severity/activity labels
 and natural word wrapping. Toggle **Details** for original diagnostic prefixes.
 **Hover help:** fields, toggles and labels explain their purpose and give a
 practical example on the next line. Reopen the updated GUI to load these updates.
-Older v0.2.1 EXEs are unchanged; extract v0.2.2 into a separate folder.
+Older EXEs are unchanged; extract v0.2.3 into a separate folder.
 The toolbar also removes the right-click **Main** hide checkbox;
 [recover a hidden older toolbar](docs/troubleshooting.md#the-top-toolbar-disappeared)
 without resetting your setup.
+
+**Current action and resume (v0.2.3 and source):** an operation-specific icon sits
+above the current action name. The Resume field keeps the last application
+filename until a later application selects another; selection alone confirms
+neither upload nor submission. Scans, tools and finished commands do not clear it.
 
 **Live counters (v0.2.2 and source):** the Run page shows Scanned, Applied, Skipped,
 Failed and HR sent during Apply/Scan/Reapply; Connect shows profile/invitation
@@ -534,7 +539,9 @@ notice and other preferences are never flagged.
 ```
 
 > Prefer clicking? The dashboard's **🎯 Resume match** tab does the same thing
-> visually — tick the rows to approve and press *Sync approved*.
+> visually: edit **Answer to save**, tick its adjacent **Save this answer**
+> checkbox, then press **Save selected answers**. The previous answer and résumé
+> reference are read-only comparisons; only the editable answer is saved.
 
 ---
 
@@ -554,21 +561,47 @@ application — of any status — to see every
 field asked and the value submitted), **⚠️ Needs attention** (questions with no
 answer on record, the applications they blocked, and a **🔁 Reapply all** button
 that retries every failed/aborted job in a new console window), **⏭️ Skipped**
-(how many jobs were skipped and *why* — a reason breakdown with trends by day,
-company, workplace type and experience level, plus a per-job table and a legend),
+(how many jobs were skipped and *why* — click a reason bar for its complete
+matching event list, select a row for saved job/decision details, or download
+the filtered CSV; a reason picker, **Show all**, trends and a legend are included),
 **🎯 Resume match** (grade
 answers against your résumé, a deviation-over-time chart, and one-click *sync* of
 approved corrections), and **🤝 Outreach** (drafted hiring-team messages with
-clickable profile links — both the full message and a short **≤300-char
-connection note** for the invitation, plus a **Done** checkbox / **Mark
-completed & remove** button to delete finished outreach from the database) — so
+clickable profile links, **Applied on** dates, both the full message and a short
+**≤300-char connection note** for the invitation, plus a **Message sent**
+checkbox / **Remove message-sent outreach** button to delete finished outreach) — so
 nothing is one long scroll.
+
+Outreach prioritizes applications **more than seven days old with no connection
+note sent** in a separate red-outlined **Prioritize first** table, oldest first,
+under the same heading. Marking a note moves that contact to regular follow-up;
+undo can return it. Those contacts also have red-highlighted collapsed titles
+with an **Overdue outreach** label, using the same priority rule rather than an
+expiration deadline. Dates use the matching submitted application's recorded
+finish (start if missing), shown in local time. Missing/invalid dates show
+**Unknown**, not an age guessed from message creation.
+
+All table columns size to their content by default, including editable review
+and outreach tables. Wide tables scroll horizontally; header edges and the
+column menu's **Autosize** action remain available for manual adjustments.
+
+Skipped lists include repeated encounters, not just unique jobs, and work in
+the Overview drilldown too. Future skips retain observed posting metadata and
+available decision-time scores/explanations. Legacy details are labeled as the
+current saved job record; missing original scores are not reconstructed.
+Inspection never opens LinkedIn or creates an application.
 
 The five headline KPI numbers are also **clickable cards**: press a card's
 **View details →** button and an inline drill-down opens under the header with
 charts for that category (per-day trend line, top companies, résumé usage,
 workplace type / experience level, Easy Apply vs external) and a filtered table
 whose job column is a clickable **Open ↗** link. Press **✕ Close** to dismiss it.
+
+For exported files, use **Reports → In browser**, choose an Analysis or Outreach
+report, then preview or **Download report**. HTML, Markdown and UTF-8 text preview
+inside the dashboard; PDF/XLSX are download-only. **Open folder** instead requests
+a window on the computer running the dashboard, not necessarily your browser's
+computer. Empty folders mean no supported report has been written there yet.
 
 | Option | Meaning |
 | --- | --- |

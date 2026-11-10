@@ -15,6 +15,7 @@ import pytest
 import linkedin_easy_apply.forms.easy_apply as ea
 from linkedin_easy_apply.forms.easy_apply import EasyApplyWorkflow
 from linkedin_easy_apply.forms.field import FieldKind, FormField
+from linkedin_easy_apply.progress import ProgressReporter
 
 _RESUME = "generated/resume/Example_backend.pdf"
 
@@ -22,6 +23,7 @@ _RESUME = "generated/resume/Example_backend.pdf"
 def _workflow() -> EasyApplyWorkflow:
     wf = object.__new__(EasyApplyWorkflow)
     wf._page = MagicMock()
+    wf._progress = ProgressReporter()
     wf._resume_selected_done = False
     return wf
 

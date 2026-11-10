@@ -267,6 +267,54 @@ def test_service_sends_and_marks_notes(tmp_path):
     assert db.pending_connection_invites(run) == []  # both marked note-sent
 
 
+def test_connection_activity_surrounds_browser_processing_and_actual_pacing(tmp_path):
+    db = Database(tmp_path / "activity.db")
+    db.initialize()
+    run = _seed(
+        db,
+        [
+            {"key": "a", "url": "https://example.test/a", "note": "Hello"},
+            {"key": "b", "url": "https://example.test/b", "note": "Hello"},
+        ],
+    )
+    events = []
+    reporter = ProgressReporter(activity_sink=events.append)
+
+    class ObservedBrowser(_FakeBrowser):
+        def __enter__(self):
+            assert events[-1].activity == "starting_browser"
+            return self
+
+    class ObservedConnector(_ScriptConnector):
+        def send_invite(self, page, target):
+            assert events[-1].activity == "connecting"
+            return super().send_invite(page, target)
+
+    def sleep(_seconds):
+        assert events[-1].activity == "pausing"
+
+    config = AppConfig()
+    config.outreach.connect_min_delay_seconds = 0.01
+    config.outreach.connect_max_delay_seconds = 0.01
+    service = ConnectionInviteService(
+        config,
+        db,
+        progress=reporter,
+        browser_factory=ObservedBrowser,
+        connector=ObservedConnector([ConnectOutcome.DRY_RUN, ConnectOutcome.DRY_RUN]),
+        sleeper=sleep,
+    )
+    assert service.run(run).sent == 2
+    assert [event.activity for event in events] == [
+        "loading_connections",
+        "starting_browser",
+        "connecting",
+        "pausing",
+        "connecting",
+    ]
+    assert all(event.resume_name is None for event in events)
+
+
 def test_service_dedups_same_person_and_marks_all_rows(tmp_path):
     db = Database(tmp_path / "c.db")
     db.initialize()

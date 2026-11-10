@@ -59,6 +59,14 @@
     "lea-19": "19_GUI_OPTION_TOOLTIPS.todo",
     "lea-20": "20_LIVE_RUN_METRICS.todo",
     "lea-21": "21_FIXED_MAIN_TOOLBAR.todo",
-    "lea-22": "22_DESKTOP_POLISH_WINDOWS_RELEASE.todo"
+    "lea-22": "22_DESKTOP_POLISH_WINDOWS_RELEASE.todo",
+    "lea-23": "23_DASHBOARD_REPORT_CONTROLS.todo",
+    "lea-24": "24_DASHBOARD_TABLE_AUTOSIZE.todo",
+    "lea-25": "25_DASHBOARD_ANSWER_APPROVAL.todo",
+    "lea-26": "26_DASHBOARD_OUTREACH_PRIORITY.todo",
+    "lea-27": "27_DASHBOARD_OUTREACH_HEADERS.todo",
+    "lea-28": "28_DASHBOARD_SKIP_DRILLDOWN.todo",
+    "lea-29": "29_GUI_ACTIVITY_AND_RESUME.todo",
+    "lea-30": "30_UPDATED_MEDIA_WINDOWS_RELEASE.todo"
   }
 }

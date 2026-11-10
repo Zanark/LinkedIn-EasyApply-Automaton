@@ -13,7 +13,7 @@ import yaml
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer  # noqa: E402
-from PySide6.QtGui import QContextMenuEvent, QFont, QHelpEvent  # noqa: E402
+from PySide6.QtGui import QContextMenuEvent, QFont, QHelpEvent, QTextDocument  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
     QAbstractSpinBox,
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (  # noqa: E402
     QCheckBox,
     QComboBox,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QMenu,
@@ -42,7 +43,11 @@ from linkedin_easy_apply.gui.process import CommandRunner  # noqa: E402
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
 from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog  # noqa: E402
 from linkedin_easy_apply.gui.widgets import Console  # noqa: E402
-from linkedin_easy_apply.progress import ProgressSnapshot  # noqa: E402
+from linkedin_easy_apply.progress import (  # noqa: E402
+    ActivitySnapshot,
+    ProgressSnapshot,
+    encode_progress,
+)
 from tools.capture_screenshots import ensure_fonts  # noqa: E402
 
 
@@ -308,7 +313,7 @@ def test_option_help_covers_controls_items_labels_and_changing_selections(window
                 item = form.itemAt(row, QFormLayout.ItemRole.FieldRole)
                 field = item.widget() if item is not None else None
                 label = form.labelForField(field) if field is not None else None
-                if label is not None:
+                if isinstance(label, QLabel):
                     assert label.toolTip() == field.toolTip()
         for index in range(window._run_settings.tabs.count()):
             _assert_option_help(window._run_settings.tabs.tabToolTip(index))
@@ -637,6 +642,81 @@ def test_real_child_updates_metrics_before_finish_and_controls_preserve_them(
     assert not window._metrics.isVisible()
 
 
+def test_real_child_activity_and_resume_survive_controls_scan_tools_and_failed_start(
+    window, qapp, monkeypatch
+):
+    seen = []
+    window._runner.output.connect(seen.append)
+    first = ActivitySnapshot(activity="preparing_application", resume_name="Example_caf\u00e9.pdf")
+    code = (
+        "import os,time; from pathlib import Path; "
+        "from linkedin_easy_apply.progress import gui_progress; "
+        "p=gui_progress(); assert p is not None; p.start('apply'); "
+        f"frame={encode_progress(first)!r}.encode('utf-8'); "
+        "split=frame.index(b'\\xc3')+1; os.write(2,frame[:split]); "
+        "time.sleep(.03); os.write(2,frame[split:]); "
+        "print('Selected: ',end='',flush=True); input(); "
+        "p.activity('awaiting_input'); print('Waiting: ',end='',flush=True); input(); "
+        "p.activity('preparing_application',resume_path=Path('private')/'Example_tailored.pdf'); "
+        "print('Replaced: ',end='',flush=True); input()"
+    )
+    monkeypatch.setattr(commands, "full_argv", lambda _args: [sys.executable, "-u", "-c", code])
+    window._run(["offline-activity-fixture"], metrics_action="apply")
+    _until(qapp, lambda: "Selected: " in "".join(seen))
+    assert window._runner.busy
+    assert window._activity.name.text() == "Preparing application"
+    assert window._resume_display.filename == "Example_caf\u00e9.pdf"
+    assert window._metrics._values[1].text() == "0"
+    assert not window._activity.icon.pixmap().isNull()
+
+    notices = []
+    monkeypatch.setattr(QMessageBox, "information", lambda *args: notices.append(args))
+    window._run(["must-not-replace-an-active-run"])
+    assert notices and window._activity.name.text() == "Preparing application"
+    window._action_box.setCurrentText("Connect (send pending invitations)")
+    window._apply_theme(THEMES["harbor-daylight"])
+    next(
+        button for button in window.findChildren(QPushButton) if button.text() == "Clear log"
+    ).click()
+    assert window._resume_display.filename == "Example_caf\u00e9.pdf"
+    assert window._activity.name.text() == "Preparing application"
+
+    window._runner.send_input("continue")
+    _until(qapp, lambda: "Waiting: " in "".join(seen))
+    assert window._activity.name.text() == "Waiting for you"
+    assert window._activity.name.property("tone") == "warning"
+    assert window._resume_display.filename == "Example_caf\u00e9.pdf"
+    window._runner.send_input("continue")
+    _until(qapp, lambda: "Replaced: " in "".join(seen))
+    assert window._resume_display.filename == "Example_tailored.pdf"
+    window._runner.send_input("finish")
+    _until(qapp, lambda: not window._runner.busy)
+    assert window._activity.name.text() == "Command finished"
+    assert window._resume_display.filename == "Example_tailored.pdf"
+
+    for action in ("scan", None):
+        seen.clear()
+        code = (
+            "from linkedin_easy_apply.progress import gui_progress; p=gui_progress(); "
+            + ("p.start('scan'); p.activity('searching_jobs'); " if action == "scan" else "")
+            + "print('Next: ',end='',flush=True); input()"
+        )
+        window._run(["offline-next-fixture"], metrics_action=action)
+        _until(qapp, lambda: "Next: " in "".join(seen))
+        assert window._activity.name.text() == (
+            "Searching jobs" if action == "scan" else "Running command"
+        )
+        assert window._resume_display.filename == "Example_tailored.pdf"
+        window._runner.send_input("finish")
+        _until(qapp, lambda: not window._runner.busy)
+    assert "LEA_METRICS" not in "".join(seen)
+    monkeypatch.setattr(commands, "full_argv", lambda _args: [str(window._root / "missing.exe")])
+    window._run(["offline-missing-fixture"], metrics_action="apply")
+    qapp.processEvents()
+    assert window._activity.name.text() == "Command error"
+    assert window._resume_display.filename == "Example_tailored.pdf"
+
+
 @pytest.mark.parametrize("stop", [False, True])
 def test_real_child_stop_and_error_freeze_dry_invites_without_claiming_sends(
     window, qapp, monkeypatch, stop
@@ -644,8 +724,9 @@ def test_real_child_stop_and_error_freeze_dry_invites_without_claiming_sends(
     seen = []
     window._runner.output.connect(seen.append)
     code = (
-        "from linkedin_easy_apply.progress import gui_progress; "
+        "from pathlib import Path; from linkedin_easy_apply.progress import gui_progress; "
         "p=gui_progress(); p.start('connect',dry_run=True); "
+        "p.activity('connecting',resume_path=Path('Example_retained.pdf')); "
         "p.connections(5,dry_run=True); p.increment({'connect_processed':2,'connect_dry_runs':2}); "
         "print('Ready: ',end='',flush=True); input(); raise SystemExit(2)"
     )
@@ -662,6 +743,8 @@ def test_real_child_stop_and_error_freeze_dry_invites_without_claiming_sends(
     assert "Would-send 2" in window._metrics._details.text()
     assert not window._metrics._timer.isActive()
     assert window._metrics._target.value() == 400
+    assert window._activity.name.text() == ("Stopped" if stop else "Command error")
+    assert window._resume_display.filename == "Example_retained.pdf"
 
 
 def test_real_child_bad_and_truncated_metrics_keep_last_valid_counts(window, qapp, monkeypatch):
@@ -670,8 +753,10 @@ def test_real_child_bad_and_truncated_metrics_keep_last_valid_counts(window, qap
     window._runner.output.connect(seen.append)
     window._runner.progress_error.connect(warnings.append)
     code = (
-        "import sys; from linkedin_easy_apply.progress import gui_progress,FRAME_START,FRAME_END; "
+        "import sys; from pathlib import Path; "
+        "from linkedin_easy_apply.progress import gui_progress,FRAME_START,FRAME_END; "
         "p=gui_progress(); p.start('apply'); p.increment({'applied':2}); "
+        "p.activity('preparing_application',resume_path=Path('Example_retained.pdf')); "
         "sys.stderr.write(FRAME_START+'not-json'+FRAME_END+FRAME_START+'{'); sys.stderr.flush()"
     )
     monkeypatch.setattr(commands, "full_argv", lambda _args: [sys.executable, "-u", "-c", code])
@@ -679,9 +764,10 @@ def test_real_child_bad_and_truncated_metrics_keep_last_valid_counts(window, qap
     _until(qapp, lambda: not window._runner.busy)
     assert window._metrics._values[1].text() == "2"
     assert "Metrics interrupted" in window._metrics._details.text()
-    assert "[METRICS]" in window._console.toPlainText()
+    assert "[STATUS]" in window._console.toPlainText()
     assert "not-json" not in "".join(seen + warnings)
     assert not window._metrics._timer.isActive()
+    assert window._resume_display.filename == "Example_retained.pdf"
 
 
 def test_failed_launch_never_presents_unreported_metrics_as_zero(window, qapp, monkeypatch):
@@ -719,6 +805,9 @@ def test_metrics_fit_compact_and_expanded_themes_with_purpose_example_help(
     assert window.size().width() == size[0]
     assert window._console.width() > 260
     assert window._console.height() > 80
+    assert max(window._activity.geometry().bottom(), window._metrics.geometry().bottom()) < (
+        window._command_preview.y()
+    )
     assert window._metrics._row_widgets[1].isVisible() == (window._metrics.width() < 540)
     caption = window._metrics.caption
     assert (
@@ -730,6 +819,85 @@ def test_metrics_fit_compact_and_expanded_themes_with_purpose_example_help(
         assert value.fontMetrics().horizontalAdvance(value.text()) <= value.contentsRect().width()
         assert title.toolTip().count("\n") == value.toolTip().count("\n") == 1
         assert "Example:" in value.toolTip()
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+@pytest.mark.parametrize("size", [(940, 640), (1340, 860)])
+def test_activity_and_long_resume_remain_readable_without_expanding_the_window(
+    window, qapp, size, theme
+):
+    filename = "Example_" + "Long_backend_role_" * 12 + ".pdf"
+    window.resize(*size)
+    window._apply_theme(THEMES[theme])
+    snapshot = ActivitySnapshot(activity="verifying_submission", resume_name=filename)
+    window._runner.activity.emit(snapshot)
+    qapp.processEvents()
+    assert window.width() == size[0]
+    assert window._activity.isVisible() and window._resume_display.isVisible()
+    assert window._activity.name.text() == "Checking submission"
+    assert window._resume_display.filename == filename
+    assert window._resume_display.name.text().endswith(".pdf")
+    assert (
+        window._resume_display.name.fontMetrics().horizontalAdvance(
+            window._resume_display.name.text()
+        )
+        <= window._resume_display.name.contentsRect().width()
+    )
+    assert window._console.height() > 80
+    counts = ProgressSnapshot(action="apply").counts | {
+        "scanned": 10_000,
+        "applied": 12,
+        "skipped": 9000,
+        "hr_drafted": 3,
+        "dry_runs": 2,
+        "unconfirmed": 1,
+    }
+    window._metrics.prepare("apply")
+    window._metrics.begin()
+    window._runner.progress.emit(
+        ProgressSnapshot(action="apply", phase="applying", counts=counts, target=20)
+    )
+    qapp.processEvents()
+    for value, title in zip(window._metrics._values, window._metrics._titles, strict=True):
+        assert value.fontMetrics().horizontalAdvance(value.text()) <= value.contentsRect().width()
+        assert title.fontMetrics().horizontalAdvance(title.text()) <= title.contentsRect().width()
+        assert value.height() >= value.fontMetrics().height()
+        assert title.height() >= title.fontMetrics().height()
+    assert window._console.height() > 80
+    assert max(window._activity.geometry().bottom(), window._metrics.geometry().bottom()) < (
+        window._command_preview.y()
+    )
+    assert window._metrics._target.geometry().bottom() < window._metrics.height()
+    assert window._input.geometry().bottom() < window._input.parentWidget().height()
+    assert window.height() == size[1]
+    for widget in (window._activity, window._activity.icon, window._activity.name):
+        _assert_option_help(widget.toolTip())
+    help_document = QTextDocument()
+    help_document.setHtml(window._resume_display.name.toolTip())
+    assert filename in help_document.toPlainText()
+    assert "\nExample:" in help_document.toPlainText()
+    assert window._activity.icon.mapToGlobal(window._activity.icon.rect().center()).y() < (
+        window._activity.name.mapToGlobal(window._activity.name.rect().center()).y()
+    )
+    before = window._activity.name.text()
+    window._runner.progress_error.emit("Fictional interrupted status")
+    assert window._activity.name.text() == "Status unavailable"
+    assert window._resume_display.filename == filename
+    window._runner.activity.emit(snapshot)
+    assert window._activity.name.text() == before
+
+
+def test_filename_and_full_hover_are_plain_text_and_not_rich_content(window):
+    filename = "<b>Example & Co.pdf"
+    window._runner.activity.emit(
+        ActivitySnapshot(activity="preparing_application", resume_name=filename)
+    )
+    assert window._resume_display.name.textFormat() == Qt.TextFormat.PlainText
+    assert window._resume_display.name.value == filename
+    document = QTextDocument()
+    document.setHtml(window._resume_display.toolTip())
+    assert filename in document.toPlainText()
+    assert "Example &amp; Co.pdf" in window._resume_display.toolTip()
 
 
 @pytest.mark.parametrize("prefix", ["", "Previous line\n"])
@@ -840,11 +1008,19 @@ def test_readme_run_capture_uses_real_controls_without_execution(
     files = {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
     observed = []
     metrics = []
+    activities = []
+    previous_resume = window._resume_display.filename
     render = capture._walkthrough_frame
 
     def observe(widget, caption):
         options = widget._current_options()
         metrics.append((options.action, widget._metrics._snapshot))
+        activities.append((widget._activity._state, widget._resume_display.filename))
+        if widget._resume_display.filename in {
+            "Example_Backend_Resume.pdf",
+            "Example_Backend_Tailored.pdf",
+        }:
+            assert widget._resume_display.name.text() == widget._resume_display.filename
         list_only = options.action == "reapply" and options.list_only
         assert widget._metrics._state == ("Waiting" if list_only else "Offline demo")
         assert not widget._metrics._timer.isActive()
@@ -877,6 +1053,13 @@ def test_readme_run_capture_uses_real_controls_without_execution(
     assert apply_counts[0]["scanned"] < apply_counts[-1]["scanned"]
     assert apply_counts[-1]["dry_runs"] > apply_counts[0]["dry_runs"]
     assert all(counts["applied"] == counts["hr_sent"] == 0 for counts in apply_counts)
+    assert activities[0] == ("searching_jobs", previous_resume)
+    assert ("filling_application", "Example_Backend_Resume.pdf") in activities
+    assert ("awaiting_input", "Example_Backend_Resume.pdf") in activities
+    assert ("uploading_document", "Example_Backend_Tailored.pdf") in activities
+    assert ("reviewing_application", "Example_Backend_Tailored.pdf") in activities
+    assert ("connecting", "Example_Backend_Tailored.pdf") in activities
+    assert activities[-1][1] == "Example_Backend_Tailored.pdf"
     assert started == [] and not window._runner.busy
     assert files == {path: path.read_bytes() for path in (window._root / "configs").iterdir()}
     assert not (window._root / "logs" / "gui-runs").exists()
