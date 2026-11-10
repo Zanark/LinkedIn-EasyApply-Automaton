@@ -441,12 +441,12 @@
     "lea-30": {
       "baseline": {
         "title": "[lea-30] Updated GUI media and Windows v0.2.3 release",
-        "managed": "efee35fa3d62d725576a1bfb595f102666d5bf8d56ebcbf69fa3e1814b67cefa",
+        "managed": "128517eb38f6de74aa2bdeb2db36e2f6cd2db0748451d334f376311243b7fa12",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABd2TVhQ",
       "number": 30,

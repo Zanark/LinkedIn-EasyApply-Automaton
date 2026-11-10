@@ -28,8 +28,37 @@
 - Copy only public source into an isolated qualification lane. Ruff passes,
   Black leaves 119 files unchanged, mypy passes 73 implementation files and
   all 868 tests pass. No private runtime inputs, historical applicant records
-  or unrelated plugin enter the candidate. Hosted and installed-asset checks
-  remain pending, not implied by these source results.
+  or unrelated plugin enter the candidate. These source results do not imply
+  the independently completed hosted and installed-asset checks below.
+- Publish exactly sixty-five reviewed files as
+  c070dda81ab7a34671a010c527b3dfa082d1fac2 and its matching annotated v0.2.3
+  tag, using verified repository-local attribution and required trailers.
+  Independent hosted read-back verifies the canonical source tree, all
+  payload/media blobs and the actual README. Main run 42736325477 and tag
+  run 42736325565 both pass qualification, Windows build, frozen offline
+  smoke and upload; only the tag run publishes. Reviewed versioned notes
+  match the hosted latest stable release exactly.
+- Download the actual three release assets and verify hosted sizes/digests,
+  checksums, exact source identity, safe ZIP inventory and every extracted
+  file. Install into a fresh side-by-side 0.2.3 directory; retain the
+  matching 21-topic tutorial. Eight actual installed offline checks pass,
+  including native GUI, Playwright driver and real sibling CLI integration.
+  Correct an auxiliary version assertion that initially expected a bare
+  number instead of the CLI's product-prefixed version line. Retain the
+  original passing eight-check log; verify the exact version and all
+  450 installed files afterward without rerunning that successful batch.
+- Independently verify all three earlier public tags, release identities
+  and nine asset fingerprints. Preserve selected private/native metadata,
+  the unchanged source launcher, six earlier installed entrypoints and the
+  unrelated unread plugin. Do not initialize real setup, restart an
+  independent application or imply live LinkedIn, clean-machine or human
+  acceptance. Dashboard and AI remain source extras, not portable additions.
+- Reconcile only lea-30. Independent read-back verifies #30 CLOSED/COMPLETED,
+  its exact reviewed managed body, one Done issue-backed Project item and a
+  durable backlink. Settled scoped preview/apply are no-ops without content
+  or timestamp churn across all thirty issue/item/local records. Preserve
+  all twenty-nine predecessor sources/mappings and original #2/#9 OPEN/In
+  review gaps. Record settlement here, not in another managed-description edit.
 
 ## 2026-11-10 - Current GUI action and retained resume filename
 

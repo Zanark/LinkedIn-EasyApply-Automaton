@@ -132,8 +132,12 @@ Final scoped issue/Project/backlink settlement is recorded separately below.
 The separate lea-30 refreshes thirteen fictional PNGs and both walkthrough
 GIFs, including current-action and retained/replaced resume demonstrations.
 All 868 tests and source release gates pass in an isolated public lane.
-README stays concise; hosted publication and actual installed-asset checks
-remain pending gates before completion.
+README stays concise. The sixty-five-file source publication and matching
+v0.2.3 tag identify c070dda81ab7a34671a010c527b3dfa082d1fac2. Both hosted
+qualification runs and tag publication succeed. Actual downloaded assets,
+all 450 installed files, eight frozen offline checks and exact version pass.
+Prior public releases, source launcher, private metadata and six earlier
+entrypoints remain intact; no independent application is restarted.
 
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
@@ -166,9 +170,19 @@ remain pending gates before completion.
 | lea-27 | 27_DASHBOARD_OUTREACH_HEADERS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/27 |
 | lea-28 | 28_DASHBOARD_SKIP_DRILLDOWN.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/28 |
 | lea-29 | 29_GUI_ACTIVITY_AND_RESUME.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/29 |
-| lea-30 | 30_UPDATED_MEDIA_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/30 |
+| lea-30 | 30_UPDATED_MEDIA_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/30 |
 
 ## Completion log
+- 2026-11-10: Independently verified #30 CLOSED/COMPLETED with its exact
+  reviewed description, one Done issue-backed Project item and durable backlink.
+  Settled scoped preview/apply are no-ops without content/timestamp churn
+  across all thirty records. All twenty-nine predecessor sources/mappings
+  and original #2/#9 OPEN/In review gaps remain unchanged.
+- 2026-11-10: Published illustrated v0.2.3 source and verified both exact-source
+  hosted runs, reviewed release notes and actual downloaded Windows assets.
+  A fresh side-by-side installation passes eight frozen offline checks and
+  exact-version verification; all 450 files remain intact afterward.
+  Preserve prior release assets, setup metadata and independent applications.
 - 2026-11-10: Independently verified #30 OPEN with its exact reviewed
   description, one In Progress issue-backed Project item and durable backlink.
   All twenty-nine prior issue/item records, source workstreams and mappings
