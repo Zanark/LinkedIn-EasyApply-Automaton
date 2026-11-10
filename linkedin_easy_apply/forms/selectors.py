@@ -330,21 +330,25 @@ PROFILE_PENDING = [
 ]
 # The "Add a note" button in the invitation modal.
 INVITE_ADD_NOTE_BUTTON = [
-    "button[aria-label='Add a note']",
-    "button:has-text('Add a note')",
+    "button[aria-label='Add a note']:visible:enabled",
+    "button:has-text('Add a note'):visible:enabled",
 ]
 # The custom-note textarea revealed after clicking "Add a note".
 INVITE_NOTE_TEXTAREA = [
-    "textarea[name='message']",
-    "textarea#custom-message",
-    "textarea[id*='custom-message']",
-    "div[role='dialog'] textarea",
+    "textarea[name='message']:visible:enabled",
+    "textarea#custom-message:visible:enabled",
+    "textarea[id*='custom-message']:visible:enabled",
+    "div[role='dialog'] textarea:visible:enabled",
 ]
 # The "Send" / "Send invitation" button in the invitation modal.
 INVITE_SEND_BUTTON = [
     "button[aria-label='Send invitation']",
     "button[aria-label*='Send now']",
     "div[role='dialog'] button:has-text('Send')",
+]
+INVITE_SEND_WITHOUT_NOTE_BUTTON = [
+    "div[role='dialog']:visible button[aria-label='Send without a note']:visible:enabled",
+    "div[role='dialog']:visible button:has-text('Send without a note'):visible:enabled",
 ]
 # The modal LinkedIn shows once the weekly invitation limit is hit (stop signal).
 INVITE_LIMIT_MODAL = [

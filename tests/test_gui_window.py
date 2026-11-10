@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import ctypes
 import os
 import sys
 import time
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 import yaml
@@ -37,7 +40,7 @@ from PySide6.QtWidgets import (  # noqa: E402
 )
 
 from linkedin_easy_apply.config import load_config  # noqa: E402
-from linkedin_easy_apply.gui import commands  # noqa: E402
+from linkedin_easy_apply.gui import commands, main_window  # noqa: E402
 from linkedin_easy_apply.gui.main_window import MainWindow  # noqa: E402
 from linkedin_easy_apply.gui.process import CommandRunner  # noqa: E402
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
@@ -49,6 +52,80 @@ from linkedin_easy_apply.progress import (  # noqa: E402
     encode_progress,
 )
 from tools.capture_screenshots import ensure_fonts  # noqa: E402
+
+
+def test_application_mark_renders_all_windows_sizes(qapp):
+    icon = main_window.application_icon()
+    sizes = {16, 20, 24, 32, 40, 48, 64, 128, 256}
+    assert {size.width() for size in icon.availableSizes()} == sizes
+    for side in sizes:
+        image = icon.pixmap(side, side).toImage()
+        assert not image.isNull()
+        assert image.width() == image.height() == side
+        assert image.pixelColor(side // 3, side // 2).alpha() == 255
+        assert image.pixelColor(0, 0).alpha() < 8
+
+
+def test_application_mark_uses_frozen_resource_not_workspace(qapp, tmp_path, monkeypatch):
+    source = main_window.resource_root() / "docs" / "mark.ico"
+    bundled = tmp_path / "bundle" / "docs"
+    bundled.mkdir(parents=True)
+    (bundled / "mark.ico").write_bytes(source.read_bytes())
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "_MEIPASS", str(bundled.parent), raising=False)
+    monkeypatch.setenv("LEA_WORKSPACE", str(tmp_path / "uninitialized"))
+    assert not main_window.application_icon().pixmap(32, 32).isNull()
+    assert not (tmp_path / "uninitialized").exists()
+
+
+def test_missing_application_mark_is_reported(qapp, tmp_path, monkeypatch):
+    warning = Mock()
+    monkeypatch.setattr(main_window, "resource_root", lambda: tmp_path)
+    monkeypatch.setattr(main_window.logger, "warning", warning)
+    assert main_window.application_icon().isNull()
+    warning.assert_called_once()
+
+
+@pytest.mark.parametrize("result", [0, -2147024809])
+def test_windows_identity_uses_unicode_and_reports_hresult(monkeypatch, result):
+    setter = Mock(return_value=result)
+    library = Mock(return_value=SimpleNamespace(SetCurrentProcessExplicitAppUserModelID=setter))
+    warning = Mock()
+    monkeypatch.setattr(main_window, "sys", SimpleNamespace(platform="win32"))
+    monkeypatch.setattr(ctypes, "WinDLL", library, raising=False)
+    monkeypatch.setattr(main_window.logger, "warning", warning)
+    main_window._set_windows_app_id()
+    library.assert_called_once_with("shell32", use_last_error=True)
+    setter.assert_called_once_with("LinkedInEasyApplyAutomaton.DesktopGUI")
+    assert setter.argtypes == [ctypes.c_wchar_p]
+    assert setter.restype is ctypes.c_long
+    assert warning.call_count == (1 if result < 0 else 0)
+
+
+def test_windows_identity_library_failure_is_reported(monkeypatch):
+    warning = Mock()
+    monkeypatch.setattr(main_window, "sys", SimpleNamespace(platform="win32"))
+    monkeypatch.setattr(ctypes, "WinDLL", Mock(side_effect=OSError("fixture")), raising=False)
+    monkeypatch.setattr(main_window.logger, "warning", warning)
+    main_window._set_windows_app_id()
+    warning.assert_called_once()
+
+
+def test_other_platforms_do_not_load_windows_libraries(monkeypatch):
+    library = Mock(side_effect=AssertionError("Windows API on another platform"))
+    monkeypatch.setattr(main_window, "sys", SimpleNamespace(platform="linux"))
+    monkeypatch.setattr(ctypes, "WinDLL", library, raising=False)
+    main_window._set_windows_app_id()
+    library.assert_not_called()
+
+
+def test_application_identity_precedes_qt_lookup(qapp, monkeypatch):
+    events = []
+    monkeypatch.setattr(main_window, "_set_windows_app_id", lambda: events.append("identity"))
+    monkeypatch.setattr(QApplication, "instance", staticmethod(lambda: events.append("qt") or qapp))
+    assert main_window.create_application() is qapp
+    assert events == ["identity", "qt"]
+    assert not qapp.windowIcon().pixmap(32, 32).isNull()
 
 
 @pytest.fixture(scope="module")
@@ -502,6 +579,34 @@ def test_run_preset_preserves_saved_bytes_and_other_settings(window):
     assert config.logging.level == "WARNING"
     assert window._config_file().read_bytes() == original
     assert Path(options.config).is_relative_to(window._root / "logs" / "gui-runs")
+
+
+@pytest.mark.parametrize(
+    "action", ["Apply", "Reapply (retry failed/aborted)", "Connect (send pending invitations)"]
+)
+@pytest.mark.parametrize("saved", [False, True])
+def test_connection_fallback_toggle_roundtrips_without_changing_saved_config(window, action, saved):
+    path = window._config_file()
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if saved:
+        data["outreach"] = {"connect_without_note": True}
+        path.write_text(yaml.safe_dump(data), encoding="utf-8")
+    original = path.read_bytes()
+    window._load_config_text()
+    settings = window._run_settings
+    field = settings._fields["outreach.connect_without_note"]
+    assert field.isChecked() is saved
+    settings.customize.setChecked(True)
+    field.setChecked(not saved)
+    window._action_box.setCurrentText(action)
+    options = window._prepared_options()
+    assert load_config(options.config).outreach.connect_without_note is not saved
+    assert load_config(options.config).jobs.max_daily == 37
+    assert path.read_bytes() == original
+    assert Path(options.config).is_relative_to(window._root / "logs" / "gui-runs")
+    settings.customize.setChecked(False)
+    restored = window._root / window._prepared_options().config
+    assert load_config(restored).outreach.connect_without_note is saved
 
 
 def test_gui_can_disable_a_saved_dry_run_without_changing_original(window):

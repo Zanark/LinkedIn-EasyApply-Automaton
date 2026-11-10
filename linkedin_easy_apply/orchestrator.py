@@ -889,13 +889,15 @@ class Orchestrator:
             logger.warning("Connection-note pass failed: {}", exc)
             return
         summary.connect_summary = result
-        summary.connection_notes_sent = result.sent
+        summary.connection_notes_sent = result.sent - result.sent_without_note
         if not result.total:
             return
         logger.success(
-            "Connection notes: {} {}, {} already connected, {} skipped, {} failed{}",
+            "Connection invitations: {} {} ({} without note), "
+            "{} already connected, {} skipped, {} failed{}",
             result.sent,
             "would-send [dry-run]" if result.dry_run else "sent",
+            result.sent_without_note,
             result.already,
             result.skipped,
             result.failed,

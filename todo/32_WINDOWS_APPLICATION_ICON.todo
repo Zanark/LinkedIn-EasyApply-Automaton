@@ -1,0 +1,76 @@
+# Windows application and taskbar branding
+Workstream-ID: lea-32
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded Windows application-icon request
+Status: BLOCKED
+Blocked-stage: Ready
+Blocker: Await a coordinated save point before promoting source used by the independent application.
+Milestone: Use the project mark for desktop windows and Windows executables
+Dependencies: lea-11, lea-12
+
+## Purpose
+Replace generic interpreter branding with the existing seafoam application-form
+and lightning mark. Give Windows a stable application identity without changing
+saved settings, editing the interpreter or disturbing a running application.
+
+## Tasks
+- [x] Inspect desktop startup, existing artwork and executable packaging.
+- [x] Prepare an independent public-source candidate and preservation baseline.
+- [x] Add a multi-resolution Windows icon and stable desktop taskbar identity.
+- [x] Embed the same mark in both Windows executables.
+- [x] Qualify native window branding, icon resources and affected regressions.
+- [x] Update the directly affected guide and retain exact candidate evidence.
+- [x] Retain one issue-backed Project item and persistent backlink.
+- [x] Integrate and qualify the combined, separately authorized source-publication lane.
+- [ ] Promote the qualified candidate at a coordinated source-app save point.
+
+## Acceptance criteria
+- [x] The actual project mark renders clearly at small and high-DPI icon sizes.
+- [x] Desktop startup sets a version-independent Windows identity before Qt startup.
+- [x] Non-Windows startup remains supported; native identity failures are explicit.
+- [x] Source desktop, tutorial and packaged desktop entries share the icon setup.
+- [x] Both executable definitions embed the multi-resolution icon resource.
+- [x] Fictional checks preserve running applications, settings and released assets.
+- [x] Candidate qualification is not reported as activation, acceptance or release.
+- [x] One issue-backed Project item and durable backlink represent the workstream.
+- [ ] Source promotion is verified without disrupting the independent application.
+
+## Completion evidence
+Exactly eight isolated candidate payloads implement shared startup branding,
+the affected guide and regressions. The existing original mark supplies nine
+ICO sizes from 16 through 256 pixels. All 82 affected cases, Black/Ruff and
+mypy pass. A real Windows check verifies the explicit application identity,
+both hidden-window native icons and all nine exact embedded frames in both
+newly built executables. Extracted executable icons match the original exactly;
+actual native renders are visually reviewed. Frozen offline smoke confirms
+the application icon, desktop rendering, tutorial and real sibling CLI.
+
+The original binary-inclusive patch passes read-only applicability without
+changing the active checkout. Preserve its 175 protected public files, selected
+private/native metadata, both original candidates and eight installed
+entrypoints. Independent process creation identities remain unchanged. Active
+checkout promotion is blocked; neither the running application nor installed
+v0.2.3 receives this update. No cache/pin manipulation, independent restart,
+live qualification, human acceptance or new release is claimed.
+
+A separately authorized source-publication lane combines the eight branding
+payloads with the no-note candidate into twenty-nine files. The two overlaps
+merge cleanly and the remaining twenty-seven payloads match their original
+frozen candidates exactly, including the ICO. All 253 combined affected cases,
+repository Ruff, Black over 119 files and mypy over seventy-three modules pass.
+Retain all thirty earlier workstreams and reconcile only these two descriptions.
+Commit/remote/hosted read-back remains a separate publication gate; publication
+does not switch the active source checkout, replace an installation or move a tag.
+
+## Completion log
+- 2026-11-10: Prepare the separately authorized combined source push in an
+  isolated Git worktree. Qualify the merged payload without rebuilding the
+  already qualified native candidate or disturbing the independent application.
+  Keep the active-checkout promotion blocker and the existing OPEN/Ready item.
+- 2026-11-10: Implement and qualify the isolated eight-payload branding candidate.
+  Freeze its complete icon-inclusive patch and preservation receipt. Leave source
+  promotion BLOCKED at Ready pending a coordinated application save point.
+- 2026-11-10: Begin the bounded Windows branding update using existing original
+  project artwork. Preserve thirty-one predecessor workstreams and their mappings.
+  Keep running applications and released executables outside the development lane.

@@ -537,6 +537,7 @@ approval and types + sends each message on LinkedIn.
 | `report_dir`       | `generated/outreach` | Where the plain-text `draft`-mode report is written.               |
 | `send_connection_notes` | `false`         | **Opt-in.** After a run, open a fresh browser and auto-send each pending recruiter a free connection invitation with their ≤300-char note (the `connect` microservice). OFF because it clicks Connect + Send for real. |
 | `connect_dry_run`  | `false`              | Walk Connect → Add a note but never click Send (rehearsal for the connection pass). |
+| `connect_without_note` | `false`          | **Opt-in fallback.** If note entry is missing, hidden or disabled, use an explicit invitation-dialog **Send without a note** button. Prefer the note whenever available; otherwise skip when this is off. |
 | `connect_max_per_run` | `15`              | Cap on connection invitations sent per pass (LinkedIn's weekly limit is ~100–200). |
 | `connect_min_delay_seconds` | `8`         | Lower bound of the randomised, human-like pause between invitations. |
 | `connect_max_delay_seconds` | `25`        | Upper bound of that randomised pause.                              |
@@ -553,6 +554,7 @@ outreach:
   # --- free connection-note microservice (opt-in) ---
   send_connection_notes: false   # auto-send connection notes at the end of a run
   connect_dry_run: false         # go through the flow but skip the final Send click
+  connect_without_note: false    # allow a plain invitation only if note entry is unavailable
   connect_max_per_run: 15
   connect_min_delay_seconds: 8
   connect_max_delay_seconds: 25
@@ -569,16 +571,27 @@ Behaviour:
 - **`send` is draft-and-approve.** A message is shown for your approval (Enter
   sends, `n` skips), so it needs an **interactive** run and only contacts
   recruiters with a free Message button. Under `--yes` it degrades to `draft`.
-- **The connection-note pass (`send_connection_notes` / `apply.py connect`) is
-  separate from `mode`.** It sends only the **free connection note** — never the
-  long message — in its own fresh browser after the run. Enable it in config to
+- **The connection pass (`send_connection_notes` / `apply.py connect`) is
+  separate from `mode`.** It sends an invitation with the **free connection note**
+  when available — never the long message — in its own fresh browser after the run. Enable it in config to
   auto-run at the end of every apply, or run `python apply.py connect` on demand
   (`--dry-run` to rehearse, `--limit N`, `--run <id>`, `-y`). It de-dupes by
   profile URL, paces itself with a randomised delay, stops on LinkedIn's weekly
-  invite limit, and marks each sent note so it's never sent twice (the dashboard
-  strikes it through). When it runs, a **`Connection notes`** summary table
-  (`Pending / Sent / Already connected / Skipped (no Connect) / Failed`) is printed
-  after the `Run #` table so you can see how many outreach invitations succeeded.
+  invite limit, and marks successful invitations to keep them out of the pending
+  queue. Actual note delivery is recorded separately; only a sent note is struck
+  through on the dashboard. When it runs, a **`Connection invitations`** summary
+  table (`Pending / Sent / Without note / Already connected /
+  Skipped (Connect/note unavailable) / Failed`) is printed after the `Run #` table.
+  **Without note** is a subset of **Sent**, not an additional total.
+- **`connect_without_note` is a source-only update after v0.2.3**, off by default.
+  Enable it in YAML or **Run → Customize settings for this run → Behavior →
+  Connect without a note if unavailable**. The GUI creates a changed-only private
+  preset; saved YAML is unchanged. The fallback needs an enabled, explicitly
+  identified **Send without a note** invitation button. It does not substitute a
+  generic Send button or retry arbitrary note-send failures without a note.
+  Dry runs click neither final Send action and do not mark delivery. A plain
+  invitation leaves the note unsent and keeps the full-message draft for follow-up;
+  the dashboard labels it **Sent without note**.
 - Every record (drafted, sent, declined, or failed) is written to the
   `outreach_messages` table for auditing and dedupe.
 - The message context includes the role, company, your name, years of experience

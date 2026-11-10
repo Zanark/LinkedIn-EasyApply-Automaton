@@ -407,12 +407,14 @@ Retry **every failed or aborted application** in one go — no search crawl. It 
 
 ### `connect`
 
-Send your pending hiring-team recruiters a **free LinkedIn connection invitation carrying their ≤300-character note** — the short note only, never the long message. It opens its **own fresh browser** (so you can run it after an apply run has closed its browser), goes to each recruiter's profile, clicks **Connect → Add a note**, types the note, and clicks **Send**. It reads the same `outreach_messages` table the outreach drafts live in, de-dupes by profile URL, paces itself with a random human-like delay, stops on LinkedIn's weekly invite limit, and marks each sent note so it's never sent twice (the dashboard strikes it through).
+Send your pending hiring-team recruiters a **free LinkedIn connection invitation**, preferring their ≤300-character note — never the long message. It opens its **own fresh browser** (so you can run it after an apply run has closed its browser), goes to each recruiter's profile, clicks **Connect → Add a note**, types the note, and clicks **Send**. It reads the same `outreach_messages` table the outreach drafts live in, de-dupes by profile URL, paces itself with a random human-like delay, and stops on LinkedIn's weekly invite limit.
+
+Set `outreach.connect_without_note: true` to permit an explicit **Send without a note** invitation button only when note entry is unavailable. The default is `false` (skip instead); an available note is still preferred. In the source GUI, use **Run → Customize settings for this run → Behavior → Connect without a note if unavailable**. Successful plain invitations leave the pending queue but do not mark or strike through the unsent note. Both draft texts stay available for follow-up. The **Connection invitations** summary includes **Without note** as a subset of **Sent**.
 
 | Option | Meaning | Default |
 | --- | --- | --- |
 | `-c, --config PATH` | Config file. | `configs\config.yaml` |
-| `--dry-run` | Go through Connect → Add a note but **never click Send**. | off (live!) |
+| `--dry-run` | Rehearse Connect; **click neither final Send nor Send without a note**. | off (live!) |
 | `-n, --limit INT` | Cap how many invitations to send this pass. | config `connect_max_per_run` |
 | `--run INT` | Only send notes drafted during a specific run id. | all pending |
 | `-y, --yes` | Skip the confirmation prompt. | prompts on |

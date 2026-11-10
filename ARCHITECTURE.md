@@ -851,9 +851,11 @@ its **own fresh browser session**, opened *after* the apply run's browser has
 closed — matching the "close the window once the applications are done, then open
 it again just to connect" flow.
 
-It sends **only the connection note**, never the long message (the long message
+It prefers an invitation **with the connection note**, never the long message (the long message
 still needs the recruiter to accept the invite first, and is handled by hand from
-the dashboard).
+the dashboard). The separate `outreach.connect_without_note: false` toggle permits
+an explicit **Send without a note** invitation action only when note entry is
+unavailable. Notes remain preferred when enabled; the default skips that contact.
 
 **Two entry points, one implementation:**
 
@@ -873,17 +875,25 @@ the dashboard).
   profile, detects an already-connected/pending state, clicks **Connect** (from the
   top card or the **More** overflow menu), clicks **Add a note**, types the note
   (defensively trimmed to 300 chars), and clicks **Send** — returning a
-  `ConnectOutcome` (`sent` / `already` / `no_button` / `note_unavailable` /
-  `limit_reached` / `dry_run` / `failed`). `dry_run` does everything except the
-  final Send and backs out of the modal. It never raises.
+  `ConnectOutcome` (`sent` / `sent_without_note` / `already` / `no_button` /
+  `note_unavailable` / `limit_reached` / `dry_run` / `dry_run_without_note` /
+  `failed`). The opt-in fallback requires an enabled, explicitly identified
+  invitation-dialog no-note button; generic Send and arbitrary note-send errors
+  do not authorize it. `dry_run` skips both final send actions and dismisses the
+  modal.
 - `connect/service.py` — `ConnectionInviteService` is the orchestration half: it
   loads pending invites (`database.pending_connection_invites`), de-dupes by
   profile URL (a recruiter surfaced by two jobs is invited once, but **all** their
-  rows are marked), opens a fresh `BrowserManager`, paces itself with a randomised
+  loaded rows are marked), opens a fresh `BrowserManager`, paces itself with a randomised
   human-like delay between invites (`connect_min/max_delay_seconds` — the codebase's
   first jittered delay), stops early on LinkedIn's weekly-invite-limit modal, and
-  marks each sent note via `database.mark_outreach_note_sent` so it is never sent
-  twice (and the dashboard strikes it through). Returns a `ConnectSummary`.
+  records each successful invitation via `database.mark_outreach_invitation_sent`.
+  `invitation_sent_at` excludes a plain invitation from future pending queries
+  without claiming its note was delivered; only `with_note=True` also stamps
+  `note_sent_at` for strike-through. Draft note/message text remains available.
+  Legacy note-only marks stay excluded without a historical backfill. Returns a
+  `ConnectSummary` whose `sent_without_note` is a subset of invitation total `sent`;
+  dry-run would-send counts never persist delivery.
 - `forms/selectors.py` — the `PROFILE_*` / `INVITE_*` candidate lists driving the
   flow (the only un-unit-testable part; live selectors).
 

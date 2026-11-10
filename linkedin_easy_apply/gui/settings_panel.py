@@ -111,12 +111,16 @@ _FIELD_HELP: dict[str, tuple[str, str]] = {
         "draft writes a report; send needs interactive approval or falls back to drafts.",
     ),
     "outreach.send_connection_notes": (
-        "Optionally send this run's pending connection notes after Apply or Reapply.",
+        "Optionally send this run's pending invitations after Apply or Reapply.",
         "Enabled can open another browser and send real invitations after the run.",
     ),
     "outreach.connect_max_per_run": (
         "Cap pending connection invitations selected for each pass.",
-        "5 processes at most five notes; Run target overrides this for Connect.",
+        "5 selects at most five pending rows; Run target overrides this for Connect.",
+    ),
+    "outreach.connect_without_note": (
+        "Allow a plain invitation only when connection note entry is unavailable.",
+        "Enabled sends without a note when Add a note is unavailable; off skips that contact.",
     ),
     "resume.builder.enabled": (
         "Enable per-job resume generation using the separately configured builder.",
@@ -270,6 +274,9 @@ class RunSettings(QWidget):
         self._check(behavior, "Clean unreferenced screenshots", "screenshots.cleanup")
         self._choice(behavior, "Outreach", "outreach.mode", ["draft", "send"])
         self._check(behavior, "Send connection notes after run", "outreach.send_connection_notes")
+        self._check(
+            behavior, "Connect without a note if unavailable", "outreach.connect_without_note"
+        )
         self._number(behavior, "Connection cap", "outreach.connect_max_per_run", 1, 100000)
         self._check(behavior, "Dynamic resume builder", "resume.builder.enabled")
         for index in range(self.tabs.count()):

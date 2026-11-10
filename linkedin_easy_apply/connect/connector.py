@@ -2,8 +2,9 @@
 
 This is the DOM-facing half of the connection-note microservice: given a target
 recruiter's profile URL and their <=300-char note, it drives the profile page
-through **Connect -> Add a note -> Send**. It never sends the long message - only
-the free connection note that can be attached to an invitation.
+through **Connect -> Add a note -> Send**. An explicit opt-in permits **Send
+without a note** only when note entry is unavailable. It never sends the long
+message.
 
 The class is intentionally thin so the decision flow can be unit-tested against a
 fake page. :class:`~linkedin_easy_apply.connect.service.ConnectionInviteService`
@@ -29,11 +30,13 @@ class ConnectOutcome(StrEnum):
     """The result of trying to send one connection invitation."""
 
     SENT = "sent"  # invitation with the note was sent
+    SENT_WITHOUT_NOTE = "sent_without_note"
     ALREADY = "already"  # already connected, or an invite is already pending
     NO_BUTTON = "no_button"  # no Connect entry point (top-card or "More" menu)
     NOTE_UNAVAILABLE = "note_unavailable"  # the "Add a note" field never appeared
     LIMIT_REACHED = "limit_reached"  # LinkedIn's weekly invitation limit was hit
     DRY_RUN = "dry_run"  # everything but the final Send click (dry-run)
+    DRY_RUN_WITHOUT_NOTE = "dry_run_without_note"
     FAILED = "failed"  # navigation error, missing Send button, or an exception
 
 
@@ -54,14 +57,21 @@ class InviteTarget:
 class ProfileConnector:
     """Drive a single profile page through Connect -> Add a note -> Send.
 
-    ``dry_run`` performs every step except the final Send click (and backs out of
-    the modal), so it can be exercised safely against real profiles.
+    ``allow_without_note`` permits an explicit no-note action only when note entry
+    is unavailable. ``dry_run`` skips either final Send action and dismisses the
+    dialog.
     """
 
     def __init__(
-        self, *, dry_run: bool = False, settle_ms: int = 2500, modal_ms: int = 1200
+        self,
+        *,
+        dry_run: bool = False,
+        allow_without_note: bool = False,
+        settle_ms: int = 2500,
+        modal_ms: int = 1200,
     ) -> None:
         self._dry_run = dry_run
+        self._allow_without_note = allow_without_note
         self._settle_ms = settle_ms
         self._modal_ms = modal_ms
 
@@ -135,31 +145,37 @@ class ProfileConnector:
         modal = first(page, selectors.INVITE_LIMIT_MODAL)
         return modal is not None and is_visible(modal)
 
+    @staticmethod
+    def _first_available(page: Any, candidates: list[str]) -> Any | None:
+        for selector in candidates:
+            matches = page.locator(selector)
+            for index in range(matches.count()):
+                control = matches.nth(index)
+                if is_visible(control) and control.is_enabled():
+                    return control
+        return None
+
     def _add_note_and_send(self, page: Any, target: InviteTarget) -> ConnectOutcome:
-        add_note = first(page, selectors.INVITE_ADD_NOTE_BUTTON)
-        if add_note is None or not is_visible(add_note):
-            logger.warning("Connect: 'Add a note' unavailable for {} - backing out", target.label)
-            self._dismiss(page)
-            return ConnectOutcome.NOTE_UNAVAILABLE
-
-        note = target.note.strip()
-        if len(note) > NOTE_CHAR_LIMIT:
-            logger.warning(
-                "Connect: note for {} is {} chars; trimming to {}",
-                target.label,
-                len(note),
-                NOTE_CHAR_LIMIT,
-            )
-            note = note[:NOTE_CHAR_LIMIT]
-
         try:
+            add_note = self._first_available(page, selectors.INVITE_ADD_NOTE_BUTTON)
+            if add_note is None:
+                return self._note_unavailable(page, target)
+
+            note = target.note.strip()
+            if len(note) > NOTE_CHAR_LIMIT:
+                logger.warning(
+                    "Connect: note for {} is {} chars; trimming to {}",
+                    target.label,
+                    len(note),
+                    NOTE_CHAR_LIMIT,
+                )
+                note = note[:NOTE_CHAR_LIMIT]
+
             add_note.click()
             page.wait_for_timeout(800)
-            box = first(page, selectors.INVITE_NOTE_TEXTAREA)
+            box = self._first_available(page, selectors.INVITE_NOTE_TEXTAREA)
             if box is None:
-                logger.warning("Connect: note textarea did not open for {}", target.label)
-                self._dismiss(page)
-                return ConnectOutcome.NOTE_UNAVAILABLE
+                return self._note_unavailable(page, target)
             box.click()
             try:
                 box.fill(note)
@@ -192,6 +208,49 @@ class ProfileConnector:
             logger.warning("Connect: error sending to {}: {}", target.label, exc)
             self._dismiss(page)
             return ConnectOutcome.FAILED
+
+    def _note_unavailable(self, page: Any, target: InviteTarget) -> ConnectOutcome:
+        if not self._allow_without_note:
+            logger.warning(
+                "Connect: note entry unavailable for {} - backing out "
+                "(Connect without a note is off)",
+                target.label,
+            )
+            self._dismiss(page)
+            return ConnectOutcome.NOTE_UNAVAILABLE
+
+        logger.warning(
+            "Connect: note entry unavailable for {} - trying the enabled no-note fallback",
+            target.label,
+        )
+        send = self._first_available(page, selectors.INVITE_SEND_WITHOUT_NOTE_BUTTON)
+        if (
+            send is None
+            or (send.get_attribute("aria-label") or safe_text(send)).strip().casefold()
+            != "send without a note"
+        ):
+            logger.warning(
+                "Connect: no enabled 'Send without a note' invitation button for {} "
+                "- backing out",
+                target.label,
+            )
+            self._dismiss(page)
+            return ConnectOutcome.FAILED
+
+        if self._dry_run:
+            logger.info(
+                "Connect: [dry-run] would send invitation without a note to {}", target.label
+            )
+            self._dismiss(page)
+            return ConnectOutcome.DRY_RUN_WITHOUT_NOTE
+
+        send.click()
+        page.wait_for_timeout(800)
+        if self._invite_limit_hit(page):
+            logger.warning("Connect: weekly invitation limit reached on send without a note")
+            return ConnectOutcome.LIMIT_REACHED
+        logger.success("Connect: sent invitation without a note to {}", target.label)
+        return ConnectOutcome.SENT_WITHOUT_NOTE
 
     def _dismiss(self, page: Any) -> None:
         """Close the invitation modal without sending (best-effort)."""

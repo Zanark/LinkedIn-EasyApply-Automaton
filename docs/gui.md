@@ -78,6 +78,18 @@ private preset files. No command or setting change is performed by the tour.*
 
 ## Windows executable
 
+**Prepared branding update (not in v0.2.3):** desktop windows use the project's
+seafoam form-and-lightning mark rather than interpreter branding. The same
+multi-resolution `docs/mark.ico` is embedded in both Windows executables and
+bundled for Qt; the original `docs/mark.svg` remains the artwork source.
+A stable, version-independent Windows application identity is set before Qt
+startup without changing saved preferences. Tutorial and startup-error windows
+use the same setup. Existing downloads and already-running windows are unchanged.
+Reopen an updated app only after finishing commands and saving editor changes.
+An older pinned shortcut can retain its original icon; pin the updated executable
+instead. No interpreter modification, shell-cache clearing or automatic repinning
+is performed.
+
 Download the Windows x64 ZIP from
 [Releases](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/latest).
 Extract the **entire folder**, then double-click `EasyApplyAutomaton.exe`.
@@ -171,10 +183,17 @@ run ID. The command preview updates as controls change.
 | Search | Enable saved searches; supply exact job URLs for Apply. |
 | Limits | Company/daily caps, search pages/page size, pauses, score threshold. |
 | Browser | Edge/Chrome/Chromium, profile, headless, timing, resume folder/default PDF. |
-| Behavior | Unknown-question pauses, resume review delay, screenshots/cleanup, outreach mode and connection caps, dynamic builder enablement. |
+| Behavior | Unknown-question pauses, resume review delay, screenshots/cleanup, outreach mode, connection caps and optional no-note fallback, dynamic builder enablement. |
 
 Unchecked hides the tabs and applies no customization overrides; checking alone
 does not save or start anything. Only changed overrides are applied.
+**Connect without a note if unavailable** defaults off and applies to standalone
+Connect and the optional end-of-run invitation pass. Enabled still prefers the
+note; only unavailable note entry permits an explicit **Send without a note**
+invitation action. Dry run skips both final send actions. A plain invitation is
+counted under Invites, not HR sent, and does not mark its draft note as delivered.
+This control is a source-only update after the v0.2.3 executable; the released
+walkthrough below documents that earlier build.
 **Start** and **Copy command** validate and
 materialize a private preset in `logs\gui-runs`; the original YAML is unchanged.
 Presets may contain personal configuration: keep them private like logs.

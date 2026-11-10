@@ -316,6 +316,7 @@ class OutreachConfig(BaseModel):
     # the standalone ``connect`` command runs the same pass on demand.
     send_connection_notes: bool = False
     connect_dry_run: bool = False  # drive Connect -> Add a note but skip the final Send
+    connect_without_note: bool = False  # plain invites only when note entry is unavailable
     connect_max_per_run: int = 15  # cap invites per run (LinkedIn weekly limit is ~100-200)
     connect_min_delay_seconds: float = 8.0  # randomised, human-like pause between invites
     connect_max_delay_seconds: float = 25.0

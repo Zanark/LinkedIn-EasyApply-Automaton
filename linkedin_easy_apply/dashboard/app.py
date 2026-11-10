@@ -1316,7 +1316,11 @@ def _split_outreach_drafts(
         except (TypeError, ValueError, OverflowError, OSError):
             applied = None
         row = {**draft, "applied_at": applied}
-        if applied is not None and applied < cutoff and not row.get("note_sent_at"):
+        if (
+            applied is not None
+            and applied < cutoff
+            and not (row.get("note_sent_at") or row.get("invitation_sent_at"))
+        ):
             priority.append(row)
         else:
             regular.append(row)
@@ -1346,7 +1350,11 @@ def _outreach_section(db: Database) -> None:
         editor_rows = [
             {
                 "Message sent": False,
-                "Note sent": "✓" if d.get("note_sent_at") else "—",
+                "Invitation": (
+                    "Sent with note"
+                    if d.get("note_sent_at")
+                    else "Sent without note" if d.get("invitation_sent_at") else "Not sent"
+                ),
                 "Name": d.get("person_name") or "Unknown",
                 "Profile": d.get("profile_url") or "",
                 "Applied to": _job(d),
@@ -1367,7 +1375,7 @@ def _outreach_section(db: Database) -> None:
             key=widget_key,
             column_order=[
                 "Message sent",
-                "Note sent",
+                "Invitation",
                 "Name",
                 "Profile",
                 "Applied to",
@@ -1375,7 +1383,7 @@ def _outreach_section(db: Database) -> None:
                 "Résumé to attach",
             ],
             disabled=[
-                "Note sent",
+                "Invitation",
                 "Name",
                 "Profile",
                 "Applied to",
@@ -1388,9 +1396,11 @@ def _outreach_section(db: Database) -> None:
                     help="Tick once you've sent the full message (after they connected), then press "
                     "Remove — it deletes the outreach (message, note and all).",
                 ),
-                "Note sent": st.column_config.TextColumn(
-                    "Note sent",
-                    help="✓ once the free connection note has been sent (mark it per contact below).",
+                "Invitation": st.column_config.TextColumn(
+                    "Invitation",
+                    help="Distinguishes invitation delivery from actual note delivery.\n\n"
+                    "Example: Sent without note leaves the drafted note unsent and "
+                    "the full message pending.",
                 ),
                 "Applied on": st.column_config.TextColumn(
                     "Applied on",
@@ -1407,7 +1417,7 @@ def _outreach_section(db: Database) -> None:
         with st.container(border=True, key="outreach_priority"):
             st.markdown(f"#### Prioritize first — {len(priority)} overdue contact(s)")
             st.caption(
-                "Applied more than 7 days ago with no connection note or full message sent. "
+                "Applied more than 7 days ago with no invitation or full message sent. "
                 "Oldest applications first."
             )
             edited.append(_editor(priority, "outreach_priority_editor"))
@@ -1422,8 +1432,9 @@ def _outreach_section(db: Database) -> None:
         edited.append(_editor(regular, "outreach_done_editor"))
     st.caption(
         f"{len(drafts)} contact(s). **Workflow:** open a profile, send the short connection "
-        "note with your invite and mark **Connection note sent** (it stays here, struck through); "
-        "once they accept, send the full message and mark **Message sent** to remove it."
+        "note with your invite and mark **Connection note sent** (it stays here, struck through). "
+        "The optional automated no-note fallback records only the invitation; its note stays "
+        "unsent. Once they accept, send the full message and mark **Message sent** to remove it."
     )
     if st.button("🗑️ Remove message-sent outreach", type="primary"):
         done_ids = [
@@ -1448,8 +1459,13 @@ def _outreach_section(db: Database) -> None:
         name = draft.get("person_name") or "Unknown"
         job = _job(draft)
         note_sent = bool(draft.get("note_sent_at"))
+        invitation_sent = note_sent or bool(draft.get("invitation_sent_at"))
         overdue = draft["id"] in priority_ids
-        marker = "   ✓ note sent" if note_sent else ""
+        marker = (
+            "   ✓ note sent"
+            if note_sent
+            else "   ✓ invite sent without note" if invitation_sent else ""
+        )
         if overdue:
             marker = "   ⚠ Overdue outreach"
         header = f"{index}. {name}" + (f"  —  {job}" if job != "—" else "") + marker
@@ -1466,13 +1482,24 @@ def _outreach_section(db: Database) -> None:
                 st.markdown(f"**Résumé to attach:** {resume}")
                 if draft.get("resume_path"):
                     st.caption(draft["resume_path"])
+            if invitation_sent and not note_sent:
+                when = str(draft.get("invitation_sent_at") or "")[:16].replace("T", " ")
+                st.info(
+                    "Invitation sent without a note"
+                    + (f" · {when}" if when else "")
+                    + ". The drafted note was not sent; the full message is still pending."
+                )
             st.markdown("**Message** _(send once they connect)_:")
             st.code(draft.get("message") or "", language="text")
             note = draft.get("note") or ""
             if note:
                 st.markdown(
                     f"**Connection note** — {len(note)}/300 chars, "
-                    "_attach to the invite (free, no connection needed)_:"
+                    + (
+                        "_draft not sent with this invitation_:"
+                        if invitation_sent and not note_sent
+                        else "_attach to the invite (free, no connection needed)_:"
+                    )
                 )
                 if note_sent:
                     when = str(draft.get("note_sent_at") or "")[:16].replace("T", " ")
@@ -1495,6 +1522,17 @@ def _outreach_section(db: Database) -> None:
                         help="Clear the 'connection note sent' mark for this contact.",
                     ):
                         db.mark_outreach_note_sent([int(draft["id"])], sent=False)
+                        st.rerun()
+                elif invitation_sent:
+                    if st.button(
+                        "↩️ Undo invitation sent",
+                        key=f"outreach_invitation_undo_{draft['id']}",
+                        help="Clear the local invitation mark, making it eligible again.\n\n"
+                        "Example: correct a mistaken mark; this does not withdraw a LinkedIn invite.",
+                    ):
+                        db.mark_outreach_invitation_sent(
+                            [int(draft["id"])], with_note=False, sent=False
+                        )
                         st.rerun()
                 elif note:
                     if st.button(

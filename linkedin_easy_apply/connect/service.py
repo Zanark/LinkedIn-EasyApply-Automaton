@@ -4,14 +4,14 @@
 microservice. It:
 
 1. loads the pending invites from the database (rows that have a profile URL and a
-   note but whose ``note_sent_at`` is still NULL),
+   note but neither an invitation nor a note marked sent),
 2. de-duplicates them by profile URL,
 3. opens a **fresh** :class:`BrowserManager` (the apply run's browser has already
    closed by the time this runs, which is exactly the "close the window, open it
    again" behaviour we want - a clean session just for connecting),
 4. paces itself with a randomised human-like delay between invites, and
-5. marks each successfully sent note via ``mark_outreach_note_sent`` so it is
-   never sent twice and the dashboard strikes it through.
+5. records invitation delivery separately from actual note delivery so a plain
+   invitation is not retried or falsely displayed as a delivered note.
 
 Everything the browser touches lives in :mod:`connect.connector`, so this class is
 fully unit-testable with a fake connector + browser factory.
@@ -36,19 +36,20 @@ from linkedin_easy_apply.progress import Metric, ProgressReporter
 
 @dataclass(slots=True)
 class ConnectSummary:
-    """Tally of a connection-note pass."""
+    """Tally of a connection-invitation pass."""
 
     total: int = 0  # pending invites considered (after de-dup + cap)
-    sent: int = 0  # notes sent (or, in dry-run, would-be sent)
+    sent: int = 0  # invitations sent (or, in dry-run, would-be sent)
     already: int = 0  # already connected / pending
     skipped: int = 0  # no Connect button or no note field
     failed: int = 0  # errors
     limit_reached: bool = False  # LinkedIn weekly invite limit hit -> stopped early
     dry_run: bool = False
+    sent_without_note: int = 0  # subset of sent, including would-send in dry-run
 
 
 class ConnectionInviteService:
-    """Send pending connection notes, one fresh browser session for the whole pass."""
+    """Send pending invitations, one fresh browser session for the whole pass."""
 
     def __init__(
         self,
@@ -69,7 +70,9 @@ class ConnectionInviteService:
         self._max = max(0, cfg.connect_max_per_run)
         self._min_delay = max(0.0, cfg.connect_min_delay_seconds)
         self._max_delay = max(self._min_delay, cfg.connect_max_delay_seconds)
-        self._connector = connector or ProfileConnector(dry_run=self._dry_run)
+        self._connector = connector or ProfileConnector(
+            dry_run=self._dry_run, allow_without_note=cfg.connect_without_note
+        )
         self._sleep = sleeper or time.sleep
         self._browser_factory = browser_factory or (lambda: BrowserManager(config.browser))
         # Rows sharing one profile URL (same recruiter reached via two jobs) are
@@ -77,17 +80,17 @@ class ConnectionInviteService:
         self._ids_by_key: dict[str, list[int]] = {}
 
     def run(self, run_id: int | None = None, *, limit: int | None = None) -> ConnectSummary:
-        """Send every pending connection note (optionally scoped to *run_id*)."""
+        """Send pending invitations (optionally scoped to *run_id*)."""
         self._progress.activity("loading_connections")
         cap = limit if limit is not None else (self._max or None)
         targets = self._load_targets(run_id, cap)
         summary = ConnectSummary(total=len(targets), dry_run=self._dry_run)
         self._progress.connections(len(targets), dry_run=self._dry_run)
         if not targets:
-            logger.info("Connect: no pending connection notes to send")
+            logger.info("Connect: no pending connection invitations to send")
             return summary
         logger.info(
-            "Connect: sending {} connection note(s){}",
+            "Connect: sending {} connection invitation(s){}",
             len(targets),
             " [dry-run]" if self._dry_run else "",
         )
@@ -147,7 +150,9 @@ class ConnectionInviteService:
     ) -> None:
         metrics: dict[ConnectOutcome, Metric] = {
             ConnectOutcome.SENT: "connect_sent",
+            ConnectOutcome.SENT_WITHOUT_NOTE: "connect_sent",
             ConnectOutcome.DRY_RUN: "connect_dry_runs",
+            ConnectOutcome.DRY_RUN_WITHOUT_NOTE: "connect_dry_runs",
             ConnectOutcome.ALREADY: "connect_already",
             ConnectOutcome.NO_BUTTON: "connect_skipped",
             ConnectOutcome.NOTE_UNAVAILABLE: "connect_skipped",
@@ -157,12 +162,21 @@ class ConnectionInviteService:
         if outcome in metrics:
             increments[metrics[outcome]] = 1
         self._progress.increment(increments)
-        if outcome is ConnectOutcome.SENT:
+        if outcome in (
+            ConnectOutcome.SENT,
+            ConnectOutcome.SENT_WITHOUT_NOTE,
+            ConnectOutcome.DRY_RUN,
+            ConnectOutcome.DRY_RUN_WITHOUT_NOTE,
+        ):
             summary.sent += 1
-            ids = self._ids_by_key.get(self._dedup_key(target.profile_url), [target.id])
-            self._db.mark_outreach_note_sent(ids)
-        elif outcome is ConnectOutcome.DRY_RUN:
-            summary.sent += 1  # would-be sent; DB is deliberately left untouched
+            without_note = outcome in (
+                ConnectOutcome.SENT_WITHOUT_NOTE,
+                ConnectOutcome.DRY_RUN_WITHOUT_NOTE,
+            )
+            summary.sent_without_note += int(without_note)
+            if outcome in (ConnectOutcome.SENT, ConnectOutcome.SENT_WITHOUT_NOTE):
+                ids = self._ids_by_key.get(self._dedup_key(target.profile_url), [target.id])
+                self._db.mark_outreach_invitation_sent(ids, with_note=not without_note)
         elif outcome is ConnectOutcome.ALREADY:
             summary.already += 1
         elif outcome in (ConnectOutcome.NO_BUTTON, ConnectOutcome.NOTE_UNAVAILABLE):

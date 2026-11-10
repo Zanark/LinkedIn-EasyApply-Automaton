@@ -77,6 +77,7 @@ class Database:
         wanted: dict[tuple[str, str], str] = {
             ("outreach_messages", "note"): "TEXT",
             ("outreach_messages", "note_sent_at"): "TEXT",
+            ("outreach_messages", "invitation_sent_at"): "TEXT",
             ("skips", "context"): "TEXT",
         }
         for (table, column), coltype in wanted.items():
@@ -756,6 +757,7 @@ class Database:
         """
         sql = (
             "SELECT o.id, o.person_name, o.profile_url, o.message, o.note, o.note_sent_at,"
+            " o.invitation_sent_at,"
             " o.created_at, j.title AS job_title, j.company AS job_company,"
             " r.name AS resume_name, r.path AS resume_path,"
             " CASE WHEN a.status = 'submitted'"
@@ -778,6 +780,7 @@ class Database:
             "message",
             "note",
             "note_sent_at",
+            "invitation_sent_at",
             "created_at",
             "job_title",
             "job_company",
@@ -848,6 +851,17 @@ class Database:
         ``note_sent_at`` is set. Returns the number of rows updated; a no-op
         (returns ``0``) when *ids* is empty.
         """
+        return self.mark_outreach_invitation_sent(ids, with_note=True, sent=sent)
+
+    def mark_outreach_invitation_sent(
+        self, ids: Sequence[int], *, with_note: bool, sent: bool = True
+    ) -> int:
+        """Record invitation delivery without claiming an unsent note was sent.
+
+        Keep the outreach row and full message for the later follow-up. Clearing
+        the mark also clears note delivery and restores pending-invite eligibility.
+        Legacy note-only timestamps remain recognized without rewriting history.
+        """
         wanted = [int(i) for i in ids]
         if not wanted:
             return 0
@@ -855,18 +869,19 @@ class Database:
         value = _now() if sent else None
         with self.connect() as conn:
             cur = conn.execute(
-                f"UPDATE outreach_messages SET note_sent_at=? WHERE id IN ({placeholders})",
-                [value, *wanted],
+                "UPDATE outreach_messages SET invitation_sent_at=?, note_sent_at=?"
+                f" WHERE id IN ({placeholders})",
+                [value, value if with_note else None, *wanted],
             )
             return int(cur.rowcount)
 
     def pending_connection_invites(
         self, run_id: int | None = None, *, limit: int | None = None
     ) -> list[dict[str, Any]]:
-        """Outreach rows whose free <=300-char connection note has NOT been sent yet.
+        """Outreach rows whose connection invitation has NOT been sent yet.
 
         A "pending invite" needs a ``profile_url`` to open and a ``note`` to type,
-        and its ``note_sent_at`` must still be NULL so a note is never sent twice.
+        and neither ``invitation_sent_at`` nor legacy ``note_sent_at`` may be set.
         Consumed by the connection-note microservice
         (:class:`~linkedin_easy_apply.connect.service.ConnectionInviteService`);
         returns ``id``, ``person_name``, ``profile_url`` and ``note`` oldest-first,
@@ -875,6 +890,7 @@ class Database:
         sql = (
             "SELECT id, person_name, profile_url, note FROM outreach_messages"
             " WHERE note_sent_at IS NULL"
+            " AND invitation_sent_at IS NULL"
             " AND note IS NOT NULL AND trim(note) != ''"
             " AND profile_url IS NOT NULL AND trim(profile_url) != ''"
         )

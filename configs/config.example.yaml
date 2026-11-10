@@ -193,6 +193,7 @@ outreach:
   # to walk through Connect + Add a note without ever clicking Send).
   send_connection_notes: false   # true = auto-send connection notes at end of run
   connect_dry_run: false         # go through the flow but skip the final Send click
+  connect_without_note: false    # allow a plain invite only if note entry is unavailable
   connect_max_per_run: 15        # cap invites per run (LinkedIn weekly limit ~100-200)
   connect_min_delay_seconds: 8   # randomised, human-like pause between invites
   connect_max_delay_seconds: 25

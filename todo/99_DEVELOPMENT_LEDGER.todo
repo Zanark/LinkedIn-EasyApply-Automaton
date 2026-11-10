@@ -1,5 +1,129 @@
 # Development ledger
 
+## 2026-11-10 - Combined source-publication preparation without runtime activation
+
+- The user separately authorizes a push. Reconcile the already qualified
+  optional no-note and Windows-branding candidates in an isolated Git worktree,
+  not in source that the independent application can load. Do not treat push
+  authority as permission for a tag, release, install replacement or restart.
+- Apply both frozen patches and review the complete combined public diff.
+  Exactly twenty-nine product payloads remain; both overlapping files merge
+  cleanly and all twenty-seven others match their immutable candidate receipts,
+  including the original-derived nine-frame ICO. Retain both original candidates.
+- Verify imports resolve from the integrated lane using the existing interpreter.
+  Repository Ruff passes, Black leaves 119 files unchanged, mypy passes all
+  seventy-three implementation modules and all 253 combined affected cases pass.
+  Use offscreen Qt and disposable fictional test/cache paths, not real applicant
+  configuration, state, browser profiles or independent application controls.
+- Carry only the six reviewed public tracking files and persistent mappings.
+  Update only lea-31/lea-32 descriptions for combined qualification; leave both
+  BLOCKED/Ready for the still-coordinated active-source switch. Preserve all
+  thirty earlier mappings and the original OPEN/In review qualification gaps.
+- Independently verify all thirty-two exact issue identities, managed baselines,
+  lifecycle, single Project memberships and persistent backlinks. Only the two
+  intended descriptions change; both remain OPEN/Ready. Subsequent scoped
+  preview/apply are no-ops without further content or timestamp churn.
+- Commit, canonical remote source and exact-SHA hosted qualification are separate
+  publication read-back gates. The active checkout deliberately remains at its
+  previous source revision; the source launcher and installed v0.2.3 are unchanged.
+  A published source commit alone is not activation or human taskbar acceptance.
+
+## 2026-11-10 - Windows application and taskbar branding
+
+- Inspect the existing window icon and both Windows executable definitions.
+  Qt currently loads the SVG, but the EXEs do not embed it and desktop startup
+  does not establish an explicit Windows application identity. These findings
+  motivate both fixes; they do not prove every cause of a stale pinned icon.
+- Prepare an independent public-source candidate using the existing original
+  seafoam form-and-lightning artwork. Preserve thirty-one predecessor mappings,
+  private/native metadata, prior candidate evidence and installed entrypoints.
+  Do not overwrite source used by an independent application, modify the shared
+  interpreter, clear shell caches or manipulate the user's taskbar pins.
+- Keep technical qualification, safe source promotion and release publication
+  separate. The latest icon request does not activate a new release pipeline.
+- Implement exactly eight candidate payloads: a nine-size ICO derived from the
+  original SVG, shared application creation with Windows identity before Qt,
+  icon resources in both EXEs, three affected test files and the desktop guide.
+  Keep the existing settings identities and non-Windows startup. Log actual
+  native identity/icon failures; do not silently claim branding succeeded.
+- Black passes six Python/spec files, Ruff passes the five changed Python
+  files and mypy passes seventy-three source modules. All 82 affected cases
+  pass. Correct an overstrict zero-alpha corner assertion for real downsampling;
+  injected PyInstaller spec globals are checked by execution and an actual build,
+  not unrelated lint suppression.
+- Build both actual Windows executables in isolated output/cache directories.
+  Verify the real process application identity, both hidden-window HICONs and
+  all nine exact PE icon frames in both EXEs. Windows-extracted executable
+  renders match the original exactly; directly review the native contact sheet.
+  Correct the checker to count both returned large/small handles. The frozen
+  GUI completes actual desktop, icon, tutorial, Playwright and sibling-CLI
+  offline smoke; its first report read was premature, not a product failure.
+- Freeze all eight payloads with the actual ICO binary included. Read-only
+  patch applicability succeeds without applying it. Preserve all 175 public
+  checkout preimages, thirty-one predecessor records/mappings, selected
+  private/native metadata, previous candidate receipts/patch and eight installed
+  entrypoints. Reverify independent process creation identities. Remove only
+  the inspected owned fictional smoke workspace.
+- Leave lea-32 BLOCKED with Ready stage and a coordinated-source-save-point
+  blocker. The qualified branding is not active in the source app or installed
+  v0.2.3. No independent application is controlled; no interpreter/cache/pin
+  mutation, commit, push, release replacement or human acceptance is included.
+- Reconcile only lea-32. Independent read-back verifies #32 OPEN, its exact
+  reviewed managed description, one Ready issue-backed Project item and durable
+  backlink. Settled scoped preview/apply are no-ops without content/timestamp
+  churn across all thirty-two records. Preserve all thirty-one predecessors,
+  #31's separate Ready blocker and original #2/#9 OPEN/In review gaps. Record
+  settlement here and in the excluded index, not another managed-body rewrite.
+
+## 2026-11-10 - Optional connection invitations without a note
+
+- Add a separately opted-in fallback when the invitation dialog cannot offer a
+  note. Keep note-first behavior and the existing default; do not turn arbitrary
+  send errors, limits or unrelated controls into permission for a plain invite.
+- Establish lea-31 and a public-source-only isolated development lane. Baseline
+  thirty existing workstreams/mappings, selected private/native metadata and
+  eight installed public entrypoints. Do not copy real configuration, resumes,
+  databases, browser state or the unrelated untracked plugin into the candidate.
+- Separate invitation delivery from note delivery so a successful plain invite
+  does not claim that its draft was sent or remain pending for another invite.
+  Preserve the long-message follow-up, limits, dry-run and live counters.
+- Existing application processes are independent. Do not control their windows,
+  restart them or run live LinkedIn automation. This task does not authorize
+  another commit, push, release or installer replacement.
+- Implement exactly twenty-three candidate payloads: nine source modules, four
+  test files, the additive schema/example setting and eight affected guides.
+  The desktop Behavior toggle defaults off and preserves saved configuration.
+  Prefer usable note controls even when hidden, disabled or ARIA-disabled decoys
+  precede them. Only an explicit enabled dialog-scoped no-note send can fall back;
+  unrelated controls and arbitrary note-send errors never grant permission.
+- Track invitation delivery separately from note delivery. Keep plain-invite
+  drafts and full-message follow-up; exclude either sent timestamp from pending
+  invitations and remove plain-invite contacts from overdue invitation priority.
+  Preserve legacy note-only rows, actual-only persistence, dry-run and limits.
+  Report the no-note subset without inflating note or full-message totals.
+- All 238 affected cases pass. Black/Ruff pass thirteen changed Python files;
+  mypy passes seventy-three implementation files. Twelve actual fictional
+  offline DOM cases pass, followed by both native themes and direct visual
+  review of the complete toggle label. The auxiliary checker initially fails
+  on its route callback and scroll/font assumptions; use existing usable-font
+  registration and painted-label bounds rather than weakening checks.
+  Correct the new setting's copied comment without changing its executable AST.
+- The source dashboard still uses the real checkout. Preserve loadable source,
+  independent processes, private inputs/preferences, prior workstreams and
+  installed entrypoints. Leave lea-31 BLOCKED with an explicit Ready stage and
+  coordinated-save-point blocker. The qualified candidate remains staged,
+  not active; no new release, live invitation or human acceptance is claimed.
+- Freeze the exact twenty-three qualified payloads and their public-source
+  patch. Read-only patch applicability and unchanged-candidate verification
+  pass. All 160 protected checkout sources, thirty predecessor workstreams and
+  mappings, selected private/native metadata and eight installed entrypoints
+  are preserved. No product-source patch is applied.
+- Reconcile only lea-31. Independent read-back verifies #31 OPEN with the exact
+  reviewed description, one Ready issue-backed Project item and persistent
+  backlink. Scoped preview/apply settle as no-ops without content or timestamp
+  churn across all thirty-one records. Preserve all thirty predecessors and
+  original #2/#9 OPEN/In review gaps; source promotion remains BLOCKED.
+
 ## 2026-11-10 - Updated media and Windows v0.2.3 delivery
 
 - The user separately authorizes refreshed README screenshots and GIFs followed

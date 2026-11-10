@@ -16,10 +16,9 @@ from linkedin_easy_apply.runtime import prepare_workspace
 def _smoke_gui(report: Path) -> int:
     from playwright.sync_api import sync_playwright
     from PySide6.QtCore import QCoreApplication, QEvent, QSettings, QTimer
-    from PySide6.QtWidgets import QApplication
 
     from linkedin_easy_apply import __version__
-    from linkedin_easy_apply.gui.main_window import MainWindow
+    from linkedin_easy_apply.gui.main_window import MainWindow, create_application
     from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog
 
     with sync_playwright() as playwright:
@@ -29,7 +28,7 @@ def _smoke_gui(report: Path) -> int:
     QSettings.setPath(
         QSettings.Format.IniFormat, QSettings.Scope.UserScope, str(Path.cwd() / "smoke-settings")
     )
-    application = QApplication([])
+    application = create_application()
     window = MainWindow("configs\\config.yaml")
     output: list[str] = []
     window._runner.output.connect(output.append)
@@ -37,6 +36,10 @@ def _smoke_gui(report: Path) -> int:
 
     def finished(code: int, status: str) -> None:
         rendered = not window.grab().isNull()
+        branded = (
+            not application.windowIcon().pixmap(32, 32).isNull()
+            and not window.windowIcon().pixmap(32, 32).isNull()
+        )
         try:
             tutorial = TutorialDialog(window, start_topic=CUSTOMIZE_TOPIC)
         except (OSError, UnicodeError, ValueError) as exc:
@@ -52,6 +55,7 @@ def _smoke_gui(report: Path) -> int:
             code == 0
             and __version__ in "".join(output)
             and rendered
+            and branded
             and driver_ready
             and tutorial_rendered
         )
@@ -61,6 +65,7 @@ def _smoke_gui(report: Path) -> int:
             cli_status=status,
             playwright_driver=driver_ready,
             rendered=rendered,
+            application_icon=branded,
             tutorial_rendered=tutorial_rendered,
             tutorial_topics=tutorial_topics,
             output="".join(output),
@@ -96,9 +101,9 @@ def main() -> int:
         app()
         return 0
 
-    from PySide6.QtWidgets import QApplication, QMessageBox
+    from PySide6.QtWidgets import QMessageBox
 
-    from linkedin_easy_apply.gui.main_window import run
+    from linkedin_easy_apply.gui.main_window import create_application, run
 
     parser = argparse.ArgumentParser(description="Easy Apply Automaton desktop")
     parser.add_argument("--config", default="configs\\config.yaml")
@@ -110,7 +115,7 @@ def main() -> int:
         try:
             return run(theme=args.theme, tutorial=True)
         except (OSError, UnicodeError, ValueError) as exc:
-            application = QApplication.instance() or QApplication([])
+            application = create_application()
             QMessageBox.critical(None, "Tutorial unavailable", str(exc))
             application.quit()
             return 1
@@ -122,7 +127,7 @@ def main() -> int:
                 json.dumps({"ok": False, "error": str(exc)}), encoding="utf-8"
             )
         else:
-            application = QApplication([])
+            application = create_application()
             QMessageBox.critical(None, "Workspace unavailable", str(exc))
             application.quit()
         return 1

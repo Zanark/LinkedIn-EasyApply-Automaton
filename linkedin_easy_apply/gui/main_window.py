@@ -8,12 +8,15 @@ simply launches it (as does ``apply.py dashboard``).
 
 from __future__ import annotations
 
+import ctypes
+import sys
 import webbrowser
 from dataclasses import replace
 from pathlib import Path
 from typing import override
 
 import yaml
+from loguru import logger
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer, QUrl
 from PySide6.QtGui import (
     QAction,
@@ -65,10 +68,11 @@ from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog
 from linkedin_easy_apply.gui.widgets import Card, Console, PathRow, heading, muted, tooltip
 from linkedin_easy_apply.runtime import is_frozen, resource_root, workspace_root
 
-__all__ = ["MainWindow", "run"]
+__all__ = ["MainWindow", "create_application", "run"]
 
 _ORG = "LinkedInEasyApplyAutomaton"
 _APP = "DesktopGUI"
+_WINDOWS_APP_ID = f"{_ORG}.{_APP}"
 _DASHBOARD_URL = "http://localhost:8501"
 
 _ACTION_HELP: dict[str, tuple[str, str]] = {
@@ -1431,19 +1435,40 @@ class MainWindow(QMainWindow):
 
 
 def application_icon() -> QIcon:
-    """The project mark, or an empty icon when the asset is missing.
+    """Load the same multi-resolution mark embedded in the Windows executables."""
+    mark = resource_root() / "docs" / "mark.ico"
+    icon = QIcon(str(mark))
+    if icon.isNull():
+        logger.warning("Application icon could not be loaded: {}", mark)
+    return icon
 
-    Importing ``QtSvg`` is what registers Qt's SVG image handler; without it
-    ``QIcon`` silently loads nothing and the window gets a blank icon.
-    """
-    mark = resource_root() / "docs" / "mark.svg"
-    if not mark.is_file():
-        return QIcon()
+
+def _set_windows_app_id() -> None:
+    if sys.platform != "win32":
+        return
     try:
-        import PySide6.QtSvg  # noqa: F401
-    except ImportError:  # pragma: no cover - QtSvg ships with PySide6
-        return QIcon()
-    return QIcon(str(mark))
+        shell32 = ctypes.WinDLL("shell32", use_last_error=True)
+        set_identity = shell32.SetCurrentProcessExplicitAppUserModelID
+        set_identity.argtypes = [ctypes.c_wchar_p]
+        set_identity.restype = ctypes.c_long
+        result = set_identity(_WINDOWS_APP_ID)
+    except OSError as exc:
+        logger.warning("Windows taskbar identity could not be set: {}", exc)
+        return
+    if result < 0:
+        logger.warning("Windows taskbar identity failed (HRESULT 0x{:08X}).", result & 0xFFFFFFFF)
+
+
+def create_application() -> QApplication:
+    """Establish Windows identity before Qt can create a top-level window."""
+    _set_windows_app_id()
+    application = QApplication.instance() or QApplication([])
+    if not isinstance(application, QApplication):
+        raise RuntimeError("The desktop requires a QApplication, not a QCoreApplication.")
+    application.setApplicationName("Easy Apply Automaton")
+    application.setApplicationDisplayName("Easy Apply Automaton")
+    application.setWindowIcon(application_icon())
+    return application
 
 
 def theme_icon(palette: Palette) -> QIcon:
@@ -1480,12 +1505,7 @@ def run(
     config_path: str = "configs/config.yaml", theme: str | None = None, *, tutorial: bool = False
 ) -> int:
     """Create the application and show the window. Returns the Qt exit code."""
-    application = QApplication.instance() or QApplication([])
-    if not isinstance(application, QApplication):
-        raise RuntimeError("The desktop requires a QApplication, not a QCoreApplication.")
-    application.setApplicationName("Easy Apply Automaton")
-    application.setApplicationDisplayName("Easy Apply Automaton")
-    application.setWindowIcon(application_icon())
+    application = create_application()
     window: QWidget
     if tutorial:
         preferences = QSettings(QSettings.defaultFormat(), QSettings.Scope.UserScope, _ORG, _APP)

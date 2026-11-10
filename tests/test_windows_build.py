@@ -1,12 +1,39 @@
-"""Redistribution notices must survive packaging, including incomplete wheel metadata."""
+"""Windows bundles retain redistribution notices and native application branding."""
 
 import shutil
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
 from tools import build_windows
+
+
+def test_freezer_embeds_and_bundles_the_application_icon(monkeypatch):
+    specification = build_windows.ROOT / "packaging" / "windows" / "EasyApplyAutomaton.spec"
+    executables = []
+    monkeypatch.setitem(
+        sys.modules,
+        "PyInstaller.utils.hooks",
+        SimpleNamespace(collect_data_files=lambda *a, **k: []),
+    )
+    namespace = {
+        "SPECPATH": str(specification.parent),
+        "Analysis": lambda *a, **k: SimpleNamespace(
+            pure=[], scripts=[], binaries=[], datas=k["datas"]
+        ),
+        "PYZ": lambda *a: None,
+        "EXE": lambda *a, **k: executables.append(k),
+        "COLLECT": lambda *a, **k: None,
+    }
+    exec(compile(specification.read_text(encoding="utf-8"), str(specification), "exec"), namespace)
+    assert {entry["name"] for entry in executables} == {"EasyApplyAutomaton", "lea"}
+    for entry in executables:
+        icon = Path(entry["icon"])
+        assert icon == build_windows.ROOT / "docs" / "mark.ico"
+        assert icon.is_file()
+        assert (str(icon), "docs") in namespace["analysis"].datas
 
 
 @pytest.fixture

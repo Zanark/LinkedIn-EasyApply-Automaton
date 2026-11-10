@@ -419,19 +419,27 @@ microservice; the same pass is available standalone as `apply.py connect`.
 
 - Skipped after **Ctrl+C**, a **failed** or **unconfirmed** run, and in **scan** mode.
 - `ConnectionInviteService` loads pending invites (`note` present, `profile_url`
-  present, `note_sent_at IS NULL`), de-dupes by profile URL, and for each: navigate
+  present, both `invitation_sent_at` and `note_sent_at IS NULL`), de-dupes by profile URL, and for each: navigate
   → **Connect** (top card or **More** menu) → **Add a note** → type the note →
   **Send**, pausing a randomised `connect_min…max_delay_seconds` between people.
-- Each success is marked via `mark_outreach_note_sent` (so it's never re-sent and
-  the dashboard strikes it through); it stops early if LinkedIn shows the weekly
-  invitation-limit modal.
+- With `outreach.connect_without_note: true`, unavailable note entry instead
+  permits an enabled, explicitly identified invitation-dialog **Send without a
+  note** action. Off by default, this fallback neither replaces an available note
+  nor retries arbitrary send errors. Dry run skips both final send actions.
+- Each success is marked via `mark_outreach_invitation_sent`: all invitations get
+  `invitation_sent_at`; only invitations with a note get `note_sent_at` and a
+  struck-through note. Plain invitations leave their draft note unsent and retain
+  the full message. Legacy note-only sent marks stay excluded without backfilling
+  their history. The pass stops early on the weekly invitation-limit modal.
 - Errors are swallowed with a warning — the connection pass can never change the
   already-finished run's result. No pending invites → no browser is even launched.
-- **End-of-run output:** when this pass ran, the CLI prints a second **`Connection
-  notes`** table right after the `Run #` summary — `Pending / Sent / Already
-  connected / Skipped (no Connect) / Failed` (plus a `Weekly limit` row if hit).
-  `Sent` is the count of successful outreach. The standalone `apply.py connect`
-  command prints the same table.
+- **End-of-run output:** the CLI prints **`Connection invitations`** after the
+  `Run #` summary — `Pending / Sent / Without note / Already connected /
+  Skipped (Connect/note unavailable) / Failed`, plus `Weekly limit` if hit.
+  `Sent` counts invitations, with **Without note** as a subset. Dry-run rows say
+  **would-send** and do not persist delivery. The standalone `apply.py connect`
+  command prints the same table. The legacy `connection_notes_sent` scalar
+  excludes plain invitations.
 
 ---
 

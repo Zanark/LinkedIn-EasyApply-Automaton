@@ -275,7 +275,12 @@ in the next topic.
   after successful applications.
 - **Send connection notes after run** separately enables an end-of-run
   invitation pass. Draft mode alone does not switch off this pass.
-- **Connection cap** limits notes in that pass and supplies Connect's default.
+- **Connect without a note if unavailable** is off by default. When enabled,
+  Connect and the end-of-run pass still prefer the note, but can use an explicit
+  **Send without a note** invitation button if note entry is unavailable.
+  Turning it off skips that contact instead. It never sends the long message.
+- **Connection cap** limits pending invitation rows selected for that pass and
+  supplies Connect's default.
 - **Dynamic resume builder** enables the separately installed builder when
   properly configured. It re-emphasizes existing master content for a job;
   it must not fabricate experience.
@@ -283,6 +288,8 @@ in the next topic.
 The top tri-state **Hiring-team outreach** controls whether hiring-team
 outreach is enabled. Mode, connection-note sending and invitation cap are
 separate settings; review all of them before a live run.
+Dry run skips both final invitation-send actions and leaves delivery unmarked.
+The source-only no-note fallback was added after the v0.2.3 executable.
 
 For no outreach, explicitly disable hiring-team outreach and leave
 **Send connection notes after run** off. For resume building, configure the

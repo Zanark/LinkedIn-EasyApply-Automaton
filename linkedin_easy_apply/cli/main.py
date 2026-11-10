@@ -319,22 +319,23 @@ def scan(
 def connect(
     config: Path = typer.Option(_DEFAULT_CONFIG, "--config", "-c", help="Path to config.yaml."),
     dry_run: bool = typer.Option(
-        False, "--dry-run", help="Open Connect + Add a note but never click Send."
+        False, "--dry-run", help="Preview the configured invitation flow; never click Send."
     ),
     limit: int | None = typer.Option(
-        None, "--limit", "-n", help="Max connection notes to send this pass."
+        None, "--limit", "-n", help="Max connection invitations to send this pass."
     ),
     run_id: int | None = typer.Option(
         None, "--run", help="Only send notes drafted in this run id (default: all pending)."
     ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation prompt."),
 ) -> None:
-    """Send pending free LinkedIn connection invitations, each with its <=300-char note.
+    """Send pending free LinkedIn connection invitations, preferring their drafted notes.
 
     Opens a fresh browser, visits every recruiter whose connection note has not yet
-    been sent, and clicks Connect -> Add a note -> Send. Successful invites are
-    marked so they are never sent twice. This is the same pass the ``apply`` run can
-    trigger at the end when ``outreach.send_connection_notes`` is enabled.
+    been sent, and clicks Connect -> Add a note -> Send. The off-by-default
+    outreach.connect_without_note setting permits a plain invite only when note
+    entry is unavailable. Both outcomes are marked to prevent repeated invites.
+    This is also the end-of-run pass enabled by outreach.send_connection_notes.
     """
     from linkedin_easy_apply.connect.service import ConnectionInviteService
 
@@ -346,12 +347,17 @@ def connect(
     if progress is not None:
         progress.start("connect", dry_run=dry_run)
     if not pending:
-        console.print("[green]No pending connection notes to send.[/green]")
+        console.print("[green]No pending connection invitations to send.[/green]")
         return
     console.print(
-        f"[cyan]{len(pending)} pending connection note(s) to send[/cyan]"
+        f"[cyan]{len(pending)} pending connection invitation(s) to send[/cyan]"
         + (" [dim](dry-run: Send is never clicked)[/dim]" if dry_run else "")
     )
+    if cfg.outreach.connect_without_note:
+        console.print(
+            "[yellow]No-note fallback enabled: invitations may be sent without a note "
+            "when note entry is unavailable.[/yellow]"
+        )
     if not yes and not dry_run:
         try:
             if not typer.confirm(
@@ -369,14 +375,14 @@ def connect(
 
 
 def _connect_table(summary: ConnectSummary) -> Table:
-    """Build the connection-note outreach summary table.
+    """Build the connection-invitation outreach summary table.
 
     Shared by the standalone ``connect`` command and the end-of-run
     connection pass of ``apply``/``reapply`` so both render identically.
     ``Sent`` is the count of successful outreach (invitations delivered).
     """
     dry = summary.dry_run
-    table = Table(title="Connection notes")
+    table = Table(title="Connection invitations")
     table.add_column("Metric")
     table.add_column("Value", justify="right")
     table.add_row("Pending", str(summary.total))
@@ -384,8 +390,12 @@ def _connect_table(summary: ConnectSummary) -> Table:
         "Sent (would-send)" if dry else "Sent",
         f"[green]{summary.sent}[/green]",
     )
+    table.add_row(
+        "Without note (would-send)" if dry else "Without note",
+        str(summary.sent_without_note),
+    )
     table.add_row("Already connected", str(summary.already))
-    table.add_row("Skipped (no Connect)", str(summary.skipped))
+    table.add_row("Skipped (Connect/note unavailable)", str(summary.skipped))
     table.add_row("Failed", f"[red]{summary.failed}[/red]" if summary.failed else "0")
     if summary.limit_reached:
         table.add_row("Weekly limit", "reached")

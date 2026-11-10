@@ -37,6 +37,7 @@ _ROLE_BY_SELECTOR = {
     selectors.INVITE_ADD_NOTE_BUTTON[0]: "add_note",
     selectors.INVITE_NOTE_TEXTAREA[0]: "textarea",
     selectors.INVITE_SEND_BUTTON[0]: "send",
+    selectors.INVITE_SEND_WITHOUT_NOTE_BUTTON[0]: "send_without_note",
     selectors.INVITE_LIMIT_MODAL[0]: "limit",
     selectors.INVITE_DISMISS_BUTTON[0]: "dismiss",
 }
@@ -55,18 +56,34 @@ class _Loc:
     def first(self) -> _Loc:
         return self
 
+    def nth(self, index: int) -> _Loc:
+        assert index == 0
+        return self
+
     def is_visible(self) -> bool:
-        return self._present
+        return self._present and self.role not in self._page.hidden
+
+    def is_enabled(self) -> bool:
+        return self._present and self.role not in self._page.disabled
+
+    def get_attribute(self, name: str) -> str | None:
+        return None
 
     def inner_text(self) -> str:
         # Only the More-menu Connect entry is text-inspected by the connector's
         # "Remove Connection" guard; the scenario controls what that text is.
         if self.role == "more_connect":
             return self._page.more_connect_text
+        if self.role == "send_without_note":
+            return self._page.without_note_text
         return ""
 
     def click(self) -> None:
+        if self.role in {"send", "send_without_note"} and self._page.fail_send:
+            raise RuntimeError("Fictional send failure")
         self._page.clicks.append(self.role)
+        if self.role in {"send", "send_without_note"} and self._page.limit_after_send:
+            self._page.roles.add("limit")
 
     def fill(self, text: str) -> None:
         self._page.filled[self.role] = text
@@ -78,6 +95,11 @@ class _FakePage:
     def __init__(self, roles: set[str], *, more_connect_text: str = "Connect") -> None:
         self.roles = set(roles)
         self.more_connect_text = more_connect_text
+        self.hidden: set[str] = set()
+        self.disabled: set[str] = set()
+        self.without_note_text = "Send without a note"
+        self.fail_send = False
+        self.limit_after_send = False
         self.clicks: list[str] = []
         self.filled: dict[str, str] = {}
         self.goto_url: str | None = None
@@ -168,6 +190,135 @@ def test_connector_note_field_unavailable():
     assert outcome is ConnectOutcome.NOTE_UNAVAILABLE
     assert "dismiss" in page.clicks
     assert "send" not in page.clicks
+
+
+def _fictional_target() -> InviteTarget:
+    return InviteTarget(
+        id=1,
+        person_name="Fictional Contact",
+        profile_url="https://example.test/contact",
+        note="A fictional connection note.",
+    )
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+@pytest.mark.parametrize(
+    "unavailable",
+    [
+        "missing_add_note",
+        "hidden_add_note",
+        "disabled_add_note",
+        "missing_textarea",
+        "hidden_textarea",
+        "disabled_textarea",
+    ],
+)
+def test_connector_plain_invite_requires_opt_in_and_unavailable_note(enabled, unavailable):
+    page = _FakePage({"connect", "add_note", "textarea", "send", "send_without_note", "dismiss"})
+    state, role = unavailable.split("_", 1)
+    if state == "missing":
+        page.roles.remove(role)
+    elif state == "hidden":
+        page.hidden.add(role)
+    else:
+        page.disabled.add(role)
+    outcome = ProfileConnector(allow_without_note=enabled).send_invite(page, _fictional_target())
+    assert outcome is (
+        ConnectOutcome.SENT_WITHOUT_NOTE if enabled else ConnectOutcome.NOTE_UNAVAILABLE
+    )
+    assert ("send_without_note" in page.clicks) is enabled
+    assert ("dismiss" in page.clicks) is not enabled
+    assert "send" not in page.clicks
+    assert not page.filled
+
+
+def test_connector_enabled_fallback_still_prefers_the_note():
+    page = _FakePage({"connect", "add_note", "textarea", "send", "send_without_note"})
+    target = _fictional_target()
+    outcome = ProfileConnector(allow_without_note=True).send_invite(page, target)
+    assert outcome is ConnectOutcome.SENT
+    assert page.filled["textarea"] == target.note
+    assert "send" in page.clicks and "send_without_note" not in page.clicks
+
+
+@pytest.mark.parametrize("role", ["add_note", "textarea", "send_without_note"])
+@pytest.mark.parametrize("state", ["hidden", "disabled"])
+def test_connector_ignores_unavailable_duplicate_controls(monkeypatch, role, state):
+    roles = {"connect", "send", "send_without_note", "dismiss"}
+    if role != "send_without_note":
+        roles.update({"add_note", "textarea"})
+    page = _FakePage(roles)
+    getattr(page, state).add("shadow")
+    controls = [_Loc(page, "shadow", True), _Loc(page, role, True)]
+
+    class _Matches:
+        def count(self) -> int:
+            return len(controls)
+
+        def nth(self, index: int) -> _Loc:
+            return controls[index]
+
+    original = page.locator
+    monkeypatch.setattr(
+        page,
+        "locator",
+        lambda selector: (
+            _Matches() if _ROLE_BY_SELECTOR.get(selector) == role else original(selector)
+        ),
+    )
+    outcome = ProfileConnector(allow_without_note=True).send_invite(page, _fictional_target())
+    assert outcome is (
+        ConnectOutcome.SENT_WITHOUT_NOTE if role == "send_without_note" else ConnectOutcome.SENT
+    )
+    assert "shadow" not in page.clicks
+
+
+def test_connector_plain_invite_dry_run_never_sends():
+    page = _FakePage({"connect", "send_without_note", "dismiss"})
+    outcome = ProfileConnector(dry_run=True, allow_without_note=True).send_invite(
+        page, _fictional_target()
+    )
+    assert outcome is ConnectOutcome.DRY_RUN_WITHOUT_NOTE
+    assert page.clicks == ["connect", "dismiss"]
+    assert not page.filled
+
+
+@pytest.mark.parametrize("unavailable", ["missing", "hidden", "disabled", "misleading", "error"])
+def test_connector_plain_invite_does_not_use_an_unavailable_or_ambiguous_button(unavailable):
+    page = _FakePage({"connect", "send", "send_without_note", "dismiss"})
+    if unavailable == "missing":
+        page.roles.remove("send_without_note")
+    elif unavailable == "hidden":
+        page.hidden.add("send_without_note")
+    elif unavailable == "disabled":
+        page.disabled.add("send_without_note")
+    elif unavailable == "misleading":
+        page.without_note_text = "Do not send without a note"
+    else:
+        page.fail_send = True
+    outcome = ProfileConnector(allow_without_note=True).send_invite(page, _fictional_target())
+    assert outcome is ConnectOutcome.FAILED
+    assert "send" not in page.clicks and "send_without_note" not in page.clicks
+    assert "dismiss" in page.clicks
+
+
+@pytest.mark.parametrize("after_send", [False, True])
+def test_connector_plain_invite_stops_at_weekly_limit(after_send):
+    page = _FakePage({"connect", "send_without_note", "dismiss"})
+    page.limit_after_send = after_send
+    if not after_send:
+        page.roles.add("limit")
+    outcome = ProfileConnector(allow_without_note=True).send_invite(page, _fictional_target())
+    assert outcome is ConnectOutcome.LIMIT_REACHED
+    assert ("send_without_note" in page.clicks) is after_send
+
+
+def test_connector_note_send_errors_do_not_downgrade_to_plain_invites():
+    page = _FakePage({"connect", "add_note", "textarea", "send", "send_without_note", "dismiss"})
+    page.fail_send = True
+    outcome = ProfileConnector(allow_without_note=True).send_invite(page, _fictional_target())
+    assert outcome is ConnectOutcome.FAILED
+    assert "send_without_note" not in page.clicks
 
 
 def test_connector_stops_on_weekly_limit_modal():
@@ -367,6 +518,76 @@ def test_service_dry_run_leaves_db_untouched(tmp_path):
     assert len(db.pending_connection_invites(run)) == 1  # still pending - not marked
 
 
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_service_plain_invite_dedup_persistence_and_live_metrics(tmp_path, dry_run):
+    db = Database(tmp_path / "fictional.db")
+    db.initialize()
+    run = _seed(
+        db,
+        [
+            {"key": "fictional-a", "url": "https://example.test/contact", "note": "Hello"},
+            {"key": "fictional-b", "url": "https://example.test/contact/?trk=x", "note": "Hello"},
+        ],
+    )
+    snapshots = []
+    outcome = ConnectOutcome.DRY_RUN_WITHOUT_NOTE if dry_run else ConnectOutcome.SENT_WITHOUT_NOTE
+    connector = _ScriptConnector([outcome])
+    summary = _service(
+        db, connector, dry_run=dry_run, progress=ProgressReporter(snapshots.append)
+    ).run(run)
+    assert summary.sent == summary.sent_without_note == 1
+    assert len(connector.seen) == 1
+    for row in db.outreach_drafts(run):
+        assert bool(row["invitation_sent_at"]) is not dry_run
+        assert row["note_sent_at"] is None
+        assert row["note"] == "Hello"
+        assert row["message"] == "the long message"
+    assert len(db.pending_connection_invites(run)) == (2 if dry_run else 0)
+    counts = snapshots[-1].counts
+    assert counts["connect_processed"] == 1
+    assert counts["connect_sent"] == (0 if dry_run else 1)
+    assert counts["connect_dry_runs"] == (1 if dry_run else 0)
+    assert counts["connect_skipped"] == counts["connect_failed"] == 0
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_standalone_connect_wires_fallback_and_reports_actual_delivery(
+    tmp_path, monkeypatch, enabled
+):
+    from io import StringIO
+
+    from rich.console import Console
+
+    from linkedin_easy_apply.cli import main
+
+    db = Database(tmp_path / "fictional.db")
+    db.initialize()
+    run = _seed(
+        db,
+        [{"key": "fictional-contact", "url": "https://example.test/contact", "note": "Hello"}],
+    )
+    config = AppConfig()
+    config.outreach.connect_without_note = enabled
+    browser = _FakeBrowser()
+    browser.page = _FakePage({"connect", "send_without_note", "dismiss"})
+    output = StringIO()
+    monkeypatch.setattr(main, "_load", lambda _path: config)
+    monkeypatch.setattr(main, "_database", lambda _config: db)
+    monkeypatch.setattr(main, "gui_progress", lambda: None)
+    monkeypatch.setattr(main, "console", Console(file=output, width=100))
+    monkeypatch.setattr(
+        "linkedin_easy_apply.connect.service.BrowserManager", lambda _config: browser
+    )
+    main.connect(config=tmp_path / "unused.yaml", dry_run=False, limit=None, run_id=run, yes=True)
+    [row] = db.outreach_drafts(run)
+    assert bool(row["invitation_sent_at"]) is enabled
+    assert row["note_sent_at"] is None
+    assert ("send_without_note" in browser.page.clicks) is enabled
+    assert "Connection invitations" in output.getvalue()
+    assert "Without note" in output.getvalue()
+    assert ("No-note fallback enabled" in output.getvalue()) is enabled
+
+
 def test_service_no_pending_never_opens_browser(tmp_path):
     db = Database(tmp_path / "c.db")
     db.initialize()
@@ -472,28 +693,32 @@ def _orchestrator(tmp_path, *, send: bool):
     return Orchestrator(config, db, AnswerStore({}))
 
 
-def test_apply_run_stores_connect_summary_for_second_table(tmp_path, monkeypatch):
+@pytest.mark.parametrize("without_note", [0, 1])
+def test_apply_run_stores_connect_summary_for_second_table(tmp_path, monkeypatch, without_note):
     """The apply run must surface the full ConnectSummary so the CLI can print
-    a second 'Connection notes' table (not just the sent count)."""
+    a second 'Connection invitations' table (not just the sent count)."""
     from linkedin_easy_apply.connect.service import ConnectSummary
     from linkedin_easy_apply.orchestrator import RunSummary
 
-    result = ConnectSummary(total=3, sent=2, already=0, skipped=1, failed=0, dry_run=False)
+    result = ConnectSummary(
+        total=3, sent=2, sent_without_note=without_note, skipped=1, dry_run=False
+    )
 
     class _FakeService:
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            pass
+        def __init__(self, config: AppConfig, *args: Any, **kwargs: Any) -> None:
+            assert config.outreach.connect_without_note
 
         def run(self, run_id: int | None = None, *, limit: int | None = None) -> ConnectSummary:
             return result
 
     monkeypatch.setattr("linkedin_easy_apply.orchestrator.ConnectionInviteService", _FakeService)
     orch = _orchestrator(tmp_path, send=True)
+    orch._config.outreach.connect_without_note = True
     summary = RunSummary(run_id=1, mode="apply")
     orch._maybe_send_connection_invites(1, summary)
 
     assert summary.connect_summary is result  # full tally reaches the CLI
-    assert summary.connection_notes_sent == 2  # back-compat scalar stays in sync
+    assert summary.connection_notes_sent == 2 - without_note
 
 
 def test_apply_run_stores_zero_connect_summary(tmp_path, monkeypatch):

@@ -6,6 +6,8 @@ import importlib.util
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -13,7 +15,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
-from PySide6.QtWidgets import QApplication, QDialog, QPushButton  # noqa: E402
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox, QPushButton  # noqa: E402
 
 from linkedin_easy_apply.gui import main_window  # noqa: E402
 from linkedin_easy_apply.gui.process import CommandRunner  # noqa: E402
@@ -158,3 +160,27 @@ def test_frozen_entry_tutorial_bypasses_first_run_preparation(monkeypatch, conso
         monkeypatch.setattr(sys, "argv", [executable, "--tutorial", "--theme", "deepseafoam"])
     assert entry.main() == 0
     assert called == (["console"] if console else [{"theme": "deepseafoam", "tutorial": True}])
+
+
+@pytest.mark.parametrize("failure", ["tutorial", "workspace"])
+def test_frozen_startup_errors_use_branded_application(monkeypatch, failure):
+    source = resource_root() / "packaging" / "windows" / "entry.py"
+    spec = importlib.util.spec_from_file_location("branding_windows_entry", source)
+    assert spec and spec.loader
+    entry = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(entry)
+    application = SimpleNamespace(quit=Mock())
+    create = Mock(return_value=application)
+    critical = Mock()
+    monkeypatch.setattr(main_window, "create_application", create)
+    monkeypatch.setattr(QMessageBox, "critical", critical)
+    monkeypatch.setattr(sys, "executable", "EasyApplyAutomaton.exe")
+    monkeypatch.setattr(
+        sys, "argv", ["EasyApplyAutomaton.exe", *(["--tutorial"] if failure == "tutorial" else [])]
+    )
+    monkeypatch.setattr(main_window, "run", Mock(side_effect=ValueError("fixture tutorial")))
+    monkeypatch.setattr(entry, "prepare_workspace", Mock(side_effect=OSError("fixture workspace")))
+    assert entry.main() == 1
+    create.assert_called_once_with()
+    critical.assert_called_once()
+    application.quit.assert_called_once_with()

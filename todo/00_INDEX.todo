@@ -139,6 +139,29 @@ all 450 installed files, eight frozen offline checks and exact version pass.
 Prior public releases, source launcher, private metadata and six earlier
 entrypoints remain intact; no independent application is restarted.
 
+The bounded lea-31 is implemented and technically qualified in isolated public
+source: an off-by-default, note-first fallback with separate invitation/note
+delivery, desktop help and eight affected guides. All 238 affected cases,
+twelve actual offline DOM scenarios and both reviewed fictional GUI themes pass.
+Source promotion is BLOCKED/Ready while an independent application uses the
+checkout. This candidate is not active in the source app or installed v0.2.3.
+
+The separate lea-32 prepares Windows application branding in an eight-payload
+candidate. All 82 affected cases pass. Actual Windows identity, hidden-window
+icons, nine original icon frames in each built executable and frozen desktop/
+tutorial/sibling-CLI smoke are verified. The binary-inclusive patch was qualified
+without changing active source. Active-checkout promotion is BLOCKED/Ready pending
+a coordinated save point; the original candidates and installed release remain.
+
+The separately authorized source-publication lane combines lea-31 and lea-32
+in an isolated Git worktree, leaving the running app's original checkout intact.
+All twenty-nine product payloads are reviewed: two cleanly merged overlaps and
+twenty-seven exact frozen-candidate matches. The 253-case combined qualification,
+Ruff, Black over 119 files and mypy over seventy-three modules pass. Reconcile
+only #31/#32's descriptions; both stay OPEN/Ready while active-checkout promotion
+is blocked. Source publication does not create a tag/release, replace installed
+v0.2.3 or resolve original #2/#9 live-qualification gaps.
+
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
 | lea-01 | 01_AUTOMATION_IMPROVEMENTS.todo | IN_REVIEW | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/2 |
@@ -171,8 +194,39 @@ entrypoints remain intact; no independent application is restarted.
 | lea-28 | 28_DASHBOARD_SKIP_DRILLDOWN.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/28 |
 | lea-29 | 29_GUI_ACTIVITY_AND_RESUME.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/29 |
 | lea-30 | 30_UPDATED_MEDIA_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/30 |
+| lea-31 | 31_OPTIONAL_NOTE_FREE_CONNECTIONS.todo | BLOCKED | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/31 |
+| lea-32 | 32_WINDOWS_APPLICATION_ICON.todo | BLOCKED | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32 |
 
 ## Completion log
+- 2026-11-10: Independently verify the updated #31/#32 managed descriptions,
+  OPEN lifecycle, single Ready issue-backed Project memberships and backlinks.
+  Scoped preview/apply settle as no-ops without further content/timestamp churn
+  across all thirty-two records. All thirty predecessor records remain unchanged.
+- 2026-11-10: Prepare the authorized combined source push in a separate worktree.
+  Qualify all twenty-nine merged product payloads and keep #31/#32 BLOCKED/Ready
+  for the active-checkout switch. Remote publication and exact-source hosted
+  qualification require their own read-back; no runtime activation is inferred.
+- 2026-11-10: Independently verify #32 OPEN with its exact reviewed description,
+  one Ready issue-backed Project item and persistent backlink. Scoped preview
+  and apply settle as no-ops; read-back confirms no content or timestamp churn
+  across all thirty-two records. Preserve all thirty-one predecessors, #31's
+  Ready blocker and original #2/#9 OPEN/In review gaps. Promotion remains BLOCKED.
+- 2026-11-10: Qualify and freeze exactly eight lea-32 branding payloads and an
+  applicable icon-inclusive patch. Preserve protected source, predecessor
+  workstreams, private/native metadata, installed entrypoints and independent
+  process identities. Source promotion remains BLOCKED/Ready, not activation.
+- 2026-11-10: Add lea-32 for Windows application and taskbar branding. Reuse
+  original project artwork, qualify a separate candidate and preserve the active
+  checkout, previous candidate, saved settings and released executables.
+- 2026-11-10: Independently verify #31 OPEN with its exact reviewed description,
+  one Ready issue-backed Project item and persistent backlink. Scoped preview
+  and apply settle as no-ops; read-back confirms no content or timestamp churn
+  across all thirty-one records. Preserve all thirty predecessors and original
+  #2/#9 OPEN/In review gaps. Source promotion remains BLOCKED, not DONE.
+- 2026-11-10: lea-31 has a qualified isolated candidate, not an activated update.
+  Leave source promotion blocked pending a coordinated application save point.
+  Preserve the running application and installed v0.2.3; do not infer publication
+  or live qualification from offline checks.
 - 2026-11-10: Independently verified #30 CLOSED/COMPLETED with its exact
   reviewed description, one Done issue-backed Project item and durable backlink.
   Settled scoped preview/apply are no-ops without content/timestamp churn

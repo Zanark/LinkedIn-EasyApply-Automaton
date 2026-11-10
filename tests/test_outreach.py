@@ -552,6 +552,41 @@ def test_mark_outreach_note_sent_can_be_undone(tmp_path):
     assert db.outreach_drafts(run)[0]["note_sent_at"] is None
 
 
+def test_legacy_invitation_migration_preserves_notes_and_separates_plain_delivery(tmp_path):
+    db = Database(tmp_path / "legacy-fictional.db")
+    with db.connect() as conn:
+        conn.execute(
+            "CREATE TABLE outreach_messages (id INTEGER PRIMARY KEY, run_id INTEGER, "
+            "job_id INTEGER, person_name TEXT, person_key TEXT, profile_url TEXT, message TEXT, "
+            "note TEXT, note_sent_at TEXT, status TEXT, created_at TEXT)"
+        )
+        conn.executemany(
+            "INSERT INTO outreach_messages "
+            "(id, person_key, profile_url, message, note, note_sent_at, status, created_at) "
+            "VALUES (?, ?, ?, 'Full fictional message', 'Fictional note', ?, 'drafted', ?)",
+            [
+                (1, "fictional-sent", "https://example.test/sent", "2020-01-02", "2020-01-01"),
+                (2, "fictional-pending", "https://example.test/pending", None, "2020-01-01"),
+            ],
+        )
+    db.initialize()
+    original = db.outreach_drafts()
+    db.initialize()
+    assert db.outreach_drafts() == original
+    assert original[0]["note_sent_at"] == "2020-01-02"
+    assert original[0]["invitation_sent_at"] is None
+    assert [row["id"] for row in db.pending_connection_invites()] == [2]
+    assert db.mark_outreach_invitation_sent([2], with_note=False) == 1
+    assert db.pending_connection_invites() == []
+    [sent, plain] = db.outreach_drafts()
+    assert sent == original[0]
+    assert plain["invitation_sent_at"] and plain["note_sent_at"] is None
+    assert plain["message"] == "Full fictional message" and plain["note"] == "Fictional note"
+    db.mark_outreach_invitation_sent([2], with_note=False, sent=False)
+    assert [row["id"] for row in db.pending_connection_invites()] == [2]
+    assert db.outreach_drafts() == original
+
+
 def test_mark_outreach_note_sent_empty_is_noop(tmp_path):
     db = Database(tmp_path / "t.db")
     db.initialize()

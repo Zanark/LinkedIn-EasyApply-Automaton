@@ -310,19 +310,25 @@ Structures at play inside the DB:
 - **An outreach audit + dedupe log** — `outreach_messages` records one row per
   hiring-team recruiter contacted (or drafted for), keyed loosely by
   `person_key`/`profile_url`, holding both the drafted `message` and the ≤300-char
-  connection `note`, a `note_sent_at` timestamp (`NULL` until you mark the free
-  connection note as sent), plus a `status` (`drafted`/`sent`/`declined`/`failed`).
+  connection `note`, an `invitation_sent_at` timestamp and a separate `note_sent_at`
+  timestamp (`NULL` until the note is marked sent), plus a `status`
+  (`drafted`/`sent`/`declined`/`failed`).
   `has_messaged_person` reads it to never contact anyone twice; `outreach_drafts`
   joins each drafted row to the résumé submitted for that job for the dashboard's
-  **Outreach** tab; `mark_outreach_note_sent` stamps/clears `note_sent_at` (a
-  non-destructive "connection note sent" flag the dashboard strikes through), while
+  **Outreach** tab; `mark_outreach_invitation_sent(ids, with_note=...)` stamps
+  invitation delivery and, only with a note, note delivery. The compatible
+  `mark_outreach_note_sent` delegates with `with_note=True`. Undo clears both marks
+  locally; it does not withdraw a LinkedIn invitation. Only a delivered note is
+  struck through. A plain invitation retains both draft texts, while
   `delete_outreach` removes a row (message, note and all) once the full message is
   sent and the outreach is complete. `pending_connection_invites` reads the same
-  table the other way — rows with a `note` and a `profile_url` whose `note_sent_at`
-  is still `NULL` — to feed the connection-note microservice
+  table the other way — rows with a `note` and a `profile_url` whose invitation
+  **and** note timestamps are still `NULL` — to feed the connection microservice
   (`linkedin_easy_apply/connect`), which sends each a free connection invitation and
-  then calls `mark_outreach_note_sent`. Like `skips`, it is isolated from
-  `applications`.
+  then calls `mark_outreach_invitation_sent`. The new nullable invitation column
+  is added idempotently; old note-only sent rows stay excluded without invented
+  invitation timestamps. Dry-run outcomes change neither mark. Like `skips`,
+  this is isolated from `applications`.
 
 **Upsert as a structure operation:** `INSERT ... ON CONFLICT(...) DO UPDATE`
 (`upsert_job`, `create_application`, `learn_answer`) is the SQL "put into a map"

@@ -448,6 +448,37 @@ def test_outreach_contact_headers_follow_priority_and_note_state(
     assert len(db.outreach_drafts()) == 3
 
 
+def test_plain_invitation_remains_followup_without_claiming_note_delivery(
+    table_app: tuple[AppTest, Database],
+) -> None:
+    app, db = table_app
+    old = next(draft for draft in db.outreach_drafts() if "Priority" in draft["person_name"])
+    db.mark_outreach_invitation_sent([old["id"]], with_note=False)
+    app.run()
+    assert not app.exception
+    assert not any("Prioritize first" in element.value for element in app.markdown)
+    rows = next(element.value for element in app.dataframe if "Message sent" in element.value)
+    selected = rows[rows["_id"] == old["id"]].iloc[0]
+    assert selected["Invitation"] == "Sent without note"
+    header = next(
+        element.label for element in app.expander if "Fictional Priority Contact" in element.label
+    )
+    assert "invite sent without note" in header and "Overdue" not in header
+    assert any("drafted note was not sent" in element.value for element in app.info)
+    assert old["note"] in [element.value for element in app.code]
+    assert len(db.outreach_drafts()) == 2
+    assert (
+        next(row for row in db.outreach_drafts() if row["id"] == old["id"])["note_sent_at"] is None
+    )
+    assert old["id"] not in {row["id"] for row in db.pending_connection_invites()}
+
+    app.button(key=f"outreach_invitation_undo_{old['id']}").click().run()
+    assert not app.exception
+    assert any("Overdue outreach" in element.label for element in app.expander)
+    assert old["id"] in {row["id"] for row in db.pending_connection_invites()}
+    assert len(db.outreach_drafts()) == 2
+
+
 @pytest.mark.parametrize(
     ("age", "note_sent", "unknown", "overdue"),
     [

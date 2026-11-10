@@ -1,0 +1,88 @@
+# Optional connection invitations without a note
+Workstream-ID: lea-31
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/31
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded connection-invitation fallback
+Status: BLOCKED
+Blocked-stage: Ready
+Blocker: Await a coordinated save point before replacing source used by an independent application.
+Milestone: Offer an explicit fallback when connection notes are unavailable
+Dependencies: lea-11
+
+## Purpose
+Allow an optional plain connection invitation when the invitation dialog cannot
+offer a note. Keep the existing note-first behavior and require an explicit
+opt-in rather than silently sending invitations without their drafted notes.
+
+## Tasks
+- [x] Trace connector, configuration, desktop, persistence and reporting boundaries.
+- [x] Establish an isolated fictional development lane and preservation baseline.
+- [x] Add an off-by-default setting and desktop toggle with two-line hover help.
+- [x] Implement a guarded note-free send path without weakening dry-run or limits.
+- [x] Persist and display invitation delivery separately from actual note delivery.
+- [x] Qualify affected behavior offline and update directly affected guides.
+- [x] Retain one existing issue-backed Project item and persistent backlink.
+- [x] Integrate and qualify the combined, separately authorized source-publication lane.
+- [ ] Promote the complete qualified candidate at a coordinated source-app save point.
+
+## Acceptance criteria
+- [x] Existing configurations continue to require a connection note by default.
+- [x] When available, the drafted note is preferred even with fallback enabled.
+- [x] An unavailable note can use only a positively identified invitation send action.
+- [x] Dry-run never sends, unavailable controls fail explicitly and weekly limits stop.
+- [x] Successful plain invitations count as invitations, not delivered notes.
+- [x] Persistence prevents repeated invitations and leaves the full message pending.
+- [x] Desktop overrides preserve saved configuration and describe the fallback clearly.
+- [x] Fictional checks preserve private inputs, running applications and released assets.
+- [x] Technical completion is distinguished from live qualification and publication.
+- [x] One issue-backed Project item and a durable backlink represent this workstream.
+- [ ] Source promotion is verified without disrupting the independent application.
+
+## Completion evidence
+Implementation and technical qualification are complete in isolated public
+source. The active original checkout and installed v0.2.3 do not contain this
+update. Updating that checkout remains blocked to protect an independently
+running application. Separate source publication does not activate that app;
+a different port or a passing fixture is not isolation.
+
+The off-by-default setting and Behavior checkbox prefer an available note.
+Fallback requires a visible, enabled, explicitly identified Send without a note
+button inside the invitation dialog. Hidden, disabled and misleading controls
+do not authorize sending; arbitrary note-send failures do not downgrade.
+
+Separate invitation and note timestamps prevent repeated pending invitations
+without falsely marking a draft delivered. Plain invitations retain both drafts,
+leave overdue invitation priority and are reported separately from sent notes
+and full hiring-team messages. Legacy note-only rows remain recognized.
+
+All 238 affected regression cases pass. Black/Ruff pass thirteen changed Python
+files and mypy passes seventy-three implementation files. Twelve actual offline
+browser scenarios pass, including note preference, dry-run, control identity and
+weekly-limit boundaries. Both fictional native themes are checked and visually
+reviewed with the complete toggle label visible. Eight affected guides describe
+the candidate separately from the released executable.
+
+Auxiliary browser routing, scroll geometry and missing-font assumptions initially
+failed. Correct the private checker using the existing font-registration helper
+rather than weakening product checks. No live LinkedIn qualification, human
+acceptance, source activation or independent restart is claimed by these checks.
+
+The separately authorized source-publication lane integrates all twenty-nine
+combined no-note and Windows-branding payloads. Both overlapping files merge
+cleanly; all twenty-seven nonoverlapping payloads match the frozen candidates
+exactly. All 253 combined affected cases pass; repository Ruff, Black over
+119 files and mypy over seventy-three implementation modules pass. Preserve
+the original frozen evidence. Commit/remote/hosted qualification read-back is
+a separate publication gate, not evidence that the active checkout switched.
+No new tag, release, installer replacement or live LinkedIn action is included.
+
+## Completion log
+- 2026-11-10: Prepare the separately authorized combined source push in an
+  isolated Git worktree. Qualify the exact merged payload and retain the Ready
+  blocker for the active checkout; do not close this workstream from publication.
+- 2026-11-10: Begin the optional note-free fallback. Preserve note-first defaults,
+  limits, dry-run, existing workstreams, private setup and independent applications.
+  Use fictional disposable state rather than a real LinkedIn session.
+- 2026-11-10: Qualify the isolated candidate and review both native themes.
+  Keep the workstream BLOCKED/Ready until coordinated source promotion is safe.
+  Preserve the thirty predecessor records and original live-qualification gaps.

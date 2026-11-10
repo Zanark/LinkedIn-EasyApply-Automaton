@@ -452,6 +452,36 @@
       "number": 30,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/30",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHXVJQ"
+    },
+    "lea-31": {
+      "baseline": {
+        "title": "[lea-31] Optional connection invitations without a note",
+        "managed": "38fe4df2741c6c939c75cb56ea07dab2c5e5498563af793984f24e6787169463",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "b3987357"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABd3DN9w",
+      "number": 31,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/31",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHYEyk"
+    },
+    "lea-32": {
+      "baseline": {
+        "title": "[lea-32] Windows application and taskbar branding",
+        "managed": "a6f18be77c5f59154c967b91357ed3dc2cfbe0cf4df1fee98c5cfbab271ff71e",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "b3987357"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABd3nFig",
+      "number": 32,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHYsCM"
     }
   }
 }
