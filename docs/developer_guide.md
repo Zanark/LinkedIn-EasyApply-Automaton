@@ -275,6 +275,37 @@ sequence. Bad/truncated frames warn without leaking payloads or clearing valid
 counts. Ordinary CLI/file logs emit no telemetry. Real-child tests verify
 updates before exit, prompt forwarding, stop/reset and rejection recovery.
 
+`gui/activity.py::RunActivity` keeps operation/lifecycle labels separate from
+outcome counters and retained `ResumeDisplay` filenames. Each supported state
+needs original distinct SVG geometry in `gui/activity_icons.py`, not merely a
+different color or a flattened standard icon. `activity_icon` uses QSvgRenderer
+and transparent, density-aware pixmaps with palette roles; informational blue
+is a documented local supplement, not a canonical DeepSeaFoam token. The tile
+has no visible caption, and centers its icon/name group with padding. The
+10.01px name declaration is 77% of the former 13px size, including a 10% increase
+over the initial compact design; Qt rounds raster font
+sizes to whole pixels. Tests cover every state in both themes at 1x/2x density,
+distinct alpha geometry, multiple inks, transparency and compact/expanded fit.
+Preserve the status-only transport, accessible operation description and
+selection-versus-attachment distinction when changing this presentation.
+
+Only action names use the bundled Nunito variable font, registered once through
+Qt's application-font database; registration failure is explicit. The original
+upright font and complete SIL Open Font License 1.1 live in `gui/fonts/`.
+They come unmodified from [Google Fonts' Nunito directory](https://github.com/google/fonts/tree/main/ofl/nunito):
+font Git blob `2ec1f4b0676c83ef33049db87b311171699e9192`,
+license blob `c8210f08ca3cece05b4f7baa428afe8e1abe3293`.
+The font remains OFL-licensed, not project MIT. Setuptools and the frozen spec
+include both resources; the Windows build also puts the license in
+`THIRD_PARTY_NOTICES/Nunito/OFL.txt` and refuses to package without it.
+
+The same per-state tone drives the tile's border and a centered, static
+`QGraphicsDropShadowEffect`, with theme-appropriate opacity and no animation.
+Repolish the frame and label on state/theme changes. Tests check the actual
+Nunito family, semibold weight, glyph coverage and rendered halo outside the
+frame in both themes; frozen smoke checks the bundled font/license and effect.
+The Qt-free palette module must not register fonts or import Qt.
+
 `gui/widgets.py::tooltip` formats option help as purpose plus a second
 `Example:` line. Explicit inventories cover settings, actions, targets and tool
 arguments; field labels share their control's help, and dependent descriptions

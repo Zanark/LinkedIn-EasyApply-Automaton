@@ -23,13 +23,18 @@ for dynamic resume building.
 and natural word wrapping. Toggle **Details** for original diagnostic prefixes.
 **Hover help:** fields, toggles and labels explain their purpose and give a
 practical example on the next line. Reopen the updated GUI to load these updates.
-Older EXEs are unchanged; extract v0.2.3 into a separate folder.
+Older EXEs are unchanged; extract v0.2.4 into a separate folder.
 The toolbar also removes the right-click **Main** hide checkbox;
 [recover a hidden older toolbar](docs/troubleshooting.md#the-top-toolbar-disappeared)
 without resetting your setup.
 
-**Current action and resume (v0.2.3 and source):** an operation-specific icon sits
-above the current action name. The Resume field keeps the last application
+**Current action and resume (v0.2.4 and source):** every stage has its own detailed,
+outlined multicolor icon above a centered rounded Nunito action name, 23% smaller than before.
+The border has a soft, steady glow matching the current stage's color, without
+flashing or pulsing. There is no redundant action header. Blue indicates normal work, green/teal
+resume or completion work, yellow a pause/caution, and red an error/discard.
+These are operation cues, not application outcomes.
+The Resume field keeps the last application
 filename until a later application selects another; selection alone confirms
 neither upload nor submission. Scans, tools and finished commands do not clear it.
 

@@ -9,7 +9,7 @@ For the commands themselves see
 
 ![The Run page in the DeepSeaFoam theme](images/gui-run-deepseafoam.png)
 
-*Windows v0.2.3 layout: run setup on the left; current-action icon, outcome
+*Windows v0.2.4 layout: run setup on the left; detailed current-action icon, outcome
 counters, retained resume filename, console and prompt input on the right.
 These current previews use isolated fictional data, not live applications.*
 
@@ -50,7 +50,7 @@ Action-dependent targets and tool inputs update their explanations when their
 meaning changes. Disabled fields still explain their purpose. These small,
 nonmodal popups do not save settings or start commands; the console retains
 its separate per-message diagnostic hover text. Reopen the updated source GUI
-or use the newly extracted v0.2.3 EXE; older v0.2.1 EXEs do not gain this update.
+or use the newly extracted v0.2.4 EXE; older v0.2.1 EXEs do not gain this update.
 
 To open only the guide, without configuration, history or browser startup:
 
@@ -78,7 +78,7 @@ private preset files. No command or setting change is performed by the tour.*
 
 ## Windows executable
 
-**Prepared branding update (not in v0.2.3):** desktop windows use the project's
+**Windows v0.2.4 branding:** desktop windows use the project's
 seafoam form-and-lightning mark rather than interpreter branding. The same
 multi-resolution `docs/mark.ico` is embedded in both Windows executables and
 bundled for Qt; the original `docs/mark.svg` remains the artwork source.
@@ -146,7 +146,7 @@ The source GUI retains the extras already installed in its environment.
 An existing `private-setup\Start-SourceSetup.cmd` directly launches this source
 checkout with its existing environment and configuration. It does not fetch or
 choose a GitHub release. The same command therefore loads updated source on
-the next launch, while a separately extracted v0.2.3 EXE runs the packaged build.
+the next launch, while a separately extracted v0.2.4 EXE runs the packaged build.
 Finish any active run and save unsaved edits before reopening either GUI.
 No configuration reset or repeat initialization is required.
 
@@ -192,8 +192,8 @@ Connect and the optional end-of-run invitation pass. Enabled still prefers the
 note; only unavailable note entry permits an explicit **Send without a note**
 invitation action. Dry run skips both final send actions. A plain invitation is
 counted under Invites, not HR sent, and does not mark its draft note as delivered.
-This control is a source-only update after the v0.2.3 executable; the released
-walkthrough below documents that earlier build.
+This control is included in source and Windows v0.2.4; older v0.2.3 EXEs are
+unchanged.
 **Start** and **Copy command** validate and
 materialize a private preset in `logs\gui-runs`; the original YAML is unchanged.
 Presets may contain personal configuration: keep them private like logs.
@@ -208,7 +208,7 @@ run filters, with fictional action icons, changing/retained resume filenames and
 outcome counters, without executing a command. The
 [README's Limits screenshot](../README.md#screenshots) is a still-image alternative.*
 
-### Current action and last resume (source and Windows v0.2.3)
+### Current action and last resume (source and Windows v0.2.4)
 
 The **Current action** tile beside the counters shows an icon above the actual
 operation name: searching jobs, selecting/building a resume, filling a form,
@@ -216,6 +216,15 @@ uploading, checking submission, drafting/sending outreach or processing an
 invitation. **Waiting for you** is an input/approval pause, not a stalled run.
 Command start, completion, Stop, errors and unavailable status stay distinct.
 Tools without operation updates show their command lifecycle instead.
+
+Every operation and lifecycle state has its own original outlined artwork with
+internal detail, partial fills and multicolor accents. Blue signals normal work,
+green/teal resume or completion work, yellow pause/caution, and red error/discard.
+The icon/name group is centered with padding; the action name is 23% smaller
+and uses the bundled, rounded Nunito font. A soft, steady border glow follows
+the current stage's color in both themes; it does not flash or pulse.
+The redundant visible **CURRENT ACTION** header is gone. Color and icons
+describe an operation, never proof that an application or invitation succeeded.
 
 The **Resume** field beside Start/Stop/Copy command shows the final filename
 chosen for an application, including a tailored PDF that replaced a static
@@ -228,8 +237,9 @@ not erase it. Retention lasts only while this GUI window is open; it is not
 saved to preferences. **Selection is not proof of upload or submission.**
 Use the console and confirmed-outcome counters for those results.
 
-These indicators are in updated source and Windows v0.2.3; older immutable
-v0.2.2 downloads are unchanged. The source launcher loads them on your next
+The indicators first shipped in v0.2.3; v0.2.4 adds the detailed artwork and
+centered rounded labels and stage-colored border glow. Older immutable downloads are unchanged.
+The source launcher loads updated source on your next
 deliberate launch; finish any active command and save edits before reopening.
 No configuration reset is needed. Each indicator has purpose/example hover help.
 

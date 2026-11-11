@@ -4,6 +4,8 @@ Both palettes come from the DeepSeaFoam project (``palette/deepseafoam.json``
 and ``palette/harbor-daylight.json``). They are transcribed here as *semantic
 roles* rather than copied field names, per that project's porting rules, so one
 stylesheet template serves both themes.
+The activity artwork adds a local informational blue to each theme; those
+supplementary values are not transcribed DeepSeaFoam palette tokens.
 
 Two details the porting rules call out explicitly and that are easy to get
 wrong in Qt:
@@ -50,6 +52,7 @@ ROLES: tuple[str, ...] = (
     "heading",  # strong emphasis, titles, selected labels
     "border",  # structural edge (not ordinary text)
     "accent",  # links, focus, primary-action fill
+    "information",  # supplementary blue for informational activity artwork
     "accent_hover",  # hovered/pressed primary action
     "button_text",  # ink on an accent fill
     "document",  # positive/document status ink
@@ -99,6 +102,7 @@ DEEP_SEA_FOAM = Palette(
             "heading": "#EEE8D5",  # warm
             "border": "#586E75",
             "accent": "#00A591",
+            "information": "#6CB6F2",
             "accent_hover": "#93A1A1",  # documented "primary-action hover"
             "button_text": "#000F13",  # base ink on the light hover fill
             "document": "#45D072",
@@ -126,6 +130,7 @@ HARBOR_DAYLIGHT = Palette(
             "heading": "#173D3A",
             "border": "#6B857E",
             "accent": "#006F63",
+            "information": "#236A9A",
             "accent_hover": "#00594F",
             "button_text": "#FCFAF2",  # paper ink on accent fills
             "document": "#247449",
@@ -219,8 +224,14 @@ QFrame#RunActivity, QFrame#ResumeDisplay {{
     border: 1px solid {separator};
     border-radius: 8px;
 }}
-QLabel#ActivityName {{ font-size: 13px; font-weight: 600; }}
+QLabel#ActivityName {{ font-family: "Nunito"; font-size: 10.01px; font-weight: 600; }}
+QFrame#RunActivity[tone="information"] {{ border-color: {information}; }}
+QFrame#RunActivity[tone="accent"] {{ border-color: {accent}; }}
+QFrame#RunActivity[tone="document"] {{ border-color: {document}; }}
+QFrame#RunActivity[tone="warning"] {{ border-color: {warning}; }}
+QFrame#RunActivity[tone="error"] {{ border-color: {error}; }}
 QLabel#ActivityName[tone="accent"], QLabel#ResumeName {{ color: {accent}; }}
+QLabel#ActivityName[tone="information"] {{ color: {information}; }}
 QLabel#ActivityName[tone="document"] {{ color: {document}; }}
 QLabel#ActivityName[tone="warning"] {{ color: {warning}; }}
 QLabel#ActivityName[tone="error"] {{ color: {error}; }}

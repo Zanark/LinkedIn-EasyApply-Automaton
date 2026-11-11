@@ -24,6 +24,16 @@ applicant or message content. This is ephemeral observability, not a second
 database: a confirmed action can be reported before later persistence finishes.
 Ordinary CLI invocations do not emit these frames.
 
+`gui/activity.py::RunActivity` presents explicit operation snapshots separately
+from outcomes; the selected resume remains in `ResumeDisplay` until replaced.
+`gui/activity_icons.py::activity_icon` renders an original per-stage SVG with
+Qt's SVG renderer at the display pixel density. The artwork uses palette roles,
+outlines and partial fills, not recolored platform-icon silhouettes. Geometry
+and theme changes remain presentation-only. The action name alone uses a bundled
+Nunito application font; a steady Qt drop-shadow glow and frame border share
+the state's semantic tone. No engine or persistence decision depends on the
+icon, label, font or its color.
+
 Native option help is another presentation concern: `gui/widgets.tooltip`
 formats purpose/example lines, while the window and settings panel own
 selection-specific descriptions. Hovering neither persists overrides nor

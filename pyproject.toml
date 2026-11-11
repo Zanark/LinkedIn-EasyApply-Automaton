@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "linkedin-easy-apply"
-version = "0.2.3"
+version = "0.2.4"
 description = "Production-quality LinkedIn Easy Apply automation framework"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -57,7 +57,7 @@ Repository = "https://github.com/Zanark/LinkedIn-EasyApply-Automaton"
 include = ["linkedin_easy_apply*"]
 
 [tool.setuptools.package-data]
-linkedin_easy_apply = ["database/sql/*.sql"]
+linkedin_easy_apply = ["database/sql/*.sql", "gui/fonts/*.ttf", "gui/fonts/OFL.txt"]
 
 [tool.black]
 line-length = 100

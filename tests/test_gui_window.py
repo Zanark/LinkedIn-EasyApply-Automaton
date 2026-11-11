@@ -8,6 +8,7 @@ import sys
 import time
 from pathlib import Path
 from types import SimpleNamespace
+from typing import get_args
 from unittest.mock import Mock
 
 import pytest
@@ -15,8 +16,16 @@ import yaml
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
-from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer  # noqa: E402
-from PySide6.QtGui import QContextMenuEvent, QFont, QHelpEvent, QTextDocument  # noqa: E402
+from PySide6.QtCore import QCoreApplication, QEvent, QPoint, QSettings, Qt, QTimer  # noqa: E402
+from PySide6.QtGui import (  # noqa: E402
+    QColor,
+    QContextMenuEvent,
+    QFont,
+    QFontInfo,
+    QHelpEvent,
+    QRawFont,
+    QTextDocument,
+)
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import (  # noqa: E402
     QAbstractSpinBox,
@@ -24,6 +33,7 @@ from PySide6.QtWidgets import (  # noqa: E402
     QCheckBox,
     QComboBox,
     QFormLayout,
+    QGraphicsDropShadowEffect,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -41,12 +51,15 @@ from PySide6.QtWidgets import (  # noqa: E402
 
 from linkedin_easy_apply.config import load_config  # noqa: E402
 from linkedin_easy_apply.gui import commands, main_window  # noqa: E402
+from linkedin_easy_apply.gui.activity import _STATES, Lifecycle  # noqa: E402
+from linkedin_easy_apply.gui.activity_icons import activity_icon  # noqa: E402
 from linkedin_easy_apply.gui.main_window import MainWindow  # noqa: E402
 from linkedin_easy_apply.gui.process import CommandRunner  # noqa: E402
 from linkedin_easy_apply.gui.theme import THEMES  # noqa: E402
 from linkedin_easy_apply.gui.tutorial import CUSTOMIZE_TOPIC, TutorialDialog  # noqa: E402
 from linkedin_easy_apply.gui.widgets import Console  # noqa: E402
 from linkedin_easy_apply.progress import (  # noqa: E402
+    Activity,
     ActivitySnapshot,
     ProgressSnapshot,
     encode_progress,
@@ -924,6 +937,109 @@ def test_metrics_fit_compact_and_expanded_themes_with_purpose_example_help(
         assert value.fontMetrics().horizontalAdvance(value.text()) <= value.contentsRect().width()
         assert title.toolTip().count("\n") == value.toolTip().count("\n") == 1
         assert "Example:" in value.toolTip()
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+@pytest.mark.parametrize("pixel_ratio", [1.0, 2.0])
+def test_every_activity_has_distinct_detailed_multicolor_artwork(qapp, theme, pixel_ratio):
+    palette = THEMES[theme]
+    assert set(_STATES) == set(get_args(Activity)) | set(get_args(Lifecycle))
+    colors = {
+        QColor(palette[role]).rgb()
+        for role in ("information", "accent", "document", "warning", "error", "heading")
+    }
+    silhouettes = set()
+    for state in _STATES:
+        pixmap = activity_icon(state, palette, pixel_ratio=pixel_ratio)
+        assert pixmap.deviceIndependentSize().toTuple() == (40, 40)
+        image = pixmap.toImage()
+        pixels = [
+            image.pixelColor(x, y) for y in range(image.height()) for x in range(image.width())
+        ]
+        assert image.pixelColor(0, 0).alpha() == 0
+        assert 0.1 < sum(pixel.alpha() > 0 for pixel in pixels) / len(pixels) < 0.9, state
+        opaque_ink = {pixel.rgb() for pixel in pixels if pixel.alpha() == 255}
+        assert len(opaque_ink & colors) >= 2, state
+        silhouette = bytes(pixel.alpha() for pixel in pixels)
+        assert silhouette not in silhouettes, f"{state} reuses another stage's shape"
+        silhouettes.add(silhouette)
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+@pytest.mark.parametrize("size", [(940, 640), (1340, 860)])
+def test_all_action_groups_are_centered_padded_and_smaller_without_a_header(
+    window, qapp, theme, size
+):
+    assert ensure_fonts()
+    window.resize(*size)
+    window._apply_theme(THEMES[theme])
+    tile = window._activity
+    reference_size = window._resume_display.name.font().pixelSize()
+    for state in _STATES:
+        tile.set_state(state)
+        qapp.processEvents()
+        assert not any(label.text() == "CURRENT ACTION" for label in tile.findChildren(QLabel))
+        assert tile.name.font().pixelSize() == round(reference_size * 0.77)
+        assert QFontInfo(tile.name.font()).family() == "Nunito"
+        assert tile.name.font().weight() == QFont.Weight.DemiBold
+        raw_font = QRawFont.fromFont(tile.name.font())
+        assert all(raw_font.supportsCharacter(ord(character)) for character in tile.name.text())
+        assert window._resume_display.name.font().family() != "Nunito"
+        icon, name = tile.icon.geometry(), tile.name.geometry()
+        assert abs(icon.center().x() - tile.rect().center().x()) <= 1
+        assert abs(name.center().x() - tile.rect().center().x()) <= 1
+        assert abs((icon.top() + name.bottom()) / 2 - tile.rect().center().y()) <= 1
+        assert icon.top() >= 10 and tile.height() - name.bottom() >= 10
+        assert name.top() - icon.bottom() >= 6
+        assert tile.name.height() >= tile.name.heightForWidth(tile.name.width())
+        assert window.size().toTuple() == size
+        assert window._console.height() > 80
+        assert "not an application outcome" in tile.toolTip()
+        assert tile.accessibleName() == f"Current action: {tile.name.text()}"
+
+
+@pytest.mark.parametrize("theme", list(THEMES))
+def test_activity_border_and_real_halo_follow_stage_and_theme(window, qapp, theme):
+    window._apply_theme(THEMES[theme])
+    tile = window._activity
+    glow = tile.graphicsEffect()
+    assert isinstance(glow, QGraphicsDropShadowEffect)
+    for state, tone in (
+        ("searching_jobs", "information"),
+        ("selecting_resume", "accent"),
+        ("pausing", "warning"),
+        ("error", "error"),
+        ("finished", "document"),
+    ):
+        tile.set_state(state)
+        qapp.processEvents()
+        expected = QColor(window._palette[tone])
+        assert tile.property("tone") == tone
+        assert glow.color().rgb() == expected.rgb()
+        assert 0 < glow.color().alpha() < 255
+        origin = tile.mapTo(window, QPoint(0, 0))
+        frame = window.grab().toImage()
+        assert frame.pixelColor(origin.x() + tile.width() // 2, origin.y()) == expected
+        point = QPoint(origin.x() - 3, origin.y() + tile.height() // 2)
+        halo = frame.pixelColor(point)
+        glow.setEnabled(False)
+        background = window.grab().toImage().pixelColor(point)
+        glow.setEnabled(True)
+        assert halo != background
+        assert sum(
+            (a - b) ** 2 for a, b in zip(halo.getRgb()[:3], expected.getRgb()[:3], strict=True)
+        ) < sum(
+            (a - b) ** 2
+            for a, b in zip(background.getRgb()[:3], expected.getRgb()[:3], strict=True)
+        )
+
+
+def test_missing_action_font_is_an_explicit_failure(qapp, monkeypatch):
+    from linkedin_easy_apply.gui.activity import QFontDatabase, _load_action_font
+
+    monkeypatch.setattr(QFontDatabase, "addApplicationFont", lambda _path: -1)
+    with pytest.raises(ValueError, match="Bundled action font could not be loaded"):
+        _load_action_font.__wrapped__()
 
 
 @pytest.mark.parametrize("theme", list(THEMES))

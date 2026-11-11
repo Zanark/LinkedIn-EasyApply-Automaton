@@ -1,5 +1,71 @@
 # Development ledger
 
+## 2026-11-11 - Qualify rounded action names, semantic glow and refreshed media
+
+- Implement 36 original multicolor stage/lifecycle SVGs with outlines, internal
+  details and partial fills. Remove the redundant caption and center the padded
+  icon/name group. Action names alone use the original bundled Nunito font.
+- Apply the requested final ten-percent increase over the 9.1px compact name:
+  10.01px, still 23 percent below the former 13px size. Keep 600 weight and the
+  steady theme/stage-colored border halo without flashing or pulsing.
+- Preserve the original SIL Open Font License 1.1 in source/package resources
+  and Windows third-party notices. Extend frozen-smoke checks for the actual
+  bundled font/license and semantic glow; hosted execution remains pending.
+- Full local Ruff/Black/mypy and 932 tests pass before the size-only refinement;
+  all 83 GUI cases and focused style checks pass after it. Cover every stage,
+  both themes/sizes, real glyphs, actual halo pixels and retained resume behavior.
+- Refresh 13 fictional PNGs and both GIFs after the size increase. Directly
+  inspect final compact light and expanded dark Run views. Keep exact-source
+  hosted qualification, public release and safe original-source promotion
+  separate; do not infer live qualification or human acceptance.
+
+## 2026-11-11 - Detailed action-tile and new-release intake
+
+- The requested update includes native icon/layout improvements, refreshed README
+  screenshots/GIFs, a new latest Windows release and updated source-launch use.
+  Keep the earlier installed-application exclusion and original qualification gaps.
+- Locate the flat standard-icon alpha-mask recoloring and duplicated stage artwork.
+  Preserve authoritative activity events, retained resume names and command metrics.
+- The source GUI and dashboard are active. Establish a separate public-source
+  candidate without private inputs; do not overwrite loadable source, stop or
+  restart independent processes, or use real applicant state as a test fixture.
+- Root remains the sole tracking writer. Add only lea-33 and preserve all
+  thirty-two predecessor identities, issue-backed memberships and durable baselines.
+  Qualification, publication and safe local-source promotion remain separate gates.
+
+## 2026-11-10 - Source-only local promotion; installed application excluded
+
+- The user separately requests the local source update and explicitly excludes
+  the installed app. Preserve the existing source launcher and private inputs;
+  do not install, update, launch or uninstall the installed application. Do not
+  create a new commit, push, tag or release or run live LinkedIn automation.
+- Identify the full Windows Python process tree, including actual interpreter
+  children behind virtual-environment stubs. A stub's lack of network sockets
+  does not establish dashboard inactivity. Verify no GUI/application run or
+  connected dashboard client at the source save point; keep every independent
+  process identity intact rather than stopping or restarting the dashboard.
+- Recheck canonical main and the exact already-qualified combined commit.
+  The six existing dirty/untracked tracking copies match its Git blobs.
+  Prove the complete two-tree fast-forward using an isolated temporary index,
+  then stage only those six matching paths and fast-forward original main,
+  tree and index to ac06298f8aed81a74df195399e9c88ed78b333f9. Do not stash,
+  reset, advance only a branch ref or inspect/stage the unrelated plugin.
+- The promoted tracked tree and index are clean before completion bookkeeping.
+  Original-source imports and the unchanged launcher's nonlaunching check pass.
+  Eleven focused existing regressions pass with offscreen Qt and disposable
+  fictional state. Reuse the exact commit's 253-case combined qualification and
+  successful hosted Windows build/smoke rather than rebuilding an installation.
+  Selected private/native metadata, unchanged source preimages and all four
+  independent interpreter identities remain exact.
+- Complete only lea-31 and lea-32; preserve all thirty predecessor records and
+  original #2/#9 OPEN/In review qualification gaps. Deliberately transfer the
+  sole tracking-writer role from the frozen publication lane to this promoted
+  original checkout before the scoped preview and authorized completion sync.
+  Independent read-back verifies both existing issues CLOSED/COMPLETED, their
+  single Project memberships Done and exact managed bodies/backlinks. All thirty
+  predecessors remain exact. Subsequent scoped preview/apply are no-ops; all
+  thirty-two settled records and local mapping bytes/timestamps are unchanged.
+
 ## 2026-11-10 - Combined source-publication preparation without runtime activation
 
 - The user separately authorizes a push. Reconcile the already qualified

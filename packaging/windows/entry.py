@@ -10,12 +10,14 @@ import os
 import sys
 from pathlib import Path
 
-from linkedin_easy_apply.runtime import prepare_workspace
+from linkedin_easy_apply.runtime import prepare_workspace, resource_root
 
 
 def _smoke_gui(report: Path) -> int:
     from playwright.sync_api import sync_playwright
     from PySide6.QtCore import QCoreApplication, QEvent, QSettings, QTimer
+    from PySide6.QtGui import QColor, QFontInfo
+    from PySide6.QtWidgets import QGraphicsDropShadowEffect
 
     from linkedin_easy_apply import __version__
     from linkedin_easy_apply.gui.main_window import MainWindow, create_application
@@ -40,6 +42,17 @@ def _smoke_gui(report: Path) -> int:
             not application.windowIcon().pixmap(32, 32).isNull()
             and not window.windowIcon().pixmap(32, 32).isNull()
         )
+        action_font = (
+            QFontInfo(window._activity.name.font()).family() == "Nunito"
+            and (resource_root() / "linkedin_easy_apply" / "gui" / "fonts" / "OFL.txt").is_file()
+        )
+        effect = window._activity.graphicsEffect()
+        action_glow = (
+            isinstance(effect, QGraphicsDropShadowEffect)
+            and effect.isEnabled()
+            and effect.color().rgb()
+            == QColor(window._palette[window._activity.property("tone")]).rgb()
+        )
         try:
             tutorial = TutorialDialog(window, start_topic=CUSTOMIZE_TOPIC)
         except (OSError, UnicodeError, ValueError) as exc:
@@ -56,6 +69,8 @@ def _smoke_gui(report: Path) -> int:
             and __version__ in "".join(output)
             and rendered
             and branded
+            and action_font
+            and action_glow
             and driver_ready
             and tutorial_rendered
         )
@@ -66,6 +81,8 @@ def _smoke_gui(report: Path) -> int:
             playwright_driver=driver_ready,
             rendered=rendered,
             application_icon=branded,
+            action_font=action_font,
+            action_glow=action_glow,
             tutorial_rendered=tutorial_rendered,
             tutorial_topics=tutorial_topics,
             output="".join(output),

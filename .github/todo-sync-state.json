@@ -456,12 +456,12 @@
     "lea-31": {
       "baseline": {
         "title": "[lea-31] Optional connection invitations without a note",
-        "managed": "38fe4df2741c6c939c75cb56ea07dab2c5e5498563af793984f24e6787169463",
+        "managed": "6b6f08e9bcf9f3c537a0866ea94094d0878cae2637a2cf7745d1593da836c073",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "b3987357"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABd3DN9w",
       "number": 31,
@@ -471,17 +471,32 @@
     "lea-32": {
       "baseline": {
         "title": "[lea-32] Windows application and taskbar branding",
-        "managed": "a6f18be77c5f59154c967b91357ed3dc2cfbe0cf4df1fee98c5cfbab271ff71e",
+        "managed": "e2d8f83658241bc8d73352307e9349683f15dcbdf15c6f3785a9d346beb28937",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "b3987357"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABd3nFig",
       "number": 32,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhHYsCM"
+    },
+    "lea-33": {
+      "baseline": {
+        "title": "[lea-33] Detailed native activity icons and Windows release",
+        "managed": "513ec2968052490051e20c4a4f2114c1ffa1ab5d69a335782651381bd246e0c9",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABeUGEdw",
+      "number": 33,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/33",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH1AO8"
     }
   }
 }

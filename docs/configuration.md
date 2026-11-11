@@ -42,6 +42,10 @@ into status-only telemetry. This is separate from logging verbosity and does
 not add fields to saved preferences or the database. See
 [live counter meanings](gui.md#live-run-counters-current-source), including why
 drafts and completed dry runs are not sends.
+The current-action tile needs no YAML setting either: its rounded Nunito label
+and steady border glow follow the selected desktop theme and current stage.
+Blue means normal work, green/teal resume or completion work, yellow pause/caution,
+and red error/discard. Only the action label uses the bundled font.
 `apply.py gui --tutorial` reads only that guide, without private setup/history.
 Windows v0.2.1 and later support `EasyApplyAutomaton.exe --tutorial` and
 `lea.exe gui --tutorial` with the same non-initializing behavior. Older v0.2.0
@@ -583,7 +587,7 @@ Behaviour:
   table (`Pending / Sent / Without note / Already connected /
   Skipped (Connect/note unavailable) / Failed`) is printed after the `Run #` table.
   **Without note** is a subset of **Sent**, not an additional total.
-- **`connect_without_note` is a source-only update after v0.2.3**, off by default.
+- **`connect_without_note` is available in source and Windows v0.2.4**, off by default.
   Enable it in YAML or **Run → Customize settings for this run → Behavior →
   Connect without a note if unavailable**. The GUI creates a changed-only private
   preset; saved YAML is unchanged. The fallback needs an enabled, explicitly

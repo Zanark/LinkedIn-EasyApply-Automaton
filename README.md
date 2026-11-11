@@ -2,7 +2,7 @@
   <img src="docs/readme-banner.svg" width="640" alt="Easy Apply Automaton — Automate your LinkedIn applications.">
 </p>
 <p align="center">
-  <a href="https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.3">Download for Windows</a> &nbsp; · &nbsp;
+  <a href="https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.4">Download for Windows</a> &nbsp; · &nbsp;
   <a href="docs/setup-and-commands.md">Setup &amp; commands</a> &nbsp; · &nbsp;
   <a href="docs/gui-tutorial.md">Tutorial</a>
 </p>
@@ -12,9 +12,9 @@
 **Find jobs, score them, fill Easy Apply from your own answers, and track the results.
 Desktop app or CLI — same engine.**
 
-<img src="docs/images/gui-run-walkthrough.gif" alt="Animated run walkthrough: current-action icons, retained resume filenames, live counters, Scan, dry-run Apply, settings, Reapply and Connect" width="900">
+<img src="docs/images/gui-run-walkthrough.gif" alt="Animated run walkthrough: detailed multicolor action icons, retained resume filenames, live counters, Scan, dry-run Apply, settings, Reapply and Connect" width="900">
 
-<sub>18-second offline walkthrough: action icons, changing resume selections and live counters, using fictional data. No command runs or application is submitted.
+<sub>18-second offline walkthrough: detailed icons, rounded action labels and state-colored glow, changing resume selections and live counters, using fictional data. No command runs or application is submitted.
 <a href="docs/images/gui-run-walkthrough.gif">Open the GIF</a>.</sub>
 
 </div>
@@ -25,7 +25,7 @@ Desktop app or CLI — same engine.**
 
 ## Get started
 
-**Windows:** [Download v0.2.3](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.3),
+**Windows:** [Download v0.2.4](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.4),
 extract the **entire ZIP**, then open `EasyApplyAutomaton.exe`.
 Keep `lea.exe` and `_internal` beside it. No Python installation needed; installed
 Edge/Chrome is required. Browser binaries are not bundled, and the EXEs are unsigned.
@@ -70,9 +70,9 @@ Windows ZIP. Dynamic resumes need the separate
 
 <img src="docs/images/gui-small-harbor-daylight.png" alt="Compact Harbor Daylight Run page with current-action icon, retained resume filename, counters, colored logs and prompt input" width="900">
 
-<sub><b>Light theme, smaller window:</b> action icon above its name, last-selected resume, counters and color-coded logs.
+<sub><b>Light theme, smaller window:</b> detailed action icon, rounded centered name and color-matched border glow, last-selected resume, counters and color-coded logs.
 Both themes come from <a href="https://github.com/Zanark/DeepSeaFoam">DeepSeaFoam</a>.
-v0.2.3 includes these desktop updates; previews use fictional offline data.</sub>
+v0.2.4 adds distinct artwork for every stage without a redundant action header; previews use fictional offline data.</sub>
 
 ## Documentation
 

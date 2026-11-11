@@ -289,7 +289,7 @@ The top tri-state **Hiring-team outreach** controls whether hiring-team
 outreach is enabled. Mode, connection-note sending and invitation cap are
 separate settings; review all of them before a live run.
 Dry run skips both final invitation-send actions and leaves delivery unmarked.
-The source-only no-note fallback was added after the v0.2.3 executable.
+The no-note fallback is included in source and Windows v0.2.4, not v0.2.3.
 
 For no outreach, explicitly disable hiring-team outreach and leave
 **Send connection notes after run** off. For resume building, configure the
@@ -309,12 +309,16 @@ needs its own real Python environment.
 - **Copy command** copies a PowerShell command. It does not run it, but can
   create a validated private preset, just like Start.
 - **READY / RUNNING** and the status bar describe command state.
-- **Current action** (source and Windows v0.2.3) shows an icon above the operation
+- **Current action** (source and Windows v0.2.4) shows an icon above the operation
   name beside the counters. Searching, building, filling, uploading, checking
   submission and outreach have distinct labels; **Waiting for you** means
   answer the current prompt. Completion/Stop/error describe the child command,
   not whether an application succeeded. Tools without detailed stages show
-  their command lifecycle.
+  their command lifecycle. Each stage has distinct outlined, detailed multicolor
+  artwork. The smaller rounded Nunito action name is centered below it, without a separate
+  **CURRENT ACTION** header. Blue is normal work, green/teal resume or completion,
+  yellow pause/caution and red error/discard. The border glows steadily in the
+  matching color without flashing; none proves a successful submission.
 - **Resume** (source and Windows v0.2.3) beside the run buttons shows the final
   application choice, including a replacement tailored PDF. It moves below
   the buttons when narrow. Hover a shortened name to inspect the full filename.

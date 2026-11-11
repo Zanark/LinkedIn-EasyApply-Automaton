@@ -3,9 +3,7 @@ Workstream-ID: lea-32
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed bounded Windows application-icon request
-Status: BLOCKED
-Blocked-stage: Ready
-Blocker: Await a coordinated save point before promoting source used by the independent application.
+Status: DONE
 Milestone: Use the project mark for desktop windows and Windows executables
 Dependencies: lea-11, lea-12
 
@@ -23,7 +21,7 @@ saved settings, editing the interpreter or disturbing a running application.
 - [x] Update the directly affected guide and retain exact candidate evidence.
 - [x] Retain one issue-backed Project item and persistent backlink.
 - [x] Integrate and qualify the combined, separately authorized source-publication lane.
-- [ ] Promote the qualified candidate at a coordinated source-app save point.
+- [x] Promote the qualified candidate at a coordinated source-app save point.
 
 ## Acceptance criteria
 - [x] The actual project mark renders clearly at small and high-DPI icon sizes.
@@ -34,7 +32,7 @@ saved settings, editing the interpreter or disturbing a running application.
 - [x] Fictional checks preserve running applications, settings and released assets.
 - [x] Candidate qualification is not reported as activation, acceptance or release.
 - [x] One issue-backed Project item and durable backlink represent the workstream.
-- [ ] Source promotion is verified without disrupting the independent application.
+- [x] Source promotion is verified without disrupting the independent application.
 
 ## Completion evidence
 Exactly eight isolated candidate payloads implement shared startup branding,
@@ -46,13 +44,16 @@ newly built executables. Extracted executable icons match the original exactly;
 actual native renders are visually reviewed. Frozen offline smoke confirms
 the application icon, desktop rendering, tutorial and real sibling CLI.
 
-The original binary-inclusive patch passes read-only applicability without
-changing the active checkout. Preserve its 175 protected public files, selected
-private/native metadata, both original candidates and eight installed
-entrypoints. Independent process creation identities remain unchanged. Active
-checkout promotion is blocked; neither the running application nor installed
-v0.2.3 receives this update. No cache/pin manipulation, independent restart,
-live qualification, human acceptance or new release is claimed.
+The original binary-inclusive patch first passes read-only applicability without
+changing the active checkout. That earlier checkpoint preserves its 175 public
+preimages, selected private/native metadata, both original candidates and eight
+installed entrypoints. Publication remains distinct from runtime activation.
+The subsequent source-only authorization promotes the complete qualified commit
+ac06298f8aed81a74df195399e9c88ed78b333f9 into original main after checking the
+full Windows interpreter/process tree and absence of an active GUI/application
+run or dashboard client. Existing dashboard process identities remain unchanged.
+No cache/pin manipulation, independent restart, live qualification, human
+acceptance or new release is claimed.
 
 A separately authorized source-publication lane combines the eight branding
 payloads with the no-note candidate into twenty-nine files. The two overlaps
@@ -60,10 +61,19 @@ merge cleanly and the remaining twenty-seven payloads match their original
 frozen candidates exactly, including the ICO. All 253 combined affected cases,
 repository Ruff, Black over 119 files and mypy over seventy-three modules pass.
 Retain all thirty earlier workstreams and reconcile only these two descriptions.
-Commit/remote/hosted read-back remains a separate publication gate; publication
-does not switch the active source checkout, replace an installation or move a tag.
+Commit/remote/hosted read-back is separately complete; publication itself did
+not switch the original checkout, replace an installation or move a tag.
+The distinct local promotion now verifies original-source imports, the unchanged
+launcher's nonlaunching check and eleven focused fictional regressions, including
+all nine source icon sizes and shared startup. Private/native metadata, unrelated
+work and unchanged source preimages are preserved. The installed application is
+explicitly excluded: no update, launch, replacement or uninstall is performed.
 
 ## Completion log
+- 2026-11-10: Complete the separately authorized original-source fast-forward at
+  a verified source save point. Keep the existing launcher and private settings;
+  verify the promoted startup/icon behavior with disposable fictional state.
+  Leave the installed application and its planned uninstall to the user.
 - 2026-11-10: Prepare the separately authorized combined source push in an
   isolated Git worktree. Qualify the merged payload without rebuilding the
   already qualified native candidate or disturbing the independent application.

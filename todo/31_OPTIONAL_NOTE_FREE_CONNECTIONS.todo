@@ -3,9 +3,7 @@ Workstream-ID: lea-31
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/31
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed bounded connection-invitation fallback
-Status: BLOCKED
-Blocked-stage: Ready
-Blocker: Await a coordinated save point before replacing source used by an independent application.
+Status: DONE
 Milestone: Offer an explicit fallback when connection notes are unavailable
 Dependencies: lea-11
 
@@ -23,7 +21,7 @@ opt-in rather than silently sending invitations without their drafted notes.
 - [x] Qualify affected behavior offline and update directly affected guides.
 - [x] Retain one existing issue-backed Project item and persistent backlink.
 - [x] Integrate and qualify the combined, separately authorized source-publication lane.
-- [ ] Promote the complete qualified candidate at a coordinated source-app save point.
+- [x] Promote the complete qualified candidate at a coordinated source-app save point.
 
 ## Acceptance criteria
 - [x] Existing configurations continue to require a connection note by default.
@@ -36,14 +34,16 @@ opt-in rather than silently sending invitations without their drafted notes.
 - [x] Fictional checks preserve private inputs, running applications and released assets.
 - [x] Technical completion is distinguished from live qualification and publication.
 - [x] One issue-backed Project item and a durable backlink represent this workstream.
-- [ ] Source promotion is verified without disrupting the independent application.
+- [x] Source promotion is verified without disrupting the independent application.
 
 ## Completion evidence
-Implementation and technical qualification are complete in isolated public
-source. The active original checkout and installed v0.2.3 do not contain this
-update. Updating that checkout remains blocked to protect an independently
-running application. Separate source publication does not activate that app;
-a different port or a passing fixture is not isolation.
+Implementation, technical qualification and separately authorized original-source
+promotion are complete. The original main is coherently fast-forwarded to the
+qualified published commit ac06298f8aed81a74df195399e9c88ed78b333f9.
+The switch checks both Windows interpreter stubs and their actual child runtimes:
+no GUI/application run or connected dashboard client is active at that save point.
+The existing dashboard processes are neither stopped nor restarted. The installed
+application is explicitly excluded; no installation update or uninstall occurs.
 
 The off-by-default setting and Behavior checkbox prefer an available note.
 Fallback requires a visible, enabled, explicitly identified Send without a note
@@ -73,10 +73,19 @@ cleanly; all twenty-seven nonoverlapping payloads match the frozen candidates
 exactly. All 253 combined affected cases pass; repository Ruff, Black over
 119 files and mypy over seventy-three implementation modules pass. Preserve
 the original frozen evidence. Commit/remote/hosted qualification read-back is
-a separate publication gate, not evidence that the active checkout switched.
-No new tag, release, installer replacement or live LinkedIn action is included.
+separately complete; publication alone did not switch the original checkout.
+After the distinct source-only authorization, original-source imports and the
+unchanged launcher's nonlaunching check pass. Eleven focused offline cases pass
+from the promoted checkout, including branding and saved-configuration-preserving
+fallback overrides. Private/native metadata, unrelated work and unchanged source
+preimages are preserved. No new tag, release, installer replacement, live LinkedIn
+action or human acceptance is included.
 
 ## Completion log
+- 2026-11-10: Complete the separately requested source-only local update after
+  verifying a safe source save point. Dry-run the complete fast-forward with an
+  isolated index, then promote the exact qualified commit and verify the original
+  launcher and focused fictional behavior. Leave the installed app to the user.
 - 2026-11-10: Prepare the separately authorized combined source push in an
   isolated Git worktree. Qualify the exact merged payload and retain the Ready
   blocker for the active checkout; do not close this workstream from publication.

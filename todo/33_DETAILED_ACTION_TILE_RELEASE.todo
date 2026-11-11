@@ -1,0 +1,75 @@
+# Detailed native activity icons and Windows release
+Workstream-ID: lea-33
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/33
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded native action-tile and delivery request
+Status: IN_PROGRESS
+Milestone: Ship distinctive action artwork, refreshed media and updated source
+Dependencies: lea-29, lea-30, lea-31, lea-32
+
+## Purpose
+Make every native current-operation stage visually distinct with detailed,
+partially filled multicolor artwork. Center the icon and compact rounded action
+label without a redundant visible caption; give the frame a steady semantic-color
+glow. Deliver refreshed fictional documentation media and a new immutable Windows
+release while preserving existing runtime use.
+
+## Tasks
+- [x] Inspect the existing renderer, state inventory and theme/layout contracts.
+- [x] Establish an independent public-source candidate outside active runtime files.
+- [x] Implement original detailed artwork for every operation and lifecycle state.
+- [x] Center the icon/name group and retain a compact name without a visible header.
+- [x] Use rounded Nunito names with the requested ten-percent final size increase.
+- [x] Add a steady stage-colored border glow without flashing or pulsing.
+- [x] Preserve the bundled font's original license and Windows notice packaging.
+- [x] Qualify both themes, compact/expanded layouts and unchanged activity behavior.
+- [x] Refresh affected fictional screenshots, walkthrough and user/developer guides.
+- [ ] Qualify exact release source and publish a new immutable latest Windows version.
+- [ ] Verify actual hosted artifacts, notes and source identity without installation.
+- [ ] Update source-launch selection at a safe coherent promotion point.
+- [ ] Independently reconcile the issue, Project status and persistent backlink.
+
+## Acceptance criteria
+- [x] Every supported state has distinct recognizable artwork beyond color alone.
+- [x] Icons retain outlines, internal detail and useful green/yellow/red/blue accents.
+- [x] The visible caption is absent; the compact name and icon are centered and padded.
+- [x] Rounded names and the steady glow follow the existing semantic theme colors.
+- [x] Current-operation accessibility/help and retained resume filenames remain intact.
+- [x] Both themes and existing compact/expanded window sizes remain usable.
+- [x] Documentation media shows the actual fictional updated GUI and accurate captions.
+- [ ] A new latest Windows release identifies its exact qualified source and assets.
+- [ ] The source launcher selects the qualified update without disrupting active use.
+- [ ] Installed applications, private inputs and unrelated work remain untouched.
+- [ ] One issue-backed Project item and durable backlink represent this workstream.
+
+## Completion evidence
+The isolated implementation supplies 36 original detailed multicolor SVGs for
+29 operations and seven lifecycle states. The centered padded tile has no visible
+header. Action names alone use bundled original Nunito at 600 weight and 10.01px:
+ten percent larger than the first 9.1px compact design, still 23 percent below the
+former 13px size. A static semantic border/halo follows work, document, caution,
+error and completion states in both themes. Font-loading failures are explicit;
+source and Windows packaging preserve the original SIL Open Font License 1.1.
+
+Ruff, Black over 120 files, mypy over 74 modules and the full 932-test suite pass
+before the final label-size refinement. After that refinement, all 83 GUI cases,
+including every state at both compact/expanded sizes and both themes, pass with
+focused Ruff/Black checks. Rendered pixels verify the border and actual halo;
+font checks cover real family, weight and every stage-label glyph.
+
+Regenerate all 13 fictional screenshots and both walkthrough GIFs after the final
+size update. Directly inspect the final compact light and expanded dark Run
+views; earlier complete state sheets establish distinct icon artwork. The Run
+walkthrough has nine frames and the tutorial seven. No live automation, private
+applicant fixture or human acceptance is inferred. Exact-source hosted frozen
+qualification, release publication and safe original-source promotion remain
+separate pending gates.
+
+## Completion log
+- 2026-11-11: Complete original artwork, centered compact layout, rounded font,
+  semantic glow and final ten-percent label increase in the isolated candidate.
+  Qualify locally and refresh fictional media; keep release/source delivery open.
+- 2026-11-11: Begin the bounded native icon/layout and delivery update. Preserve
+  thirty-two predecessor workstreams and the original live qualification gaps.
+  Develop independently of running source applications; keep installed versions
+  and private applicant data outside implementation and qualification fixtures.

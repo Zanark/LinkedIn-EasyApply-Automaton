@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+from functools import cache
 from html import escape
+from pathlib import Path
 from typing import Literal, override
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPainter, QResizeEvent
+from PySide6.QtGui import QColor, QFontDatabase, QResizeEvent
 from PySide6.QtWidgets import (
     QFrame,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
@@ -16,50 +19,59 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from linkedin_easy_apply.gui.activity_icons import activity_icon
 from linkedin_easy_apply.gui.theme import Palette
 from linkedin_easy_apply.gui.widgets import tooltip
 from linkedin_easy_apply.progress import Activity, ActivitySnapshot
 
 Lifecycle = Literal["ready", "starting", "running", "finished", "stopped", "error", "unavailable"]
 _SP = QStyle.StandardPixmap
-_STATES: dict[Activity | Lifecycle, tuple[str, QStyle.StandardPixmap, str]] = {
-    "ready": ("Ready", _SP.SP_DialogApplyButton, "muted"),
-    "starting": ("Starting command", _SP.SP_MediaPlay, "accent"),
-    "running": ("Running command", _SP.SP_MediaPlay, "accent"),
-    "finished": ("Command finished", _SP.SP_DialogApplyButton, "document"),
-    "stopped": ("Stopped", _SP.SP_MediaStop, "warning"),
-    "error": ("Command error", _SP.SP_MessageBoxCritical, "error"),
-    "unavailable": ("Status unavailable", _SP.SP_MessageBoxWarning, "warning"),
-    "starting_browser": ("Opening browser", _SP.SP_ComputerIcon, "accent"),
-    "searching_jobs": ("Searching jobs", _SP.SP_FileDialogContentsView, "accent"),
-    "opening_job": ("Opening job", _SP.SP_DirOpenIcon, "accent"),
-    "checking_job": ("Checking job", _SP.SP_FileDialogDetailedView, "accent"),
-    "skipping_job": ("Skipping job", _SP.SP_MediaSkipForward, "muted"),
-    "selecting_resume": ("Selecting resume", _SP.SP_FileDialogListView, "accent"),
-    "reviewing_resume": ("Resume review pause", _SP.SP_FileDialogInfoView, "warning"),
-    "ai_review": ("AI job review", _SP.SP_MessageBoxInformation, "accent"),
-    "building_resume": ("Building resume", _SP.SP_FileDialogNewFolder, "accent"),
-    "preparing_application": ("Preparing application", _SP.SP_FileIcon, "accent"),
-    "generating_cover_letter": ("Writing cover letter", _SP.SP_FileDialogNewFolder, "accent"),
-    "opening_application": ("Opening application", _SP.SP_DialogOpenButton, "accent"),
-    "filling_application": ("Filling application", _SP.SP_FileDialogDetailedView, "accent"),
-    "selecting_attachment": ("Selecting attachment", _SP.SP_FileDialogListView, "accent"),
-    "uploading_document": ("Uploading document", _SP.SP_ArrowUp, "accent"),
-    "reviewing_application": ("Reviewing application", _SP.SP_FileDialogInfoView, "accent"),
-    "awaiting_input": ("Waiting for you", _SP.SP_MessageBoxQuestion, "warning"),
-    "submitting_application": ("Submitting application", _SP.SP_ArrowForward, "accent"),
-    "verifying_submission": ("Checking submission", _SP.SP_BrowserReload, "accent"),
-    "discarding_application": ("Discarding application", _SP.SP_TrashIcon, "warning"),
-    "finding_contacts": ("Finding hiring team", _SP.SP_DirHomeIcon, "accent"),
-    "drafting_message": ("Drafting outreach", _SP.SP_FileIcon, "accent"),
-    "sending_message": ("Sending outreach", _SP.SP_ArrowForward, "accent"),
-    "loading_connections": ("Loading invitations", _SP.SP_DialogOpenButton, "accent"),
-    "connecting": ("Processing invitation", _SP.SP_DialogYesButton, "accent"),
-    "saving_results": ("Saving results", _SP.SP_DialogSaveButton, "accent"),
-    "writing_report": ("Writing report", _SP.SP_FileDialogDetailedView, "accent"),
-    "pausing": ("Pacing pause", _SP.SP_MediaPause, "warning"),
-    "finishing": ("Finishing run", _SP.SP_BrowserReload, "accent"),
+_STATES: dict[Activity | Lifecycle, tuple[str, str]] = {
+    "ready": ("Ready", "information"),
+    "starting": ("Starting command", "information"),
+    "running": ("Running command", "information"),
+    "finished": ("Command finished", "document"),
+    "stopped": ("Stopped", "warning"),
+    "error": ("Command error", "error"),
+    "unavailable": ("Status unavailable", "warning"),
+    "starting_browser": ("Opening browser", "information"),
+    "searching_jobs": ("Searching jobs", "information"),
+    "opening_job": ("Opening job", "information"),
+    "checking_job": ("Checking job", "information"),
+    "skipping_job": ("Skipping job", "warning"),
+    "selecting_resume": ("Selecting resume", "accent"),
+    "reviewing_resume": ("Resume review pause", "warning"),
+    "ai_review": ("AI job review", "information"),
+    "building_resume": ("Building resume", "accent"),
+    "preparing_application": ("Preparing application", "information"),
+    "generating_cover_letter": ("Writing cover letter", "accent"),
+    "opening_application": ("Opening application", "information"),
+    "filling_application": ("Filling application", "information"),
+    "selecting_attachment": ("Selecting attachment", "accent"),
+    "uploading_document": ("Uploading document", "information"),
+    "reviewing_application": ("Reviewing application", "information"),
+    "awaiting_input": ("Waiting for you", "warning"),
+    "submitting_application": ("Submitting application", "information"),
+    "verifying_submission": ("Checking submission", "information"),
+    "discarding_application": ("Discarding application", "error"),
+    "finding_contacts": ("Finding hiring team", "information"),
+    "drafting_message": ("Drafting outreach", "accent"),
+    "sending_message": ("Sending outreach", "information"),
+    "loading_connections": ("Loading invitations", "information"),
+    "connecting": ("Processing invitation", "information"),
+    "saving_results": ("Saving results", "accent"),
+    "writing_report": ("Writing report", "accent"),
+    "pausing": ("Pacing pause", "warning"),
+    "finishing": ("Finishing run", "accent"),
 }
+
+
+@cache
+def _load_action_font() -> None:
+    source = Path(__file__).with_name("fonts") / "Nunito.ttf"
+    font_id = QFontDatabase.addApplicationFont(str(source))
+    if "Nunito" not in QFontDatabase.applicationFontFamilies(font_id):
+        raise ValueError(f"Bundled action font could not be loaded: {source}")
 
 
 class RunActivity(QFrame):
@@ -67,51 +79,58 @@ class RunActivity(QFrame):
 
     def __init__(self, palette: Palette) -> None:
         super().__init__()
+        _load_action_font()
         self._palette = palette
         self._state: Activity | Lifecycle = "ready"
         self.setObjectName("RunActivity")
         self.setFixedWidth(112)
         self.setMinimumHeight(108)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Maximum)
+        self._glow = QGraphicsDropShadowEffect(self)
+        self._glow.setBlurRadius(16)
+        self._glow.setOffset(0, 0)
+        self.setGraphicsEffect(self._glow)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(3)
-        self.caption = QLabel("CURRENT ACTION")
-        self.caption.setObjectName("MetricTitle")
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(6)
         self.icon = QLabel()
+        self.icon.setFixedSize(40, 40)
         self.name = QLabel()
         self.name.setObjectName("ActivityName")
         self.name.setTextFormat(Qt.TextFormat.PlainText)
         self.name.setWordWrap(True)
-        self.name.setMinimumHeight(36)
-        for label in (self.caption, self.icon, self.name):
+        self.name.setFixedWidth(90)
+        for label in (self.icon, self.name):
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.caption)
         layout.addStretch(1)
-        layout.addWidget(self.icon)
-        layout.addWidget(self.name)
+        layout.addWidget(self.icon, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self.name, 0, Qt.AlignmentFlag.AlignHCenter)
         layout.addStretch(1)
         self.set_state("ready")
 
     def set_state(self, state: Activity | Lifecycle) -> None:
         self._state = state
-        name, standard_icon, tone = _STATES[state]
+        name, tone = _STATES[state]
+        self.setProperty("tone", tone)
+        self.style().unpolish(self)
+        self.style().polish(self)
+        glow_color = QColor(self._palette[tone])
+        glow_color.setAlpha(145 if self._palette.is_dark else 105)
+        self._glow.setColor(glow_color)
         self.name.setText(name)
         self.name.setProperty("tone", tone)
         self.name.style().unpolish(self.name)
         self.name.style().polish(self.name)
-        pixmap = self.style().standardIcon(standard_icon).pixmap(32, 32)
-        painter = QPainter(pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-        painter.fillRect(pixmap.rect(), QColor(self._palette[tone]))
-        painter.end()
-        self.icon.setPixmap(pixmap)
+        self.name.setFixedHeight(self.name.heightForWidth(self.name.width()))
+        self.icon.setPixmap(
+            activity_icon(state, self._palette, pixel_ratio=self.devicePixelRatioF())
+        )
         self.setAccessibleName(f"Current action: {name}")
         help_text = tooltip(
             f"Current engine operation: {name}; this is not an application outcome.",
             "Waiting for you means answer the current prompt; Applied counts only confirmed submissions.",
         )
-        for widget in (self, self.caption, self.icon, self.name):
+        for widget in (self, self.icon, self.name):
             widget.setToolTip(help_text)
 
     def update_activity(self, snapshot: ActivitySnapshot) -> None:

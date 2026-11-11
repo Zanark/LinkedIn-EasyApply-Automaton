@@ -11,7 +11,9 @@ data = [
 data += [
     (str(root / "docs" / name), "docs") for name in ("mark.svg", "mark.ico", "gui-tutorial.md")
 ]
-data += collect_data_files("linkedin_easy_apply", includes=["database/sql/*.sql"])
+data += collect_data_files(
+    "linkedin_easy_apply", includes=["database/sql/*.sql", "gui/fonts/*.ttf", "gui/fonts/OFL.txt"]
+)
 data += collect_data_files("playwright", excludes=["driver/package/.local-browsers/**"])
 
 analysis = Analysis(

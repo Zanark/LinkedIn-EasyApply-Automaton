@@ -143,24 +143,41 @@ The bounded lea-31 is implemented and technically qualified in isolated public
 source: an off-by-default, note-first fallback with separate invitation/note
 delivery, desktop help and eight affected guides. All 238 affected cases,
 twelve actual offline DOM scenarios and both reviewed fictional GUI themes pass.
-Source promotion is BLOCKED/Ready while an independent application uses the
-checkout. This candidate is not active in the source app or installed v0.2.3.
+Its separately authorized source promotion is now complete at
+ac06298f8aed81a74df195399e9c88ed78b333f9; the installed application is excluded.
 
 The separate lea-32 prepares Windows application branding in an eight-payload
 candidate. All 82 affected cases pass. Actual Windows identity, hidden-window
 icons, nine original icon frames in each built executable and frozen desktop/
 tutorial/sibling-CLI smoke are verified. The binary-inclusive patch was qualified
-without changing active source. Active-checkout promotion is BLOCKED/Ready pending
-a coordinated save point; the original candidates and installed release remain.
+without changing active source. The subsequent original-source promotion is
+complete at a verified source save point; original qualification remains intact.
 
 The separately authorized source-publication lane combines lea-31 and lea-32
 in an isolated Git worktree, leaving the running app's original checkout intact.
 All twenty-nine product payloads are reviewed: two cleanly merged overlaps and
 twenty-seven exact frozen-candidate matches. The 253-case combined qualification,
 Ruff, Black over 119 files and mypy over seventy-three modules pass. Reconcile
-only #31/#32's descriptions; both stay OPEN/Ready while active-checkout promotion
-is blocked. Source publication does not create a tag/release, replace installed
-v0.2.3 or resolve original #2/#9 live-qualification gaps.
+only #31/#32's descriptions at that earlier BLOCKED/Ready checkpoint. Source
+publication itself does not activate the original checkout or resolve original
+#2/#9 live-qualification gaps.
+
+The subsequent user-authorized source-only update coherently fast-forwards
+original main/tree/index to the qualified published commit above. The full
+Windows interpreter tree has no GUI/application run or connected dashboard
+client at the save point; independent dashboard processes are left alone.
+Original-source imports, the unchanged launcher's nonlaunching check and eleven
+focused fictional regressions pass. Preserve private/native metadata, unrelated
+work, original candidates and unchanged source preimages. Only lea-31/lea-32
+complete; original #2/#9 remain OPEN/In review. No installed application is
+updated, launched or uninstalled; no commit, push, tag or release is created.
+Scoped issue/Project/backlink completion settlement is recorded separately below.
+Independent read-back now verifies both issues CLOSED/COMPLETED, their single
+Project items Done and exact managed descriptions/backlinks. All thirty
+predecessors remain exact. Subsequent scoped preview/apply are no-ops; all
+thirty-two settled records and local mapping bytes/timestamps remain unchanged.
+The promoted original checkout is the sole synchronizer; the frozen publication
+lane is retained only as historical evidence.
 
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
@@ -194,10 +211,22 @@ v0.2.3 or resolve original #2/#9 live-qualification gaps.
 | lea-28 | 28_DASHBOARD_SKIP_DRILLDOWN.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/28 |
 | lea-29 | 29_GUI_ACTIVITY_AND_RESUME.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/29 |
 | lea-30 | 30_UPDATED_MEDIA_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/30 |
-| lea-31 | 31_OPTIONAL_NOTE_FREE_CONNECTIONS.todo | BLOCKED | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/31 |
-| lea-32 | 32_WINDOWS_APPLICATION_ICON.todo | BLOCKED | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32 |
+| lea-31 | 31_OPTIONAL_NOTE_FREE_CONNECTIONS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/31 |
+| lea-32 | 32_WINDOWS_APPLICATION_ICON.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32 |
+| lea-33 | 33_DETAILED_ACTION_TILE_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/33 |
 
 ## Completion log
+- 2026-11-11: Locally qualify lea-33's 36 detailed icons, centered rounded names,
+  final ten-percent label increase and steady semantic frame glow. Regenerate
+  fictional screenshots/GIFs. Keep exact-source release and safe source delivery
+  pending; preserve installed apps, all predecessors and original review gaps.
+- 2026-11-11: Add lea-33 for detailed distinct native action icons, centered compact
+  presentation, fictional media, a new Windows release and safe source delivery.
+  Preserve all predecessors and independently running/installed applications.
+- 2026-11-10: Complete only the separately requested original-source update for
+  lea-31/lea-32. The existing source launcher selects the qualified published
+  checkout; private setup, independent runtimes and unrelated work are preserved.
+  Installed application changes and any new source publication are excluded.
 - 2026-11-10: Independently verify the updated #31/#32 managed descriptions,
   OPEN lifecycle, single Ready issue-backed Project memberships and backlinks.
   Scoped preview/apply settle as no-ops without further content/timestamp churn

@@ -62,6 +62,11 @@ def copy_notices(bundle: Path) -> dict[str, str]:
         if not (supplemental / relative).is_file():
             raise FileNotFoundError(f"Supplemental redistribution notice missing: {relative}")
     shutil.copytree(supplemental, destination, dirs_exist_ok=True)
+    font_notice = ROOT / "linkedin_easy_apply" / "gui" / "fonts" / "OFL.txt"
+    if not font_notice.is_file():
+        raise FileNotFoundError(f"Bundled Nunito redistribution notice missing: {font_notice}")
+    (destination / "Nunito").mkdir(exist_ok=True)
+    shutil.copyfile(font_notice, destination / "Nunito" / "OFL.txt")
     return versions
 
 
