@@ -3,7 +3,7 @@ Workstream-ID: lea-37
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/37
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed bounded source-publication and project-handoff request
-Status: IN_PROGRESS
+Status: DONE
 Milestone: Publish completed source without exporting private continuity
 Dependencies: lea-34, lea-35, lea-36
 
@@ -20,20 +20,20 @@ out of the payload. This is source publication, not a new Windows release.
 - [x] Author four public project notes with narrow Git ignore exceptions.
 - [x] Link the public handoff and explain its privacy/authority boundary.
 - [x] Qualify the exact source payload and verify allowed/denied context paths.
-- [ ] Commit explicit reviewed paths with the required attribution and trailers.
-- [ ] Push normally and independently verify the remote commit, tree and blobs.
-- [ ] Reconcile scoped issue/Project/backlink completion and predecessor preservation.
+- [x] Commit explicit reviewed paths with the required attribution and trailers.
+- [x] Push normally and independently verify the remote commit, tree and blobs.
+- [x] Reconcile scoped issue/Project/backlink completion and predecessor preservation.
 
 ## Acceptance criteria
-- [ ] Published source includes the completed lea-34/35/36 work and matching guides.
+- [x] Published source includes the completed lea-34/35/36 work and matching guides.
 - [x] Only README, STATE, MEMORY and JOURNAL under the public context subfolder
   are tracked; private originals and unreviewed future context remain ignored.
 - [x] Public notes contain project engineering facts, not raw private continuity.
-- [ ] Qualified source and remote blobs match the explicitly reviewed payload.
-- [ ] Commits use the verified repository-local Zanark identity and both trailers.
-- [ ] One issue-backed Project item and persistent backlink represent this workstream.
-- [ ] All 36 predecessors, unrelated work, private inputs and independent apps remain intact.
-- [ ] Published v0.2.4 is unchanged; no tag, release, installation or live action occurs.
+- [x] Qualified source and remote blobs match the explicitly reviewed payload.
+- [x] Commits use the verified repository-local Zanark identity and both trailers.
+- [x] One issue-backed Project item and persistent backlink represent this workstream.
+- [x] All 36 predecessors, unrelated work, private inputs and independent apps remain intact.
+- [x] Published v0.2.4 is unchanged; no tag, release, installation or live action occurs.
 
 ## Completion evidence
 Publication preparation reviews the existing bounded glossary, icon sizing and
@@ -56,9 +56,24 @@ unreviewed future context and existing private-input exclusions. The original
 private store retains exact bytes and modification times. These checks do not
 send invitations or establish live LinkedIn qualification.
 
-Actual commit/push and independent remote verification are still pending.
+On 2026-11-12, publish source commit
+dc2da766ce741d94410dacec37e79f8e7f3399dc to main through a normal push.
+Independent GitHub API read-back verifies the exact branch commit, complete
+Git tree and all 77 reviewed blobs. Author and committer use the verified
+repository-local Zanark identity; both required trailers are present.
+The remote context tree contains exactly the four reviewed public handoff
+files. Original private continuity and the unrelated plugin are absent.
+The published v0.2.4 release and its asset identities remain unchanged.
+
+Completion is scoped to lea-37/#37 and its single Project item and persistent
+backlink. Preserve all 36 predecessor issue/item snapshots, mappings and
+numbered source bytes/mtimes. Hosted CI and current live LinkedIn acceptance
+remain separate from the verified source publication.
 
 ## Completion log
+- 2026-11-12: Publish the reviewed source and public handoff at dc2da76.
+  Verify the exact remote tree, all 77 payload blobs, attribution, private
+  exclusions and unchanged release. Reconcile only this workstream's completion.
 - 2026-11-11: Begin separately authorized source publication. Review the intended
   payload, settle the project-only public-context scope and preserve private
   originals, predecessor work and unrelated files. Do not replay old delivery

@@ -546,12 +546,12 @@
     "lea-37": {
       "baseline": {
         "title": "[lea-37] Publish reviewed source and a public project handoff",
-        "managed": "ad883773c58d174b8ef4edfda971bf0ad61f9a78d612aa5d956517b0362e23a2",
+        "managed": "9b45bd699ddfa81e5db36ecaa6cdceba4a3192f1eafb1bd0c13209e07d8f10b7",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABeZYsrg",
       "number": 37,

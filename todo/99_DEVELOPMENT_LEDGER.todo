@@ -1,5 +1,24 @@
 # Development ledger
 
+## 2026-11-12 - Publish reviewed source and public project handoff
+
+- Publish source commit dc2da766ce741d94410dacec37e79f8e7f3399dc to main
+  through a normal non-forced push. Recheck repository-local and effective
+  Zanark author/committer identity and retain both required session trailers.
+- Independently verify GitHub main, the exact complete Git tree and all 77
+  reviewed payload blobs. Include the completed glossary, 64-pixel source icons,
+  qualified fictional media, invitation-control repair and affected guidance.
+- The remote context tree contains exactly four reviewed public engineering
+  files, not the original private continuity. Verify narrow allow/deny rules,
+  original private bytes/mtimes and the excluded unrelated plugin.
+- Reconcile only lea-37/#37, its single Done Project item and persistent
+  backlink; preserve all 36 predecessor snapshots, mappings and numbered sources.
+  Keep the actual source publication separate from its small tracking-settlement
+  follow-up and from hosted CI or live LinkedIn acceptance.
+- The latest v0.2.4 release and asset identities remain unchanged. No new tag,
+  release, installation, installed-app update, independent runtime control or
+  live LinkedIn action is part of this source publication.
+
 ## 2026-11-11 - Review source publication and public project continuity
 
 - Establish a separately authorized normal source push for the completed

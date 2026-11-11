@@ -245,9 +245,14 @@ acceptance remain unverified; installed apps, existing media and v0.2.4 are unch
 | lea-34 | 34_ACTION_ICON_GLOSSARY.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/34 |
 | lea-35 | 35_LARGER_ACTION_ICONS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/35 |
 | lea-36 | 36_CONNECTION_INVITATION_CONTROLS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/36 |
-| lea-37 | 37_REVIEWED_SOURCE_PUBLICATION.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/37 |
+| lea-37 | 37_REVIEWED_SOURCE_PUBLICATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/37 |
 
 ## Completion log
+- 2026-11-12: Publish the reviewed lea-34/35/36 source and four-file public
+  engineering handoff at dc2da766ce741d94410dacec37e79f8e7f3399dc.
+  Independently verify main, the complete tree and 77 exact payload blobs.
+  Complete only lea-37/#37; preserve all 36 predecessors, ignored private
+  originals and unrelated work. Published v0.2.4 remains unchanged.
 - 2026-11-11: Begin lea-37 for the separately authorized source push and a
   reviewed four-file public project handoff. Keep the original private store,
   applicant inputs and unrelated work local; preserve all 36 predecessors.
