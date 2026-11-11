@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "linkedin-easy-apply"
-version = "0.2.4"
+version = "0.2.5"
 description = "Production-quality LinkedIn Easy Apply automation framework"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -39,6 +39,7 @@ build = ["pyinstaller>=6.16,<7"]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
+    "pytest-xdist>=3.6",
     "black>=24.0",
     "ruff>=0.4",
     "mypy>=1.10",

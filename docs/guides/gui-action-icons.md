@@ -9,7 +9,7 @@ application result. These are the actual original GUI designs, exported in
 **Harbor Daylight** colors on a light panel background, not generic substitutes
 or screenshots of live applications. DeepSeaFoam recolors the same geometry.
 
-Current source displays every icon at 64-by-64 logical pixels inside the
+Source and Windows v0.2.5 display every icon at 64-by-64 logical pixels inside the
 unchanged 112-by-108 tile, with full rounded labels beneath. The table artwork
 is a padded documentation export, not the GUI's display size. Windows v0.2.4
 retains its original 40px runtime icons.

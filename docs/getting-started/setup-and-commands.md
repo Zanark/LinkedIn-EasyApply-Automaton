@@ -166,7 +166,7 @@ Same submission flags as `apply` (`--dry-run`, `--limit`, `--confirm-submit`,
 There is no `--url`: reapply opens each job by its stored URL.
 The saved batch contains at most 200 distinct eligible jobs, excludes any
 submitted or unconfirmed application, and requires a usable URL.
-Current source keeps five [historical preview cards](../guides/gui.md#retry-preview-current-source)
+Source and Windows v0.2.5 keep five [historical preview cards](../guides/gui.md#retry-preview-current-source)
 when the GUI requests `--list`. Ordinary terminal output stays unchanged.
 Live Reapply retains application counters and can perform configured hiring-team
 outreach after a confirmed submission; preview never does.
@@ -191,10 +191,10 @@ Scan never submits, so it takes no submission flags.
 
 Notes are preferred. Set `outreach.connect_without_note: true` to permit a plain
 invitation only when note entry is unavailable; the default is `false` (skip
-instead). Updated source waits for usable controls and accepts explicit no-note
+instead). Source and Windows v0.2.5 wait for usable controls and accept explicit no-note
 actions or a final Send/Connect only inside an identified invitation dialog.
 Existing drafts and arbitrary send errors never authorize a plain retry.
-This recognition repair is source-only; published v0.2.4 is unchanged.
+This recognition repair ships in Windows v0.2.5; v0.2.4 is unchanged.
 This is a configuration or
 GUI per-run setting, not a new CLI flag. Successful plain invitations leave the
 pending queue without marking the note delivered or removing the message draft.

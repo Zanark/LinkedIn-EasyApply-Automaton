@@ -432,14 +432,14 @@ microservice; the same pass is available standalone as `apply.py connect`.
   pausing a randomised `connect_min…max_delay_seconds` between people.
 - With `outreach.connect_without_note: true`, unavailable note entry instead
   permits an explicit no-note action, or a final Send/Connect only inside
-  positively identified invitation context. Current source waits for usable
+  positively identified invitation context. Source and Windows v0.2.5 wait for usable
   controls; conflicting/unavailable drafts and arbitrary send errors never
   authorize a plain fallback. Off by default, it still prefers a usable note.
   Dry run skips every final send action and preserves pre-existing matching drafts.
-- Source records delivery only after profile **Pending** or a new explicit
+- Source and Windows v0.2.5 record delivery only after profile **Pending** or a new explicit
   invitation-sent confirmation; a click or modal closure alone remains
   **Failed/unconfirmed**, without automatic retry. These control-recognition
-  and confirmation repairs are not in the unchanged v0.2.4 download.
+  and confirmation repairs ship in v0.2.5, not the unchanged v0.2.4 download.
 - Each success is marked via `mark_outreach_invitation_sent`: all invitations get
   `invitation_sent_at`; only invitations with a note get `note_sent_at` and a
   struck-through note. Plain invitations leave their draft note unsent and retain

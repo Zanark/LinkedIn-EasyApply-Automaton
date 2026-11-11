@@ -102,6 +102,20 @@ def test_frozen_tutorial_uses_bundled_guide_not_workspace(qapp, tmp_path, monkey
     guide.deleteLater()
 
 
+def test_relocated_source_tutorial_ignores_callers_decoy_guide(qapp, tmp_path, monkeypatch):
+    expected = load_tutorial(resource_root() / "docs" / "guides" / "gui-tutorial.md")
+    decoy = tmp_path / "docs" / "guides"
+    decoy.mkdir(parents=True)
+    (decoy / "gui-tutorial.md").write_text("## Wrong guide\nCaller fixture.\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("LEA_WORKSPACE", str(tmp_path / "uninitialized"))
+    guide = TutorialDialog()
+    assert guide._topics == expected
+    assert "Wrong guide" not in guide._title.text()
+    assert not (tmp_path / "uninitialized").exists()
+    guide.deleteLater()
+
+
 def test_standalone_opens_without_configuration_database_or_runner(qapp, tmp_path, monkeypatch):
     workspace = tmp_path / "not-initialized"
     monkeypatch.setenv("LEA_WORKSPACE", str(workspace))

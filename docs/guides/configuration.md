@@ -44,7 +44,7 @@ not add fields to saved preferences or the database. See
 drafts and completed dry runs are not sends.
 The current-action tile needs no YAML setting either: its rounded Nunito label
 and steady border glow follow the selected desktop theme and current stage.
-Current source uses 64px icons inside the unchanged 112-by-108 logical pixel
+Source and Windows v0.2.5 use 64px icons inside the unchanged 112-by-108 logical pixel
 tile; the packaged v0.2.4 icons remain 40px.
 Blue means normal work, green/teal resume or completion work, yellow pause/caution,
 and red error/discard. Only the action label uses the bundled font.
@@ -597,7 +597,7 @@ Behaviour:
 - **`connect_without_note` is available in source and Windows v0.2.4**, off by default.
   Enable it in YAML or **Run → Customize settings for this run → Behavior →
   Connect without a note if unavailable**. The GUI creates a changed-only private
-  preset; saved YAML is unchanged. **Current source repairs control recognition:**
+  preset; saved YAML is unchanged. **Source and Windows v0.2.5 repair control recognition:**
   bounded waits allow delayed controls, and an already-open editable note is
   preferred without requiring Add a note. The fallback accepts exact normalized
   **Send without a note/Send without note** text or an accessible label; a generic
@@ -613,7 +613,7 @@ Behaviour:
   no delivery and do not dismiss a pre-existing matching note draft. A confirmed
   plain invitation leaves its note unsent and keeps both draft texts for follow-up;
   the dashboard labels it **Sent without note**. These control and confirmation
-  repairs are source-only; published v0.2.4 retains its older exact-only fallback.
+  repairs ship in Windows v0.2.5; v0.2.4 retains its older exact-only fallback.
 - Every record (drafted, sent, declined, or failed) is written to the
   `outreach_messages` table for auditing and dedupe.
 - The message context includes the role, company, your name, years of experience

@@ -917,7 +917,7 @@ and scripted connector cover persistence, de-dup, limit-stop and dry-run.
 Fresh-browser fictional DOM tests exercise supported surfaces, delayed controls,
 note preference, unrelated composers, drafts and positive confirmation without
 external requests or user profiles. Live LinkedIn qualification remains separate.
-The control-recognition repair is source-only, not a change to published v0.2.4.
+The control-recognition repair ships in Windows v0.2.5, not the unchanged v0.2.4.
 
 ---
 

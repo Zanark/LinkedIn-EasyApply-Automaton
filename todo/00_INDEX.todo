@@ -249,8 +249,17 @@ acceptance remain unverified; installed apps, existing media and v0.2.4 are unch
 | lea-38 | 38_RETRY_METRICS_AND_README.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/38 |
 | lea-39 | 39_REPOSITORY_ORGANIZATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/39 |
 | lea-40 | 40_FINAL_SOURCE_PUBLICATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40 |
+| lea-41 | 41_PARALLEL_CI_AND_LAYOUT_TESTS.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/41 |
+| lea-42 | 42_UPDATED_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/42 |
 
 ## Completion log
+- 2026-11-12: Verify both new issue-backed Project items as OPEN/In Progress
+  and preserve all forty predecessor records/timestamps. The local candidate
+  passes 1,081 full-suite cases, 94 final focused cases and all source/workflow
+  checks. Hosted qualification and v0.2.5 publication remain pending.
+- 2026-11-12: Begin lea-41 for expanded relocation tests and parallel CI, and
+  lea-42 for a new immutable Windows patch release. Preserve all 40 predecessors,
+  private inputs, existing releases and independently running applications.
 - 2026-11-12: Publish the qualified README/retry and repository-layout source
   at 82fd77d87b431397799629ddc0f589e91605d499. Independently verify main,
   the complete tree and 285 exact public blobs. Settle only lea-40; preserve

@@ -95,7 +95,7 @@ Choosing Apply alone is not permission to send anything.
   Zero uses the command default. Search URL is disabled.
 - **List retry targets only (no browser)** prints candidates without opening
   LinkedIn or filling/submitting. This is different from a browser dry run.
-  Current source keeps **Targets / Failed / Aborted / Attempts / Repeated**
+  Source and Windows v0.2.5 keep **Targets / Failed / Aborted / Attempts / Repeated**
   beside the action tile. These describe the saved retry batch, not new
   application failures or hiring-team sends.
 - **Connect (send pending invitations)** opens pending recruiter profiles and
@@ -283,12 +283,12 @@ in the next topic.
 - **Send connection notes after run** separately enables an end-of-run
   invitation pass. Draft mode alone does not switch off this pass.
 - **Connect without a note if unavailable** is off by default. When enabled,
-  Connect and the end-of-run pass still prefer the note. Updated source waits
-  for usable controls and permits explicit no-note actions or a final Send/Connect
+  Connect and the end-of-run pass still prefer the note. Source and Windows v0.2.5 wait
+  for usable controls and permit explicit no-note actions or a final Send/Connect
   only inside an identified invitation dialog when note entry is unavailable.
   Turning it off skips that contact instead. Existing drafts and send errors do
   not authorize a plain retry; it never sends the long message. Dry run clicks no
-  final send action. This repair is not in the unchanged v0.2.4 download.
+  final send action. The repair ships in v0.2.5; older downloads are unchanged.
 - **Connection cap** limits pending invitation rows selected for that pass and
   supplies Connect's default.
 - **Dynamic resume builder** enables the separately installed builder when

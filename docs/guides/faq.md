@@ -308,12 +308,12 @@ It is **off by default** because it clicks Connect + Send for real — start wit
 [configuration → `outreach`](configuration.md#outreach).
 
 Set `outreach.connect_without_note: true` to permit a plain invitation when note
-entry is unavailable. Current source waits for usable controls, accepts explicit
+entry is unavailable. Source and Windows v0.2.5 wait for usable controls, accept explicit
 no-note actions or a final Send/Connect only inside an identified invitation
-dialog, and preserves existing drafts instead of downgrading arbitrary errors.
-It requires profile Pending or a new invitation-sent confirmation before marking
+dialog, and preserve existing drafts instead of downgrading arbitrary errors.
+They require profile Pending or a new invitation-sent confirmation before marking
 delivery; a click or modal closure alone is unconfirmed. Dry-run never sends.
-These repairs are source-only; the v0.2.4 download is unchanged.
+These repairs ship in Windows v0.2.5; the v0.2.4 download is unchanged.
 
 ### Where is my data stored?
 

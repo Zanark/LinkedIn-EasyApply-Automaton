@@ -602,6 +602,36 @@
       "number": 40,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH8iHg"
+    },
+    "lea-41": {
+      "baseline": {
+        "title": "[lea-41] Expand parallel qualification and relocated-layout regressions",
+        "managed": "052809977f9f84540001677cd8c355afdc917a8edea9db88fa5d39847c7636d3",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABecyhoQ",
+      "number": 41,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/41",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH-D-k"
+    },
+    "lea-42": {
+      "baseline": {
+        "title": "[lea-42] Publish the updated Windows desktop patch release",
+        "managed": "cc7ddfbe12279d7368431f5533ff0be50d16b2fb94d2560f142f7e447b588312",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABecymhQ",
+      "number": 42,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/42",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH-EFE"
     }
   }
 }

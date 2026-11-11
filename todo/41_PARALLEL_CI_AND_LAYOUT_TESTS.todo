@@ -1,0 +1,43 @@
+# Expand parallel qualification and relocated-layout regressions
+Workstream-ID: lea-41
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/41
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded CI and relocation-test request
+Status: IN_PROGRESS
+Milestone: Qualify every supported test group without weakening release gates
+Dependencies: lea-39
+
+## Purpose
+Expand meaningful offline regressions for the reorganized repository and run
+independent quality, test and frozen-build lanes concurrently. Preserve the
+tag-only publication boundary and all predecessor workstreams.
+
+## Tasks
+- [x] Cover relocated public resources, tooling roots and archive integrity.
+- [x] Schedule every test group on both supported Python versions.
+- [x] Use bounded isolated workers and retain per-lane diagnostic reports.
+- [x] Require fictional invitation browser cases instead of silently skipping.
+- [x] Block release publication on any failed, cancelled or skipped prerequisite.
+- [ ] Qualify the exact workflow and reconcile only this workstream's tracking.
+
+## Acceptance criteria
+- [x] Every collected test file belongs to a scheduled matrix group.
+- [x] Actual schema/tutorial/configuration behavior works outside the checkout cwd.
+- [x] Fictional private/excluded payloads cannot produce release archives.
+- [ ] All bundled bytes, manifest entries and published checksums agree.
+- [ ] All independent qualification lanes must succeed before a tag publishes.
+- [ ] Local and exact-source hosted results are recorded distinctly.
+- [ ] Private inputs, independent applications and prior tracking are preserved.
+
+## Completion evidence
+The full fictional offline suite passes locally: 1,081 cases with two workers
+and file-scoped scheduling, including required invitation browser fixtures.
+Ruff, Black and mypy over 74 source files pass. The actual barrier is exercised
+against missing, unexpected, failed, cancelled and skipped results.
+All forty predecessor issue and Project records/timestamps are independently
+preserved after adopting only lea-41 and lea-42. Hosted qualification and
+release integrity remain pending; no live LinkedIn or human acceptance is claimed.
+
+## Completion log
+- 2026-11-12: Begin the separately requested parallel CI and relocation coverage.
+  Keep tests fictional, hosted permissions minimal and local workers bounded.

@@ -1,0 +1,39 @@
+# Publish the updated Windows desktop patch release
+Workstream-ID: lea-42
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/42
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded Windows release update request
+Status: IN_PROGRESS
+Milestone: Deliver a new immutable package with verified source and assets
+Dependencies: lea-35, lea-36, lea-38, lea-39, lea-41
+
+## Purpose
+Package the already implemented larger icons, invitation-control repair,
+consistent retry metrics and reorganized source as a new Windows patch release.
+Preserve previous releases and every private or independently running setup.
+
+## Tasks
+- [x] Align package version, release notes and directly affected guides.
+- [ ] Qualify the reviewed source and verify commit attribution.
+- [ ] Normally push source and a new matching immutable release tag.
+- [ ] Verify every exact-source hosted lane and release publication.
+- [ ] Download and verify published assets against the exact manifest/checksums.
+- [ ] Reconcile only this workstream's issue, Project item and durable backlink.
+
+## Acceptance criteria
+- [ ] Source and package version match the new tag and release notes.
+- [ ] The release waits for every parallel qualification lane.
+- [ ] The actual published archive, checksum file and manifest agree.
+- [ ] Manifest source identity equals the exact tagged commit.
+- [ ] Previous tags/releases/assets and all predecessor tracking are preserved.
+- [ ] No private continuity, applicant values or unrelated work is published.
+- [ ] No installation, independent-app control or live LinkedIn action occurs.
+
+## Completion evidence
+Version v0.2.5 is aligned in package metadata and source, with dedicated notes
+and directly affected guides. Local and hosted qualification remain separate.
+No tag or release has been created, and no installed application is being updated.
+
+## Completion log
+- 2026-11-12: Begin the separately authorized Windows release update.
+  Keep private context publication skipped and preserve earlier releases.

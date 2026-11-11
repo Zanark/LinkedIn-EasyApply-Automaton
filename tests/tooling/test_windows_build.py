@@ -1,7 +1,10 @@
 """Windows bundles retain redistribution notices and native application branding."""
 
+import hashlib
+import json
 import shutil
 import sys
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -118,3 +121,130 @@ def test_missing_supplemental_notice_blocks_packaging(notice_root, tmp_path, rel
     bundle.mkdir()
     with pytest.raises(FileNotFoundError, match="Supplemental redistribution notice missing"):
         build_windows.copy_notices(bundle)
+
+
+@pytest.fixture
+def fictional_build(tmp_path, monkeypatch):
+    root = tmp_path / "source checkout with spaces"
+    packaging = root / "packaging" / "windows"
+    packaging.mkdir(parents=True)
+    (root / "pyproject.toml").write_text('[project]\nversion = "1.2.3"\n', encoding="utf-8")
+    (root / "LICENSE").write_text("Fictional test license\n", encoding="utf-8")
+    (packaging / "START_HERE.txt").write_text("Fictional start guide\n", encoding="utf-8")
+    specification = packaging / "EasyApplyAutomaton.spec"
+    specification.touch()
+    output = tmp_path / "delivery with spaces"
+    bundle = output / "EasyApplyAutomaton"
+    calls = []
+
+    def freeze(command, *, cwd, check):
+        calls.append((command, cwd, check))
+        bundle.mkdir(parents=True, exist_ok=True)
+        (bundle / "lea.exe").write_bytes(b"fictional console")
+        (bundle / "EasyApplyAutomaton.exe").write_bytes(b"fictional desktop")
+        tutorial = bundle / "_internal" / "docs" / "guides" / "gui-tutorial.md"
+        tutorial.parent.mkdir(parents=True, exist_ok=True)
+        tutorial.write_text("## Fictional tutorial\nOffline only.\n", encoding="utf-8")
+
+    monkeypatch.setattr(build_windows, "ROOT", root)
+    monkeypatch.setattr(
+        build_windows, "sys", SimpleNamespace(platform="win32", executable=sys.executable)
+    )
+    monkeypatch.setattr(build_windows.platform, "machine", lambda: "AMD64")
+    monkeypatch.setattr(build_windows, "subprocess", SimpleNamespace(run=freeze))
+    monkeypatch.setattr(build_windows, "copy_notices", lambda target: {"fixture": "1.0"})
+    caller = tmp_path / "unrelated caller"
+    caller.mkdir()
+    (caller / "pyproject.toml").write_text('[project]\nversion = "9.9.9"\n', encoding="utf-8")
+    monkeypatch.chdir(caller)
+    return SimpleNamespace(
+        root=root, output=output, bundle=bundle, specification=specification, calls=calls
+    )
+
+
+def test_moved_build_helper_uses_checkout_and_verifies_every_archive_byte(fictional_build):
+    fixture = fictional_build
+    source_commit = "1" * 40
+    assert build_windows.build(fixture.output, source_commit) == fixture.bundle
+    command, cwd, check = fixture.calls[0]
+    assert cwd == fixture.root and check is True
+    assert command[-1] == str(fixture.specification)
+    assert command[command.index("--workpath") + 1] == str(
+        fixture.root / "build" / "windows-freeze"
+    )
+    manifest_path = fixture.output / "EasyApplyAutomaton-1.2.3-windows-x64.manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["source_commit"] == source_commit
+    assert manifest["version"] == "1.2.3"
+    archive_path = fixture.output / "EasyApplyAutomaton-1.2.3-windows-x64.zip"
+    assert manifest["zip_sha256"] == hashlib.sha256(archive_path.read_bytes()).hexdigest()
+    assert manifest["zip_bytes"] == archive_path.stat().st_size
+    with zipfile.ZipFile(archive_path) as archive:
+        assert set(archive.namelist()) == {
+            f"EasyApplyAutomaton/{relative}" for relative in manifest["files"]
+        }
+        for relative, expected in manifest["files"].items():
+            contents = archive.read(f"EasyApplyAutomaton/{relative}")
+            assert len(contents) == expected["bytes"]
+            assert hashlib.sha256(contents).hexdigest() == expected["sha256"]
+    assert manifest["unpacked_bytes"] == sum(item["bytes"] for item in manifest["files"].values())
+    for line in (fixture.output / "SHA256SUMS").read_text(encoding="utf-8").splitlines():
+        expected, filename = line.split("  ", 1)
+        assert hashlib.sha256((fixture.output / filename).read_bytes()).hexdigest() == expected
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "configs/config.yaml",
+        "configs/answers.yaml",
+        "configs/searches.yaml",
+        ".env",
+        ".env.backup",
+        "runtime/history.db",
+        "runtime/history.sqlite",
+        "runtime/history.sqlite3",
+        "runtime/capture.HAR",
+        ".agent-context/STATE.md",
+        ".browser-profile/Default/Preferences",
+        "playwright/.local-browsers/browser.exe",
+        "_internal/Qt6Pdf.dll",
+        "_internal/Qt6Qml.dll",
+        "_internal/Qt6Quick.dll",
+        "_internal/Qt6VirtualKeyboard.dll",
+        "_internal/qpdf.dll",
+    ],
+)
+def test_fictional_private_or_excluded_payload_blocks_release(fictional_build, relative):
+    fixture = fictional_build
+    forbidden = fixture.bundle.joinpath(*relative.split("/"))
+    forbidden.parent.mkdir(parents=True, exist_ok=True)
+    forbidden.write_text("fictional rejected payload", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="Private runtime data or excluded component rejected"):
+        build_windows.build(fixture.output, "2" * 40)
+    assert not list(fixture.output.glob("*.zip"))
+    assert not list(fixture.output.glob("*.manifest.json"))
+    assert not (fixture.output / "SHA256SUMS").exists()
+
+
+def test_failed_freezer_does_not_publish_success_shaped_assets(fictional_build, monkeypatch):
+    def fail(*args, **kwargs):
+        raise RuntimeError("Fictional freezer failure")
+
+    monkeypatch.setattr(build_windows, "subprocess", SimpleNamespace(run=fail))
+    with pytest.raises(RuntimeError, match="Fictional freezer failure"):
+        build_windows.build(fictional_build.output, "3" * 40)
+    assert not list(fictional_build.output.glob("*.zip"))
+    assert not (fictional_build.output / "SHA256SUMS").exists()
+
+
+@pytest.mark.parametrize("system,machine", [("linux", "AMD64"), ("win32", "ARM64")])
+def test_unsupported_build_platform_never_invokes_freezer(
+    fictional_build, monkeypatch, system, machine
+):
+    monkeypatch.setattr(build_windows, "sys", SimpleNamespace(platform=system))
+    monkeypatch.setattr(build_windows.platform, "machine", lambda: machine)
+    with pytest.raises(RuntimeError, match="64-bit Windows"):
+        build_windows.build(fictional_build.output, "4" * 40)
+    assert fictional_build.calls == []
+    assert not fictional_build.output.exists()

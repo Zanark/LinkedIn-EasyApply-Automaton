@@ -50,7 +50,7 @@ Action-dependent targets and tool inputs update their explanations when their
 meaning changes. Disabled fields still explain their purpose. These small,
 nonmodal popups do not save settings or start commands; the console retains
 its separate per-message diagnostic hover text. Reopen the updated source GUI
-or use the newly extracted v0.2.4 EXE; older v0.2.1 EXEs do not gain this update.
+or use the newly extracted v0.2.5 EXE; older v0.2.1 EXEs do not gain this update.
 
 To open only the guide, without configuration, history or browser startup:
 
@@ -146,7 +146,7 @@ The source GUI retains the extras already installed in its environment.
 An existing `private-setup\Start-SourceSetup.cmd` directly launches this source
 checkout with its existing environment and configuration. It does not fetch or
 choose a GitHub release. The same command therefore loads updated source on
-the next launch, while a separately extracted v0.2.4 EXE runs the packaged build.
+the next launch, while a separately extracted EXE runs its own packaged build.
 Finish any active run and save unsaved edits before reopening either GUI.
 No configuration reset or repeat initialization is required.
 
@@ -189,13 +189,13 @@ Unchecked hides the tabs and applies no customization overrides; checking alone
 does not save or start anything. Only changed overrides are applied.
 **Connect without a note if unavailable** defaults off and applies to standalone
 Connect and the optional end-of-run invitation pass. Enabled still prefers the
-note; only unavailable note entry permits a plain invitation. Current source
-waits for controls and recognizes explicit no-note actions or a final Send/Connect
+note; only unavailable note entry permits a plain invitation. Source and Windows v0.2.5
+wait for controls and recognize explicit no-note actions or a final Send/Connect
 inside an identified invitation dialog, never an unrelated message Send.
 Dry run skips all final send actions. A confirmed plain invitation is
 counted under Invites, not HR sent, and does not mark its draft note as delivered.
 This control is included in source and Windows v0.2.4; older v0.2.3 EXEs are
-unchanged. The control-recognition repair is source-only; v0.2.4 retains its
+unchanged. The control-recognition repair ships in v0.2.5; v0.2.4 retains its
 older exact-only fallback. A final click alone is not delivery confirmation.
 **Start** and **Copy command** validate and
 materialize a private preset in `logs\gui-runs`; the original YAML is unchanged.
@@ -229,7 +229,7 @@ the current stage's color in both themes; it does not flash or pulse.
 The redundant visible **CURRENT ACTION** header is gone. Color and icons
 describe an operation, never proof that an application or invitation succeeded.
 
-**Larger source icons:** all 36 icons now render at 64-by-64 logical pixels,
+**Larger icons in source and Windows v0.2.5:** all 36 icons render at 64-by-64 logical pixels,
 up from 40-by-40 (2.56 times the area). The tile stays 112 by 108 pixels; tighter
 internal spacing preserves the full centered labels and their existing font.
 The immutable Windows v0.2.4 download retains its original 40px icons.
@@ -294,9 +294,11 @@ Snapshots are not a durable transaction ledger. A hard stop after an action but
 before database persistence can leave counts ahead of history or the final
 summary; verify LinkedIn before retrying. Older v0.2.1 EXEs do not include
 these counters. Finish an active run and save edits before reopening the updated
-source GUI or the newly extracted v0.2.3 EXE.
+source GUI or the newly extracted v0.2.5 EXE.
 
 ### Retry preview (current source)
+
+Available in source and Windows v0.2.5.
 
 **Reapply → List retry targets only (no browser)** keeps the same layout:
 the action tile on the left and five numeric cards on the right. It reports
@@ -320,7 +322,7 @@ The strip says **Retry preview** and **No browser or sends**; no submission
 progress bar is shown. An empty successful query reports five zeroes; before
 a valid response, unavailable values stay `--`. Values remain after completion,
 theme/selector changes and Clear log. Checking list-only affects only Reapply.
-This source update does not modify the published v0.2.4 download.
+Older immutable downloads, including v0.2.4, are unchanged.
 
 With list-only **off**, Reapply still uses the normal application pipeline:
 **Scanned / Applied / Skipped / Failed / HR sent**. Confirmed retries can draft

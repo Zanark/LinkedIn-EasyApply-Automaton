@@ -172,15 +172,26 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,gui,dashboard,export]"
 
 # Quality gates (all must pass)
-.\.venv\Scripts\ruff.exe check .
+.\.venv\Scripts\ruff.exe check linkedin_easy_apply tests tools packaging apply.py
 .\.venv\Scripts\black.exe --check linkedin_easy_apply tests tools\windows\build_windows.py tools\windows\smoke_windows.py tools\media\capture_screenshots.py tools\todo_sync.py packaging\windows
 .\.venv\Scripts\mypy.exe linkedin_easy_apply
 .\.venv\Scripts\python.exe -m pytest
+# Optional bounded local parallel run
+.\.venv\Scripts\python.exe -m pytest -n 2 --dist loadfile
 ```
 
 Optional extras: `.[ai]` (OpenAI), `.[dashboard]` (Streamlit), `.[export]`
 (XLSX export). The full suite imports dashboard helpers, so its environment
 needs the dashboard extra even though the portable build excludes it.
+
+The [test inventory](../../tests/README.md) describes the parallel hosted lanes.
+The Windows workflow runs every test group on Python 3.12 and 3.13 with two
+isolated workers per lane, separate style/type jobs and an independent frozen
+build/smoke. All results converge on the existing `qualify` check before a tag
+can publish. Test reports are uploaded even on failure. Adding a group requires
+adding it to the matrix; regression coverage rejects unscheduled test files
+and release gates that omit a required job. Local workers stay bounded because
+this workstation may also run independent applications.
 
 `tests/automation/test_connection_invites.py` covers the connector, service persistence and
 actual selectors against intercepted fictional HTTPS pages. It launches a fresh

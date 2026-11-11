@@ -1,5 +1,35 @@
 # Development ledger
 
+## 2026-11-12 - Qualify the parallel CI candidate locally
+
+- Pass all 1,081 fictional offline cases with two workers and file-scoped
+  scheduling. Invitation browser fixtures are required, not silently skipped.
+  Ruff, Black and the 74-file mypy check pass.
+- Pass 94 focused workflow, layout, build and desktop-resource cases against
+  the final v0.2.5 edits. Verify the CLI version and pass actionlint 1.7.12
+  against the exact release workflow.
+- Exercise the real qualification script against missing/unexpected results
+  and every failed, cancelled or skipped prerequisite. Publication remains
+  tag-only and all independent quality/test/build jobs must succeed.
+- Independently verify the two new issue-backed Project items and all forty
+  predecessor issue/Project records, including timestamps, without changes.
+- Prepare version v0.2.5, dedicated release notes and directly affected guides.
+  Hosted results, tag creation and actual release-asset verification remain
+  pending. Private context publication stays skipped.
+
+## 2026-11-12 - Parallel qualification and Windows patch release intake
+
+- Add bounded lea-41 for moved-resource/build/documentation regressions and
+  parallel supported-Python test lanes. Keep reports per lane and require all
+  style/type/test/frozen-build results before publication.
+- Add dependent lea-42 for a new immutable Windows release containing the
+  previously implemented icon, invitation, retry and organization improvements.
+- Private context publication is explicitly skipped after clarification.
+  Preserve the existing four-file public handoff, private inputs, unrelated
+  work, previous release assets and independently running applications.
+- Implementation, local checks, hosted qualification and publication remain
+  separate; no installation or live LinkedIn activity is included.
+
 ## 2026-11-12 - Publish the qualified README, retry metrics and repository layout
 
 - Normally push source commit 82fd77d87b431397799629ddc0f589e91605d499

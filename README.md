@@ -2,7 +2,7 @@
   <img src="docs/assets/branding/readme-banner.png" width="900" alt="Easy Apply Automaton: teal robot logo and blue lettering on a feathered grid background">
 </p>
 <p align="center">
-  <a href="https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.4">Download for Windows</a> &nbsp; · &nbsp;
+  <a href="https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.5">Download for Windows</a> &nbsp; · &nbsp;
   <a href="docs/getting-started/setup-and-commands.md">Setup &amp; commands</a> &nbsp; · &nbsp;
   <a href="docs/guides/gui-tutorial.md">Tutorial</a>
 </p>
@@ -24,7 +24,7 @@ No browser or sends. <a href="docs/assets/images/gui-run-walkthrough.gif">Open t
 
 ## Get started
 
-**Windows:** [Download v0.2.4](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.4),
+**Windows:** [Download v0.2.5](https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.5),
 extract the **entire ZIP**, then open `EasyApplyAutomaton.exe`.
 No Python needed; use installed Edge/Chrome. [Full setup](docs/guides/gui.md#windows-executable).
 
@@ -34,8 +34,8 @@ Start with **Scan**, then **dry-run Apply** before enabling live actions.
 **Source / CLI:** [Install and commands](docs/getting-started/setup-and-commands.md).
 **Already configured?** [Reuse your workspace](docs/guides/gui.md#reuse-an-existing-setup); do not initialize again.
 
-Previews show current source, including larger icons and the five-card retry
-preview. The **v0.2.4 download is unchanged**.
+**v0.2.5** includes the larger icons, five-card retry preview and invitation
+repair. [Release notes](docs/releases/v0.2.5.md).
 
 ## Screenshots
 

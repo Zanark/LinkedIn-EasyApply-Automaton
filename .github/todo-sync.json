@@ -77,6 +77,8 @@
     "lea-37": "37_REVIEWED_SOURCE_PUBLICATION.todo",
     "lea-38": "38_RETRY_METRICS_AND_README.todo",
     "lea-39": "39_REPOSITORY_ORGANIZATION.todo",
-    "lea-40": "40_FINAL_SOURCE_PUBLICATION.todo"
+    "lea-40": "40_FINAL_SOURCE_PUBLICATION.todo",
+    "lea-41": "41_PARALLEL_CI_AND_LAYOUT_TESTS.todo",
+    "lea-42": "42_UPDATED_WINDOWS_RELEASE.todo"
   }
 }
