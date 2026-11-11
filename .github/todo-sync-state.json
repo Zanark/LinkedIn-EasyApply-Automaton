@@ -486,12 +486,12 @@
     "lea-33": {
       "baseline": {
         "title": "[lea-33] Detailed native activity icons and Windows release",
-        "managed": "513ec2968052490051e20c4a4f2114c1ffa1ab5d69a335782651381bd246e0c9",
+        "managed": "40408910d8f70db06b0e0c548941b0d4c5400d3c618d6353f1fa90c4c731766e",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABeUGEdw",
       "number": 33,

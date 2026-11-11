@@ -1,5 +1,27 @@
 # Development ledger
 
+## 2026-11-11 - Publish v0.2.4 and verify the original source update
+
+- Publish exactly 39 reviewed public paths as
+  6716546e23a27e0c0215bb99156b24fad9b4e32b and new immutable v0.2.4. Verify
+  repository-local and effective Zanark attribution, both required trailers,
+  canonical remote commit/tree and all reviewed blobs.
+- Both exact-source main/tag runs pass hosted quality, Windows packaging and
+  actual frozen smoke. The tag publishes the new latest release. Verify actual
+  release notes, source manifest, ZIP/checksums and all 454 archived files
+  without extracting, running or installing that download. Preserve v0.2.3.
+- Recheck actual source-runtime ownership and clients, rehearse the complete
+  tree update using a temporary index, then coherently fast-forward original
+  main/tree/index. Do not stop or restart independent dashboard processes,
+  alter installed apps, reset private setup or read the unrelated plugin.
+- Exact original-source imports/version, the unchanged launcher's nonlaunching
+  check and all 89 isolated GUI/resource cases pass. Selected private/native
+  metadata, source/tracking preimages and four independent process creation
+  identities remain exact. Offline and hosted success are not live LinkedIn,
+  fresh-machine execution or human visual acceptance.
+- Complete only lea-33 after those separate gates. Root remains the sole
+  tracking writer; preserve thirty-two predecessors and original review gaps.
+
 ## 2026-11-11 - Qualify rounded action names, semantic glow and refreshed media
 
 - Implement 36 original multicolor stage/lifecycle SVGs with outlines, internal
