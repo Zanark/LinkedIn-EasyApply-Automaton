@@ -591,12 +591,12 @@
     "lea-40": {
       "baseline": {
         "title": "[lea-40] Publish the reviewed README, retry metrics and repository layout",
-        "managed": "dc48fdc2ecf216c0098a7404fac9d66e42c33504367a92d28e50c92b1944d94e",
+        "managed": "6310f3771bbecf4d6788ad681ae241cb4ba8c7a989a885c87d79e1218c12f57d",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABebZR5w",
       "number": 40,

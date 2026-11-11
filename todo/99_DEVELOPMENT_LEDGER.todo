@@ -1,5 +1,24 @@
 # Development ledger
 
+## 2026-11-12 - Publish the qualified README, retry metrics and repository layout
+
+- Normally push source commit 82fd77d87b431397799629ddc0f589e91605d499
+  to main. Independently verify the GitHub ref, exact complete tree and all
+  285 reviewed public file blobs, account-associated Zanark attribution and
+  both required session trailers.
+- Pass the full fictional offline suite: 1,012 cases, no skips/errors/failures.
+  Ruff, Black and the 74-file mypy check pass. Preserve the prerequisite
+  workstreams' separate presentation, navigation and compatibility evidence.
+- Keep the four public handoff files byte/mtime-exact. Private continuity,
+  applicant inputs, runtime output and the unrelated plugin are not published.
+  Preserve all five existing tags and v0.2.4 release/asset identities.
+- Reconcile only lea-40/#40 through its existing issue, Project item and
+  durable backlink. Preserve all 39 predecessor records and timestamps.
+- Existing Actions run 43099092085 is observed for this exact source push.
+  Hosted qualification, live LinkedIn behavior and human acceptance remain
+  distinct; source publication does not claim their success. No tag, release,
+  installation, independent-runtime control or new automation is requested.
+
 ## 2026-11-12 - Final source publication intake
 
 - The user separately authorizes a final source commit and normal main push.

@@ -248,9 +248,13 @@ acceptance remain unverified; installed apps, existing media and v0.2.4 are unch
 | lea-37 | 37_REVIEWED_SOURCE_PUBLICATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/37 |
 | lea-38 | 38_RETRY_METRICS_AND_README.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/38 |
 | lea-39 | 39_REPOSITORY_ORGANIZATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/39 |
-| lea-40 | 40_FINAL_SOURCE_PUBLICATION.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40 |
+| lea-40 | 40_FINAL_SOURCE_PUBLICATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40 |
 
 ## Completion log
+- 2026-11-12: Publish the qualified README/retry and repository-layout source
+  at 82fd77d87b431397799629ddc0f589e91605d499. Independently verify main,
+  the complete tree and 285 exact public blobs. Settle only lea-40; preserve
+  all 39 predecessors, private inputs and v0.2.4 release/asset identities.
 - 2026-11-12: Begin the separately authorized lea-40 final source publication.
   Review the completed README/retry and repository-layout payload; preserve
   private inputs, unrelated work, public handoff bytes and the existing release.

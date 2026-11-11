@@ -3,7 +3,7 @@ Workstream-ID: lea-40
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed bounded final source publication request
-Status: IN_PROGRESS
+Status: DONE
 Milestone: Publish the qualified source without private data or a new release
 Dependencies: lea-38, lea-39
 
@@ -13,28 +13,44 @@ and purpose-based repository layout. Preserve private runtime inputs,
 unrelated work, independent applications and the existing Windows release.
 
 ## Tasks
-- [ ] Review the exact public payload, effective attribution and private exclusions.
-- [ ] Verify relevant source qualification and directly dependent navigation.
-- [ ] Commit the reviewed source under Zanark with the required session trailers.
-- [ ] Normally push main and independently verify the exact remote source.
-- [ ] Reconcile only this issue, its Project membership and persistent backlink.
+- [x] Review the exact public payload, effective attribution and private exclusions.
+- [x] Verify relevant source qualification and directly dependent navigation.
+- [x] Commit the reviewed source under Zanark with the required session trailers.
+- [x] Normally push main and independently verify the exact remote source.
+- [x] Reconcile only this issue, its Project membership and persistent backlink.
 
 ## Acceptance criteria
-- [ ] The public source contains the selected banner and truthful retry counters.
-- [ ] Grouped documentation, assets, tests and tooling retain compatible entry points.
-- [ ] No private continuity, applicant inputs, runtime output or unrelated file is added.
-- [ ] Existing public handoff files and all predecessor workstreams remain preserved.
-- [ ] Author and committer use the verified repository-local Zanark identity.
-- [ ] The normal main push is independently read back at its actual commit.
-- [ ] One scoped issue-backed Project item and durable backlink are verified.
-- [ ] No tag, release, installation, live action or independent-runtime control occurs.
+- [x] The public source contains the selected banner and truthful retry counters.
+- [x] Grouped documentation, assets, tests and tooling retain compatible entry points.
+- [x] No private continuity, applicant inputs, runtime output or unrelated file is added.
+- [x] Existing public handoff files and all predecessor workstreams remain preserved.
+- [x] Author and committer use the verified repository-local Zanark identity.
+- [x] The normal main push is independently read back at its actual commit.
+- [x] One scoped issue-backed Project item and durable backlink are verified.
+- [x] No tag, release, installation, live action or independent-runtime control occurs.
 
 ## Completion evidence
-Publication review is in progress. The two prerequisite workstreams retain
-their separate local implementation and qualification evidence. Source
-publication, hosted qualification and human acceptance are distinct outcomes;
-no pending operation is represented as completed.
+- Source commit 82fd77d87b431397799629ddc0f589e91605d499 is normally pushed
+  to main and independently read back through GitHub. All 285 canonical file
+  blobs match the reviewed tree 1a2c8337d2682f029b33b92df11d39cdb5938130.
+- Author and committer are Zanark with the verified account-associated noreply
+  address. Both required co-author and session trailers are present.
+- The complete fictional offline suite passes 1,012 cases with no skips,
+  failures or errors. Ruff, Black and the 74-file mypy check pass. Prerequisite
+  workstreams retain their distinct presentation and navigation evidence.
+- The four reviewed public handoff files retain their exact bytes and mtimes.
+  Private continuity, applicant/runtime inputs and unrelated work are excluded.
+  All five existing tags and v0.2.4 release/asset identities remain unchanged.
+- Scoped tracking uses the existing issue and single non-archived Project item,
+  exact managed content, configured status option IDs and persistent backlinks.
+  Preserve all 39 predecessor issue/Project snapshots, including timestamps.
+- Existing Actions run 43099092085 belongs to this exact source push. Hosted
+  qualification remains separate from source publication; no hosted result,
+  live LinkedIn qualification or human acceptance is claimed here.
 
 ## Completion log
 - 2026-11-12: Begin the separately authorized final source publication.
   Preserve the completed local work and existing release boundaries.
+- 2026-11-12: Publish and independently verify the exact reviewed source.
+  Complete only lea-40 through its existing scoped tracking mapping; preserve
+  predecessor workstreams, private data and the published Windows release.
