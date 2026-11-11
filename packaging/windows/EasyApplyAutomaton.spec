@@ -9,8 +9,10 @@ data = [
     for name in ("config", "answers", "searches")
 ]
 data += [
-    (str(root / "docs" / name), "docs") for name in ("mark.svg", "mark.ico", "gui-tutorial.md")
+    (str(root / "docs" / "assets" / "branding" / name), str(Path("docs") / "assets" / "branding"))
+    for name in ("mark.svg", "mark.ico")
 ]
+data += [(str(root / "docs" / "guides" / "gui-tutorial.md"), str(Path("docs") / "guides"))]
 data += collect_data_files(
     "linkedin_easy_apply", includes=["database/sql/*.sql", "gui/fonts/*.ttf", "gui/fonts/OFL.txt"]
 )
@@ -77,7 +79,7 @@ gui = EXE(
     [],
     exclude_binaries=True,
     name="EasyApplyAutomaton",
-    icon=str(root / "docs" / "mark.ico"),
+    icon=str(root / "docs" / "assets" / "branding" / "mark.ico"),
     console=False,
     upx=False,
 )
@@ -87,7 +89,7 @@ cli = EXE(
     [],
     exclude_binaries=True,
     name="lea",
-    icon=str(root / "docs" / "mark.ico"),
+    icon=str(root / "docs" / "assets" / "branding" / "mark.ico"),
     console=True,
     upx=False,
 )

@@ -35,7 +35,7 @@ from linkedin_easy_apply.config import AppConfig, ConfigError, load_config
 from linkedin_easy_apply.config.models import SearchConfig, SearchEntry
 from linkedin_easy_apply.database import Database
 from linkedin_easy_apply.logging import setup_logging
-from linkedin_easy_apply.progress import gui_progress
+from linkedin_easy_apply.progress import RetryPreviewSnapshot, gui_progress
 from linkedin_easy_apply.runtime import is_frozen, resource_root
 
 if TYPE_CHECKING:
@@ -274,6 +274,16 @@ def reapply(
 
 def _print_reapply_targets(db: Database) -> None:
     targets = db.reapply_targets()
+    if (progress := gui_progress()) is not None:
+        progress.retry_preview(
+            RetryPreviewSnapshot(
+                targets=len(targets),
+                last_failed=sum(target["last_status"] == "failed" for target in targets),
+                last_aborted=sum(target["last_status"] == "aborted" for target in targets),
+                prior_attempts=sum(target["attempts"] for target in targets),
+                repeated_jobs=sum(target["attempts"] > 1 for target in targets),
+            )
+        )
     if not targets:
         console.print("[green]No failed or aborted applications to retry. 🎉[/green]")
         return

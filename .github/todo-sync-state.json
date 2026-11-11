@@ -557,6 +557,51 @@
       "number": 37,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/37",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH6ZSc"
+    },
+    "lea-38": {
+      "baseline": {
+        "title": "[lea-38] Consistent retry metrics and a concise branded README",
+        "managed": "0e5e39189d480db225958c0c24f4a16720da713d649c1e6f3a8f5509b0473a73",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABeaTKKQ",
+      "number": 38,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/38",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH7YpE"
+    },
+    "lea-39": {
+      "baseline": {
+        "title": "[lea-39] Purpose-based repository organization",
+        "managed": "b7466fcbe4429b129f72e2526dfc61877f4435c79f4ef6fda0607377faea68b0",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABebFG6Q",
+      "number": 39,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/39",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH8MLc"
+    },
+    "lea-40": {
+      "baseline": {
+        "title": "[lea-40] Publish the reviewed README, retry metrics and repository layout",
+        "managed": "dc48fdc2ecf216c0098a7404fac9d66e42c33504367a92d28e50c92b1944d94e",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABebZR5w",
+      "number": 40,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH8iHg"
     }
   }
 }

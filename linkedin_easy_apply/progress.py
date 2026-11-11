@@ -151,16 +151,37 @@ class ActivitySnapshot(BaseModel):
         return name
 
 
-_RECORD: TypeAdapter[ProgressSnapshot | ActivitySnapshot] = TypeAdapter(
-    ProgressSnapshot | ActivitySnapshot
+class RetryPreviewSnapshot(BaseModel):
+    """Saved retry-batch history, never a live run or a send outcome."""
+
+    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+
+    version: Literal[3] = 3
+    action: Literal["reapply-list"] = "reapply-list"
+    targets: Count
+    last_failed: Count
+    last_aborted: Count
+    prior_attempts: Count
+    repeated_jobs: Count
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def exact_version_type(cls, version: object) -> object:
+        if type(version) is not int:
+            raise ValueError("The protocol version must be an integer.")
+        return version
+
+
+_RECORD: TypeAdapter[ProgressSnapshot | ActivitySnapshot | RetryPreviewSnapshot] = TypeAdapter(
+    ProgressSnapshot | ActivitySnapshot | RetryPreviewSnapshot
 )
 
 
-def encode_progress(snapshot: ProgressSnapshot | ActivitySnapshot) -> str:
+def encode_progress(snapshot: ProgressSnapshot | ActivitySnapshot | RetryPreviewSnapshot) -> str:
     return FRAME_START + snapshot.model_dump_json() + FRAME_END
 
 
-def _write_progress(snapshot: ProgressSnapshot | ActivitySnapshot) -> None:
+def _write_progress(snapshot: ProgressSnapshot | ActivitySnapshot | RetryPreviewSnapshot) -> None:
     sys.stderr.write(encode_progress(snapshot))
     sys.stderr.flush()
 
@@ -180,13 +201,17 @@ class ProgressReporter:
 
     def __init__(
         self,
-        sink: Callable[[ProgressSnapshot], None] | None = None,
+        sink: Callable[[ProgressSnapshot | RetryPreviewSnapshot], None] | None = None,
         *,
         activity_sink: Callable[[ActivitySnapshot], None] | None = None,
     ) -> None:
         self._sink = sink
         self._activity_sink = activity_sink
         self._snapshot: ProgressSnapshot | None = None
+
+    def retry_preview(self, snapshot: RetryPreviewSnapshot) -> None:
+        """Publish the retrieved history without starting or changing a live run."""
+        self._emit(snapshot)
 
     def activity(self, activity: Activity, *, resume_path: Path | None = None) -> None:
         """Report an operation; only an explicit filename changes the retained display."""
@@ -259,10 +284,11 @@ class ProgressReporter:
         self._snapshot = ProgressSnapshot.model_validate(data)
         self._emit()
 
-    def _emit(self) -> None:
-        if self._sink is not None and self._snapshot is not None:
+    def _emit(self, snapshot: ProgressSnapshot | RetryPreviewSnapshot | None = None) -> None:
+        snapshot = snapshot if snapshot is not None else self._snapshot
+        if self._sink is not None and snapshot is not None:
             try:
-                self._sink(self._snapshot.model_copy(deep=True))
+                self._sink(snapshot.model_copy(deep=True))
             except OSError as exc:
                 self._sink = None
                 logger.warning("Live metrics unavailable: {}", exc)
@@ -282,7 +308,7 @@ class ProgressStream:
 
     def feed(
         self, text: str
-    ) -> Iterator[str | ProgressSnapshot | ActivitySnapshot | ProgressError]:
+    ) -> Iterator[str | ProgressSnapshot | ActivitySnapshot | RetryPreviewSnapshot | ProgressError]:
         self._pending += text
         while self._pending:
             if self._discarding:

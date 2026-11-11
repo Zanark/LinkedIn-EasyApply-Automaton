@@ -1,0 +1,86 @@
+# Consistent retry metrics and a concise branded README
+Workstream-ID: lea-38
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/38
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded retry presentation and README curation request
+Status: DONE
+Milestone: Preserve truthful retry counters and simplify the project front page
+Dependencies: lea-20, lea-34, lea-35
+
+## Purpose
+Keep the action tile and five numeric cards consistent across live Reapply and
+browser-free retry previews. Distinguish saved failed/aborted history from
+current application, hiring-message and invitation outcomes. Use the supplied
+robot banner with transparent feathered edges on a shorter README, linked to
+detailed existing guides.
+
+## Tasks
+- [x] Trace retry eligibility, live application/outreach counters and missing preview cards.
+- [x] Preserve predecessor tracking and create a fictional isolated source candidate.
+- [x] Add strict, private-data-free preview counts without changing live outcomes.
+- [x] Keep list-only state confined to Reapply and retain the five-card arrangement.
+- [x] Add the selected feathered README banner and relocate detail to linked guides.
+- [x] Qualify CLI transport, actual child updates, empty/error states and both themes.
+- [x] Refresh affected fictional media and deliver the qualified source locally.
+- [x] Reconcile the scoped issue, Project item and persistent backlink.
+
+## Acceptance criteria
+- [x] Live retry retains Scanned, Applied, Skipped, Failed and HR sent.
+- [x] Preview shows targets, last-failed/aborted jobs, prior attempts and repeated jobs.
+- [x] Preview opens no browser, starts no automation run and implies no sends.
+- [x] Unknown values remain unavailable until a complete valid snapshot arrives.
+- [x] The action tile stays beside the responsive cards with its existing size/artwork.
+- [x] README shows the selected banner, useful visuals and concise linked navigation.
+- [x] Existing live, draft, dry-run, unconfirmed and invitation semantics remain distinct.
+- [x] One scoped issue-backed Project item/backlink and all 37 predecessors are preserved.
+- [x] Private inputs, unrelated work, independent apps and published v0.2.4 remain unchanged.
+
+## Completion evidence
+The hidden list-only state previously hid the cards and could leak into other
+actions. Restrict it to Reapply. Keep the existing action tile and live cards;
+use Targets, Failed, Aborted, Attempts and Repeated for the explicit historical
+preview. All five counts derive from the same retrieved batch. A complete
+successful empty result shows zeroes; missing or failed results stay unavailable.
+The preview creates no automation run and never invokes the browser or outreach.
+
+Add a strict, complete version-three snapshot alongside unchanged live-counter
+and activity contracts. Invalid records retain the last valid values. Ordinary
+CLI output and live application, draft, dry-run, unconfirmed, outreach and
+invitation outcomes retain their existing meaning. Live retry can still send
+configured approved hiring messages and report outreach failures separately.
+
+All 183 focused protocol, CLI, process and GUI cases pass. Coverage includes an
+actual fictional CLI child, empty/error cases, no automation-record writes,
+hidden-checkbox scope and both themes at compact, standard and expanded sizes.
+Focused Black/Ruff pass on nine changed Python files; mypy passes 75 source
+files. Direct native presentation inspection confirms the retained 112x108 tile,
+full labels, five cards and wrapping footer. These are fictional technical and
+presentation checks, not live LinkedIn qualification or human acceptance.
+
+Use the final supplied banner with transparent feathered edges, preserving its
+central artwork. README is 80 lines with 343 rendered words including the
+collapsed glossary. Link setup/reference detail and keep all 36 icons available.
+Refresh the affected fictional walkthrough frame; retain unchanged stills and
+original SVG bytes. Direct local Markdown/browser review covers desktop
+light/dark and mobile light, expanded glossary, loaded images and no horizontal
+page overflow. This is not a published-page observation.
+
+Deliver exactly 21 qualified source/test/guide/media files locally and verify
+their exact candidate bytes and original-source import identities. Preserve
+251 unrelated tracked file hashes/mtimes, HEAD, staging, selected private-file
+metadata and independent dashboard process creation identities. A running
+shared checkout is not an immutable build. Keep issue #38, its single existing
+Project item and durable workstream/index backlinks; completion is scoped to
+that mapping and preserves all 37 predecessor objects and mappings.
+
+No live LinkedIn action, real applicant fixture, installed-app change,
+independent-runtime control, commit, push or release is included. Published
+v0.2.4 remains unchanged.
+
+## Completion log
+- 2026-11-12: Complete the bounded source implementation, fictional technical
+  qualification and direct presentation review. Deliver the exact local
+  payload and scope completion to the existing lea-38 issue/Project mapping.
+  Keep local delivery, live acceptance and publication distinct.
+- 2026-11-12: Begin the bounded retry presentation and README curation workstream.
+  Trace authoritative historical/live outcomes and preserve predecessor work.

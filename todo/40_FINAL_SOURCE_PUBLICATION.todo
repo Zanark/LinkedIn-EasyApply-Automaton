@@ -1,0 +1,40 @@
+# Publish the reviewed README, retry metrics and repository layout
+Workstream-ID: lea-40
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded final source publication request
+Status: IN_PROGRESS
+Milestone: Publish the qualified source without private data or a new release
+Dependencies: lea-38, lea-39
+
+## Purpose
+Commit and normally push the reviewed README branding, truthful retry preview
+and purpose-based repository layout. Preserve private runtime inputs,
+unrelated work, independent applications and the existing Windows release.
+
+## Tasks
+- [ ] Review the exact public payload, effective attribution and private exclusions.
+- [ ] Verify relevant source qualification and directly dependent navigation.
+- [ ] Commit the reviewed source under Zanark with the required session trailers.
+- [ ] Normally push main and independently verify the exact remote source.
+- [ ] Reconcile only this issue, its Project membership and persistent backlink.
+
+## Acceptance criteria
+- [ ] The public source contains the selected banner and truthful retry counters.
+- [ ] Grouped documentation, assets, tests and tooling retain compatible entry points.
+- [ ] No private continuity, applicant inputs, runtime output or unrelated file is added.
+- [ ] Existing public handoff files and all predecessor workstreams remain preserved.
+- [ ] Author and committer use the verified repository-local Zanark identity.
+- [ ] The normal main push is independently read back at its actual commit.
+- [ ] One scoped issue-backed Project item and durable backlink are verified.
+- [ ] No tag, release, installation, live action or independent-runtime control occurs.
+
+## Completion evidence
+Publication review is in progress. The two prerequisite workstreams retain
+their separate local implementation and qualification evidence. Source
+publication, hosted qualification and human acceptance are distinct outcomes;
+no pending operation is represented as completed.
+
+## Completion log
+- 2026-11-12: Begin the separately authorized final source publication.
+  Preserve the completed local work and existing release boundaries.

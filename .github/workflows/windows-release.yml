@@ -48,16 +48,16 @@ jobs:
         run: |
           python -m ruff check .
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          python -m black --check linkedin_easy_apply tests tools\build_windows.py tools\smoke_windows.py tools\capture_screenshots.py tools\todo_sync.py packaging\windows
+          python -m black --check linkedin_easy_apply tests tools\windows\build_windows.py tools\windows\smoke_windows.py tools\media\capture_screenshots.py tools\todo_sync.py packaging\windows
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m mypy linkedin_easy_apply
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           python -m pytest
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build Windows distribution
-        run: python tools\build_windows.py --source-commit "$env:GITHUB_SHA"
+        run: python tools\windows\build_windows.py --source-commit "$env:GITHUB_SHA"
       - name: Exercise frozen executables offline
-        run: python tools\smoke_windows.py dist\windows\EasyApplyAutomaton
+        run: python tools\windows\smoke_windows.py dist\windows\EasyApplyAutomaton
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: windows-${{ github.sha }}

@@ -1,7 +1,7 @@
 """LinkedIn Easy Apply Automaton.
 
 A production-quality, modular automation framework for the LinkedIn Easy Apply
-workflow. See ``ARCHITECTURE.md`` for the full design specification.
+workflow. See ``docs/architecture/specification.md`` for the full design specification.
 
 The package is organised into single-responsibility subpackages:
 

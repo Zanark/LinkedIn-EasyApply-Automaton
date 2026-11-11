@@ -1,7 +1,11 @@
 # Contributor and agent entry point
 
-Read [the developer guide](docs/developer_guide.md) and
-[the tracking adoption contract](docs/github-tracking.md) before changing workstreams.
+Read [the developer guide](docs/development/developer_guide.md) and
+[the tracking adoption contract](docs/development/github-tracking.md) before changing workstreams.
+
+Use [the repository layout](docs/development/repository-layout.md) and
+[documentation index](docs/README.md) for current paths. Keep private runtime
+folders, historical workstreams and published release bundles in place.
 
 The canonical work inventory is [`todo/00_INDEX.todo`](todo/00_INDEX.todo).
 Preserve the existing lowercase directory. Actual workstreams use numbered

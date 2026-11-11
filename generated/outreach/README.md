@@ -15,6 +15,6 @@ Nothing is ever sent automatically in `draft` mode.
 Reports are **git-ignored** (they contain recruiter names and profile URLs);
 this folder and README are kept so a fresh clone has the structure.
 
-See `docs/configuration.md` (the `outreach` section) and
+See `docs/guides/configuration.md` (the `outreach` section) and
 `linkedin_easy_apply/orchestrator.py` (`_emit_outreach_report`) for how this
 path is wired.

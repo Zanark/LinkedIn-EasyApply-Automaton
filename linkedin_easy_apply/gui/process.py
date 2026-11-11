@@ -19,6 +19,7 @@ from linkedin_easy_apply.progress import (
     ProgressError,
     ProgressSnapshot,
     ProgressStream,
+    RetryPreviewSnapshot,
 )
 
 __all__ = ["CommandRunner", "child_environment", "start_detached"]
@@ -127,7 +128,7 @@ class CommandRunner(QObject):
 
     def _deliver(self, text: str) -> None:
         for record in self._progress_stream.feed(text):
-            if isinstance(record, ProgressSnapshot):
+            if isinstance(record, ProgressSnapshot | RetryPreviewSnapshot):
                 self.progress.emit(record)
             elif isinstance(record, ActivitySnapshot):
                 self.activity.emit(record)

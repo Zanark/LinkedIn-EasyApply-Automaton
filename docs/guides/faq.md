@@ -1,0 +1,447 @@
+# FAQ
+
+### Does this store my LinkedIn password?
+
+No. The tool **never** asks for, types, or stores credentials. You log in to
+LinkedIn once in the browser profile referenced by `browser.profile_path`, and
+the automaton reuses that already-authenticated session via Playwright's
+persistent context.
+
+### Will this get my account banned?
+
+Automating LinkedIn is against their Terms of Service and carries real risk. The
+tool ships with conservative defaults (`max_per_run`, `max_per_company`,
+`max_daily`, optional pauses) to keep volume human-like, but **use it at your
+own risk**. Start with `scan` and `--dry-run`. See the disclaimer in the README.
+
+### I got "We limit daily submissions ... Save this job and apply tomorrow" — what happened?
+
+That's **LinkedIn's own daily Easy Apply cap**, separate from this tool's
+`jobs.max_daily`. The notice rejects the current submit; it does not establish
+anything else about the account's status or the exact threshold.
+
+The tool **detects this notice and stops the run immediately** rather than
+recording a false submit and re-trying it on the next job (retrying into the cap
+is exactly what looks bot-like). The blocked job is recorded with status
+`limit_reached` — **not** counted as applied, failed, or skipped — and the CLI
+prints a yellow "daily Easy Apply cap was reached" note. Stop and follow
+LinkedIn's guidance; the exact reset time is not verified. Do not raise limits
+or repeatedly retry to get around the notice.
+
+### Why did a run stop with an unconfirmed submission?
+
+The tool clicked Submit but saw neither positive LinkedIn confirmation nor a
+recognized rejection within 20 seconds. It records `unconfirmed`, stops with
+exit code 2, and excludes that job from automatic retry to avoid a duplicate.
+It is not counted as applied or failed. Check the job/application on LinkedIn
+before deciding what to do next; a button click alone is not proof of success.
+
+### How do I try it safely first?
+
+1. `lea scan` — discovers and scores jobs, writes nothing to LinkedIn.
+2. `lea apply --dry-run` — fills every field but never clicks the final submit.
+3. `lea apply --confirm-submit` — asks you to confirm before each submission
+   (the prompt defaults to **Yes**, so pressing Enter submits). Without this
+   flag `lea apply` submits automatically.
+
+### Is AI required?
+
+No. AI is disabled by default and entirely optional. With `ai.enabled: false`
+the flow is 100% deterministic. When enabled, AI only *advises* (match score,
+missing skills, a recommendation); it can never submit an application.
+
+### What do the desktop's live counters count?
+
+Source and Windows v0.2.2 or later show outcomes for the GUI's current command, not lifetime
+history. Applied needs workflow confirmation; HR sent excludes drafts and
+connection invitations. Scan-only jobs and completed dry runs also count as
+Skipped, as in the final summary. Dry runs, drafts and uncertain submissions
+have separate totals. Counts survive Stop and Clear log; only an accepted new
+command resets them. Interrupted persistence can leave history behind an
+observed action, so verify before retrying. See the
+[complete counter reference](gui.md#live-run-counters-current-source).
+Older v0.2.1 EXEs do not contain these counters.
+
+### What happens when it hits a question it doesn't recognise?
+
+By default (`run.pause_on_unknown_question: true`) it pauses and asks you for the
+answer, then **remembers it** in the database for future runs. Before pausing on
+a later run, it checks those learned answers and reuses the match automatically.
+With `--yes` / non-interactive mode, unknown questions are skipped and the step
+is recorded.
+
+### It paused on a question — can I just fill it on the page instead of the terminal?
+
+Yes. Either type the answer in the terminal and the tool fills LinkedIn for you,
+or fill the field directly on the LinkedIn page and press Enter in the terminal.
+It reads the final value back from the page, records whether it came from
+`manual` input or the `portal`, and saves it for future runs.
+
+### Can I pre-answer bespoke questions so an unattended run never gets stuck?
+
+Yes — add a `custom_questions` list to `answers.yaml`. Each entry maps keyword
+patterns to a canned answer, so a recurring custom question (shift timings, a
+location picker, a project-specific consent) is filled automatically instead of
+being skipped or aborting a `-y` run:
+
+```yaml
+custom_questions:
+  - match: ["shift timing", "night shift"]
+    answer: "Yes"                       # Yes/No -> fills selects, radios, checkboxes
+  - match: ["which location are you applying", "preferred location"]
+    answer: ["Bengaluru", "Hyderabad"]  # ordered dropdown fallbacks (first that exists wins)
+```
+
+The first entry whose keyword appears in the question wins. Answers can be
+`Yes`/`No` (filled as a boolean), a plain string, or a list of ordered dropdown
+fallbacks. Custom answers are a **fallback only** — built-in handling for salary,
+notice period, contact fields and yes/no questions always takes priority. See
+[`configuration.md`](configuration.md#answersyaml) for the full reference.
+
+### Will it guess missing skill experience or work preferences?
+
+No. Missing skill years are not replaced with total experience, and unrecognized
+technology-specific questions remain unresolved. Hybrid and commuting need their own
+approved answers. A nonempty city, degree or other unrelated text does not imply Yes.
+Under `-y`, missing required facts can prevent completion rather than being invented.
+
+### How does it answer salary and notice-period questions?
+
+Store `current_ctc` as an **annual** plain integer (e.g. `3000000` for 30 LPA).
+**Expected** salary is picked per job by the role's **seniority tier** — inferred
+from the job title — using `expected_ctc_sde1/2/3` (SDE 1/2/3), defaulting to the
+SDE 1 band when the level is unclear. Answers are always just the number — an
+"amount in INR" field gets `4000000`, never `40,00,000`. If a question asks for a
+**monthly** figure, the tool uses an exact per-tier value when you set
+`expected_ctc_monthly_sde1/2/3` (e.g. `300000` / `320000` / `340000`); otherwise it
+divides by 12 — expected salary rounds to the nearest **100,000** and current
+salary to the nearest **10,000** (30 LPA → `250000`/month). Expected values are
+recomputed per job; a computed current-salary value is saved so it is reused. For
+notice period, the answer is **always a plain number** (e.g. `45`, never
+`45 days`): `notice_period_days` supplies it for every notice question, falling
+back to the first integer inside the free-text `notice_period`.
+"Financial expectations (monthly gross)" uses the expected monthly salary configuration too.
+
+### How do I see exactly what the tool is doing (and why)?
+
+Add the global `-v` / `--verbose` flag **before** any command (or set
+`logging.level: DEBUG`). Every run then narrates itself: the job it's on, each
+form field, the question category it parsed, **which answer it resolved and from
+which `answers.yaml` key**, and whether it filled the field or left it blank —
+plus the submit/discard decision. Full logs land in `logs/easy_apply_<date>.log`
+(git-ignored). For example:
+
+    .\.venv\Scripts\python.exe apply.py -v apply --dry-run -y
+
+To inspect a single question offline, `lea -v test-form "..."` shows the same
+parse → resolve reasoning without opening a browser.
+
+### How does it pick which resume to upload?
+
+In order: an explicit `resume.mapping` match (role/keyword → filename), then
+filename-keyword overlap with the job text, then `resume.default`. See
+`docs/guides/configuration.md`.
+
+When the active form step asks for a resume, the tool first reads LinkedIn's
+filename-labelled radios and legacy cards. It preserves an already-selected
+match or selects a matching upload and verifies the checked state using fresh controls,
+not the old IDs that LinkedIn can replace during selection. Matching is
+case-insensitive and accepts numbered copies, but never a different variant
+sharing a filename prefix. Only if none matches does it upload once and verify
+the new attachment. A failed selection never triggers a duplicate upload.
+
+If you enable `resume.builder`, a resume is **generated per job** first (see the
+next question); the static order above is the fallback.
+
+### Can it tailor a fresh resume to each job?
+
+Yes — opt in with `resume.builder` (see `docs/guides/configuration.md`). Download the
+[dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder), point
+`resume.builder.path` at it, and define keyword **clusters** (e.g. an `ai`
+cluster). Just before applying, the automaton detects the job's cluster and asks
+the builder to render a resume that surfaces the most relevant existing content
+first (e.g. `Data & AI` skills under an AI headline). `mode: keyword` is offline
+and deterministic; `mode: ai` asks your AI provider to choose the emphasis. Either
+way it only **re-emphasises** your `master.yaml` — it never invents experience.
+On no match or any error it falls back to static selection, and `scan` never
+triggers a render.
+
+### Where do the resume PDFs come from?
+
+You can drop any PDF in `generated/resume/`, **or** generate one with the
+standalone [dynamic-resume-builder](https://github.com/Zanark/dynamic-resume-builder):
+keep your content in one `master.yaml`, run
+`python render.py publish --out-dir <this-repo>\generated\resume`, and it renders
+a pixel-tuned one-page PDF straight into `generated/resume/`. See the
+[resume-generation guide](resume-studio.md) for how it works.
+
+### How do I control which jobs it applies to?
+
+Combine `scoring.rules` + `scoring.threshold` with the `jobs` filters
+(`include_keywords`, `exclude_keywords`, `blacklist_companies`,
+`whitelist_companies`). Use `lea scan` to see scores before applying.
+
+### How exactly does job scoring work?
+
+Each job gets one number. The engine joins the **title and description** into a
+single haystack and adds a rule's `weight` **once** for every `keyword` that
+appears there; the job is eligible when `score >= threshold`.
+
+- **Presence, not frequency** — a keyword counts once no matter how often it
+  occurs.
+- **Whole-word vs substring** — plain alphanumeric keywords match on word
+  boundaries (`go` never matches `google`); punctuation keywords like `c++` or
+  `.net` match by substring.
+- **Negative weights are penalties** (`architect: -30`) that push roles below
+  the bar. **Threshold is inclusive** (exactly `threshold` passes).
+- The per-keyword `breakdown` is saved to the DB and logged at `DEBUG`:
+  `Scored '…': 12 vs threshold 20 -> FAIL (breakdown: {'python': 20, 'architect': -30, ...})`.
+
+Full reference + worked examples:
+[`configuration.md` → scoring](configuration.md#scoring). Algorithm write-up:
+[`algorithms.md`](../architecture/algorithms.md#5-weighted-keyword-scoring--threshold).
+
+### Why was a job skipped?
+
+Skips happen in **two phases** (`orchestrator._process_job`). Hard **gates** are
+checked first and win over any score; then the **score threshold** applies:
+
+**Phase 1 — hard gates (`_pre_apply_checks`), first match wins:**
+
+| Reason logged | Trips when… |
+| --- | --- |
+| `not_easy_apply` | the posting has no Easy Apply button (external apply) |
+| `already_applied` | you already applied to this URL (recorded in the DB) |
+| `duplicate_company_role` | you already applied to that company + title |
+| `not_whitelisted` | `whitelist_companies` is set and the company isn't on it |
+| `blacklisted` | the company is in `blacklist_companies` |
+| `excluded_keyword` | an `exclude_keywords` term appears in title/description |
+| `missing_include_keyword` | `include_keywords` is set and none appear |
+| `company_limit` | you've hit `max_per_company` for that company |
+
+**Phase 2 — score:** if it clears the gates but `score < threshold`, it's
+skipped as `below_threshold`. Set `scoring.enforce: false` (or pass
+`--ignore-score`) to keep scoring everything while never skipping on score
+alone — see [configuration → *Ignoring the score*](configuration.md#ignoring-the-score).
+
+**Two later, silent skips:** `ai_advised_against` (only when AI is enabled) and
+`scan_only` (`scan` mode never applies). Every decision is in the log — the
+`INFO` line reads `Skip (<reason>) - <job>`, and the preceding `DEBUG` `Scored …`
+line shows the exact keyword math.
+
+### Does it overwrite fields LinkedIn already filled correctly?
+
+No. If a text, number, select, checkbox, or radio field already contains the
+same value the tool would use, it logs that the field is already filled and
+leaves it as-is instead of rewriting it.
+
+### Can it message the "Meet the hiring team" recruiters after applying?
+
+By default it **drafts** them for you rather than messaging directly. After a job
+is submitted, the tool reads the *Meet the hiring team* recruiter cards, grabs
+each person's name and LinkedIn **profile URL** straight from the page, and drafts
+**two** variants: a full personalised **message** (role, company, your
+background) to send once they connect, and a short **connection note** (≤300
+characters — LinkedIn's cap for the free invitation note) that introduces you,
+your background and why you're reaching out. Both variants open with a fixed
+signature greeting (`Hi <first name>, I trust you are having an amazing day!`).
+At the end of the run
+it writes a plain-text **report** to `generated/outreach/` listing every contact,
+their profile URL, the résumé that was submitted for that job (so you know which
+file to attach), the drafted message, and the connection note (with its
+character count) — you open each profile, attach the note to your connection
+invite, and send the full message once they accept. It clicks nothing, so it runs
+fully unattended (even under `-y`). Nothing is
+collected during `--dry-run` (no submit means the cards never appear). The same
+contacts also appear on the `lea dashboard` as clickable profile links beside
+**Applied on** dates. A red-outlined **Prioritize first** table puts applications
+**more than seven days old with no connection note sent** first, oldest first.
+The same contacts have red-highlighted collapsible titles labeled
+**Overdue outreach**, visible before opening their messages. This is a follow-up
+priority cue, not a confirmed expiration deadline.
+Mark **Connection note sent** after the invitation to move an overdue contact
+into regular follow-up; **Undo note sent** can restore its priority.
+Once you've sent the full message, tick **Message sent** and press **Remove
+message-sent outreach** (or use the expander's message-completion button).
+This deletes that outreach's message, note and all, not its application history.
+Dates come from the matching submitted application's recorded finish, falling
+back to its start when missing, and display in local time. Missing or invalid
+dates show **Unknown** with a warning; message creation is never used to guess
+when you applied.
+
+The connection note is kept within the 300-character limit automatically: if it
+would overflow it trims the tech-stack list first, then drops the portfolio link,
+and finally truncates at a word boundary — so the introduction and reason for
+reaching out always survive. Fill `portfolio` (or `website`) in `answers.yaml` to
+include a portfolio link in the note. Customise either variant with a Jinja2
+template via `outreach.template` (full message) or `outreach.note_template`
+(note).
+
+Prefer the tool to send for you? Set `outreach.mode: send` for the old
+draft-**approve**-and-send flow: it shows each message for your OK (Enter sends,
+`n` skips) and only contacts recruiters with a free **Message** button, so it
+needs an interactive run (it degrades back to `draft` under `-y`). Either mode
+never contacts the same person twice and stops after `outreach.max_per_run`.
+Toggle the whole feature per-run with `--message-hiring-team` /
+`--no-message-hiring-team`. See [configuration → `outreach`](configuration.md#outreach).
+Reaching out at volume can look like spam, so keep the cap small and review each
+draft.
+
+### Can it send the connection notes automatically instead of me clicking each one?
+
+Yes — that's the opt-in **connection-note microservice**. The draft/report flow
+above only *writes* the ≤300-char note; sending the free invitation is a separate
+pass that clicks **Connect**, uses the available note box (or **Add a note**) and
+**Send** for you. Run it standalone with
+`python apply.py connect` (add `--dry-run` to rehearse without sending, `--limit N`
+to cap, `--run <id>` to scope, `-y` to skip the prompt), or set
+`outreach.send_connection_notes: true` to have every `apply` run trigger it
+automatically at the end. Either way it opens its **own fresh browser** *after* the
+apply run's browser has closed (so it literally "closes the window, then opens it
+again just to connect"), prefers the **note** (never the long message — that
+still waits until they accept), de-dupes by profile URL, paces itself with a random
+8–25 s delay, stops the moment LinkedIn shows its weekly-invite-limit modal, and
+marks confirmed invitations so they leave the pending queue. Only confirmed
+notes are struck through on the dashboard.
+It is **off by default** because it clicks Connect + Send for real — start with
+`connect --dry-run` to confirm the flow works against the live page. See
+[configuration → `outreach`](configuration.md#outreach).
+
+Set `outreach.connect_without_note: true` to permit a plain invitation when note
+entry is unavailable. Current source waits for usable controls, accepts explicit
+no-note actions or a final Send/Connect only inside an identified invitation
+dialog, and preserves existing drafts instead of downgrading arbitrary errors.
+It requires profile Pending or a new invitation-sent confirmation before marking
+delivery; a click or modal closure alone is unconfirmed. Dry-run never sends.
+These repairs are source-only; the v0.2.4 download is unchanged.
+
+### Where is my data stored?
+
+Locally only. A SQLite database (`database.path`) records jobs, applications,
+questions/answers, AI results and errors. Nothing is sent anywhere except
+LinkedIn itself (and your AI provider, if you explicitly enable one).
+
+### Can I run it headless?
+
+Yes — set `browser.headless: true`. Keep it headed the first few runs so you can
+watch what it does and intervene if needed.
+
+### Which browsers are supported?
+
+Microsoft Edge (default), Google Chrome, and bundled Chromium
+(`browser.engine`). For Edge/Chrome the
+matching browser must be installed; for `chromium`, run
+`playwright install chromium` once.
+
+### How do I see stats / export results?
+
+`lea stats` prints a summary table. `lea export --format csv` (or `xlsx`, which
+needs the `.[export]` extra) writes applications joined with jobs to
+`applications.csv` (git-ignored, so your exported data isn't committed). `lea
+dashboard` launches an optional Streamlit UI (needs the `.[dashboard]` extra)
+that, beyond the headline metrics, is organised into Excel-style tabs
+(**Overview**, **Submitted**, **Application details**, **Needs attention**,
+**Skipped**, **Resume match**, **Outreach**) so nothing is one long scroll. It
+lists **every successful application as a collapsible card** (expand to replay the
+exact questions asked and answers submitted, start to finish), lets you drill into
+any
+application to see exactly which questions were asked and the value submitted for
+each (plus the résumé used), surfaces a **Needs attention** view of the questions
+it had no answer for (and the applications they blocked, so you know what to add to
+`answers.yaml`, plus a one-click **Reapply all** to retry the failed jobs), breaks
+down **why every skipped job was skipped** in **Skipped** (reason breakdown plus
+trends by day / company / workplace / level), grades your submitted answers against
+your résumé in **Resume match** (with a deviation-over-time chart and one-click
+*sync* of approved corrections), and shows drafted hiring-team outreach with
+clickable LinkedIn profile links, application dates, the résumé to attach, a
+copy-ready full message and a short **≤300-char connection note** for the invite.
+Untouched applications older than seven days get a separate red-outlined
+priority table. **Message sent** / **Remove message-sent outreach** deletes only
+the completed outreach selected in either table.
+
+Table columns auto-size by default, including editable tables and KPI drill-downs.
+Scroll wide tables horizontally; manual header resizing and **Autosize** still work.
+
+For exported files, use the header's **Reports → In browser** to select, preview
+and download a report. **Open folder** requests a window on the dashboard host,
+not necessarily your browser's computer. See [report troubleshooting](troubleshooting.md#dashboard-report-buttons-appear-to-do-nothing).
+
+### Can I click a KPI to see just that category?
+
+Yes. The five headline numbers (applications today, total submitted, failed,
+skipped, jobs discovered) are **clickable cards**. Press a card's **View details →**
+button and an inline drill-down opens under the header showing *only* that
+category: a per-day trend line, bar charts (top companies, résumé usage, workplace
+type, experience level, Easy Apply vs external — whichever apply), and a filtered
+record table whose job column is a clickable **Open ↗** link. Press **✕ Close** to
+return to the normal view. (The panel is rendered in place because Streamlit tabs
+cannot be switched programmatically; the logic lives in `dashboard/focus.py`.)
+
+### Why did the bot skip so many jobs? Where can I see why?
+
+Open the **⏭️ Skipped** tab. Every job the pipeline decides *not* to apply to is
+recorded with a reason, so you can see the breakdown at a glance — e.g.
+`below_threshold` (score under your threshold), `already_applied`,
+`duplicate_company_role`, `blacklisted` / `excluded_keyword` / `not_whitelisted`
+(your filters), `company_limit` (per-company cap), `ai_advised_against`,
+`scan_only` (scan mode never applies), or a form-level `skipped` / `dry_run` /
+`aborted`. The tab shows a reason bar chart, skips over time, and breakdowns by
+company / workplace type / experience level, and a legend explaining every reason.
+Click a reason bar for **every matching recorded event**, newest first, including
+repeat encounters with the same job. **Skip reason** is the keyboard-friendly
+alternative; **Show all** or a chart double-click clears the filter. The Overview
+**Skipped** drilldown supports the same controls.
+
+The list includes available job title, company, location, link, timestamp,
+run/mode and decision explanation/scoring. Select a row for the saved description,
+posting metadata and available keyword weights; **Download this list (CSV)**
+exports all filtered rows, not just those visible on screen. Skipped jobs do not
+need an **Application details** record.
+
+Future skips save observed posting details and available decision-time scores.
+Legacy rows explicitly use the current saved job record, which may have changed;
+missing original scores are not replaced with later scores. Missing descriptions
+remain unavailable. Inspection does not visit LinkedIn or start applications.
+The headline **Skipped** metric is the all-time total across runs; older runs
+that kept only aggregate counts cannot be reconstructed into per-job events.
+
+### The bot answered a question wrong — how do I correct it everywhere?
+
+Use **Resume match**. The tool grades every answer it has submitted against your
+master résumé (`master.yaml`) and flags the ones that disagree — most commonly a
+stale **total years of experience** (e.g. it answered *3* when your résumé shows
+*6*). Only fields the résumé can judge are graded (total & per-skill experience,
+name/email/phone/location); salary, notice period and other personal preferences
+are shown as *not derivable* and never counted as a mistake.
+
+To fix them, either:
+
+- **Dashboard:** open **🎯 Resume match**, review or edit **Answer to save**, tick
+  **Save this answer** directly beside it, and press **Save selected answers**.
+  The previous answer and résumé reference are explicitly read-only; neither is
+  saved automatically. Select a row to enable the button; or
+- **CLI:** run `lea sync-answers` to preview the differences, then `lea
+  sync-answers --apply` to store them.
+
+Approved values become **overrides** saved in the database and used **first** —
+ahead of `answers.yaml` and the learned bank — the next time each question is
+asked. (Prefer editing `answers.yaml` for values you set once and rarely change;
+use sync for correcting what the bot already submitted.) `lea sync-answers
+--list` shows the overrides currently in effect.
+
+### Some applications failed / aborted — how do I retry them?
+
+Use **Reapply**. The **⚠️ Needs attention** tab lists every job whose Easy Apply
+run stalled (and that was never later submitted), and a **🔁 Reapply all** button
+retries them all in one click. Because Easy Apply needs a live browser and your
+logged-in session, the button opens a **new console window** that runs the retry
+(the exact command is shown too, as a copy-paste fallback). From the terminal the
+same thing is `lea reapply` (add `--list` to preview, `--dry-run` to fill without
+submitting, `-n N` to cap the count).
+
+Most failures are a required question the bot had no answer for, so the retry
+only helps if you supply that answer first: fix it in **🎯 Resume match** /
+`answers.yaml`, then reapply. Jobs that eventually succeeded are never retried,
+and a job that has failed several times is listed once with an attempt count.
+
+See [`troubleshooting.md`](troubleshooting.md) if something isn't working.

@@ -62,7 +62,7 @@ documents to an issue. They may contain personal data or credentials.
 
 Source and documentation:
 https://github.com/Zanark/LinkedIn-EasyApply-Automaton
-https://github.com/Zanark/LinkedIn-EasyApply-Automaton/blob/main/docs/gui.md
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/blob/main/docs/guides/gui.md
 
 Offline smoke checks are not a guarantee of compatibility with every Windows
 machine or LinkedIn layout. Use responsibly and observe platform restrictions.

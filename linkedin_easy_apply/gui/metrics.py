@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from linkedin_easy_apply.gui.widgets import tooltip
-from linkedin_easy_apply.progress import Metric, ProgressSnapshot
+from linkedin_easy_apply.progress import Metric, ProgressSnapshot, RetryPreviewSnapshot
 
 _JOB_METRICS: tuple[Metric, ...] = ("scanned", "applied", "skipped", "failed", "hr_sent")
 _CONNECT_METRICS: tuple[Metric, ...] = (
@@ -28,7 +28,38 @@ _CONNECT_METRICS: tuple[Metric, ...] = (
     "connect_skipped",
     "connect_failed",
 )
-_LABELS: dict[Metric, tuple[str, str, str, str]] = {
+_PREVIEW_METRICS = ("targets", "last_failed", "last_aborted", "prior_attempts", "repeated_jobs")
+_LABELS: dict[str, tuple[str, str, str, str]] = {
+    "targets": (
+        "Targets",
+        "accent",
+        "Eligible jobs in this saved retry batch, not jobs opened in a browser.",
+        "A preview of four saved jobs shows Targets 4 without running any application.",
+    ),
+    "last_failed": (
+        "Failed",
+        "error",
+        "Preview jobs whose most recent failed/aborted attempt was failed.",
+        "A job with two old failures counts once here, not as two current failures.",
+    ),
+    "last_aborted": (
+        "Aborted",
+        "warning",
+        "Preview jobs whose most recent failed/aborted attempt was aborted.",
+        "Failed 3 and Aborted 1 describe the saved history of four retry targets.",
+    ),
+    "prior_attempts": (
+        "Attempts",
+        "accent",
+        "Total saved failed/aborted attempts across this preview batch.",
+        "Two failed attempts and one aborted attempt for one job contribute 3.",
+    ),
+    "repeated_jobs": (
+        "Repeated",
+        "warning",
+        "Preview jobs with more than one saved failed/aborted attempt.",
+        "A job with three old attempts counts as one repeated job.",
+    ),
     "scanned": (
         "Scanned",
         "accent",
@@ -106,7 +137,7 @@ class RunMetrics(QFrame):
         super().__init__()
         self.setObjectName("RunMetrics")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
-        self._snapshot: ProgressSnapshot | None = None
+        self._snapshot: ProgressSnapshot | RetryPreviewSnapshot | None = None
         self._action: str | None = None
         self._started_at: float | None = None
         self._elapsed = 0
@@ -117,12 +148,6 @@ class RunMetrics(QFrame):
         self.caption.setObjectName("MetricsCaption")
         self.caption.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.caption.setMinimumWidth(0)
-        self.caption.setToolTip(
-            tooltip(
-                "Identify the actual child command, its engine target and elapsed process time.",
-                "Apply #12 | 3/10 | 02:14 means three completions toward ten, not an ETA.",
-            )
-        )
         layout = QVBoxLayout(self)
         self._layout = layout
         layout.setContentsMargins(10, 6, 10, 6)
@@ -162,12 +187,6 @@ class RunMetrics(QFrame):
         self._details = QLabel("Current command only; drafts and dry runs are not sends.")
         self._details.setObjectName("MetricsDetails")
         self._details.setWordWrap(True)
-        self._details.setToolTip(
-            tooltip(
-                "Show separate dry-run, draft, uncertain and invitation totals for this command.",
-                "Drafts 3 and HR sent 0 means contacts were collected, not messaged.",
-            )
-        )
         layout.addWidget(self._details)
         self._target = QProgressBar()
         self._target.setObjectName("RunTarget")
@@ -206,7 +225,7 @@ class RunMetrics(QFrame):
         self._timer.start()
         self._render()
 
-    def update_progress(self, snapshot: ProgressSnapshot) -> None:
+    def update_progress(self, snapshot: ProgressSnapshot | RetryPreviewSnapshot) -> None:
         self._snapshot = snapshot
         self._action = snapshot.action
         self._warning = False
@@ -231,7 +250,7 @@ class RunMetrics(QFrame):
 
     def _goal(self) -> tuple[int, int | None]:
         snapshot = self._snapshot
-        if snapshot is None:
+        if not isinstance(snapshot, ProgressSnapshot):
             return 0, None
         counts = snapshot.counts
         if snapshot.phase == "connecting":
@@ -243,42 +262,96 @@ class RunMetrics(QFrame):
     def _render_caption(self) -> None:
         snapshot = self._snapshot
         elapsed = f"{self._elapsed // 60:02}:{self._elapsed % 60:02}"
-        if snapshot is None:
-            action = self._action.title() if self._action else "Live counters"
-            self.caption.setText(f"{action} | {elapsed}" if self._started_at else action)
-            return
-        action = snapshot.action.title()
-        if snapshot.run_id is not None:
-            action += f" #{snapshot.run_id}"
-        done, target = self._goal()
-        progress = f"{done:,}/{target:,} | {elapsed}" if target else elapsed
-        text = f"{action} | {progress}"
-        if self.caption.fontMetrics().horizontalAdvance(text) > self.caption.contentsRect().width():
+        action = (
+            "Retry preview"
+            if self._action == "reapply-list"
+            else self._action.title() if self._action else "Live counters"
+        )
+        progress = elapsed if self._started_at is not None else None
+        if isinstance(snapshot, ProgressSnapshot):
+            if snapshot.run_id is not None:
+                action += f" #{snapshot.run_id}"
+            done, target = self._goal()
+            progress = f"{done:,}/{target:,} | {elapsed}" if target else elapsed
+        text = f"{action} | {progress}" if progress else action
+        if progress and (
+            self.caption.fontMetrics().horizontalAdvance(text) > self.caption.contentsRect().width()
+        ):
             text = f"{action}\n{progress}"
         self.caption.setText(text)
 
     def _render(self) -> None:
         snapshot = self._snapshot
-        metrics = _CONNECT_METRICS if self._action == "connect" else _JOB_METRICS
+        preview = self._action == "reapply-list"
+        self.caption.setToolTip(
+            tooltip(
+                (
+                    "Identify a read-only retry preview and its elapsed process time."
+                    if preview
+                    else "Identify the actual child command, its engine target and elapsed process time."
+                ),
+                (
+                    "Retry preview has no application run ID or submission target."
+                    if preview
+                    else "Apply #12 | 3/10 | 02:14 means three completions toward ten, not an ETA."
+                ),
+            )
+        )
+        self._details.setToolTip(
+            tooltip(
+                (
+                    "Distinguish saved retry history from new application or outreach outcomes."
+                    if preview
+                    else "Show separate dry-run, draft, uncertain and invitation totals for this command."
+                ),
+                (
+                    "Failed 3 describes earlier attempts; this preview sends nothing."
+                    if preview
+                    else "Drafts 3 and HR sent 0 means contacts were collected, not messaged."
+                ),
+            )
+        )
+        metrics = (
+            _PREVIEW_METRICS
+            if preview
+            else _CONNECT_METRICS if self._action == "connect" else _JOB_METRICS
+        )
+        counts: dict[str, int] = {}
+        if isinstance(snapshot, RetryPreviewSnapshot):
+            counts = {
+                "targets": snapshot.targets,
+                "last_failed": snapshot.last_failed,
+                "last_aborted": snapshot.last_aborted,
+                "prior_attempts": snapshot.prior_attempts,
+                "repeated_jobs": snapshot.repeated_jobs,
+            }
+        elif isinstance(snapshot, ProgressSnapshot):
+            counts = {metric: value for metric, value in snapshot.counts.items()}
         for card, title, value, metric in zip(
             self._cards, self._titles, self._values, metrics, strict=True
         ):
             label, role, purpose, example = _LABELS[metric]
             title.setText(label)
-            value.setText(f"{snapshot.counts[metric]:,}" if snapshot else "--")
+            value.setText(f"{counts[metric]:,}" if snapshot else "--")
             value.setProperty("tone", role)
             value.style().unpolish(value)
             value.style().polish(value)
             for widget in (card, title, value):
                 widget.setToolTip(tooltip(purpose, example))
-        if snapshot is None:
+        if preview:
+            details = (
+                f"{self._state} - saved retry history | No browser or sends."
+                if snapshot is not None
+                else f"{self._state}: saved history unavailable. No browser or sends."
+            )
+        elif snapshot is None:
             details = (
                 "Current command only; drafts and dry runs are not sends."
                 if self._state == "Ready"
                 else f"{self._state}: no run metrics received."
             )
         else:
-            counts = snapshot.counts
+            assert isinstance(snapshot, ProgressSnapshot)
             live = self._state == "Running"
             phase = _PHASES[snapshot.phase] if live else f"{self._state} - last reported"
             if snapshot.dry_run or (snapshot.phase == "connecting" and snapshot.connect_dry_run):

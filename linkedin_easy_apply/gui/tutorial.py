@@ -46,7 +46,7 @@ def load_tutorial(path: Path) -> tuple[TutorialTopic, ...]:
 
 class TutorialDialog(QDialog):
     def __init__(self, parent: QWidget | None = None, *, start_topic: str | None = None) -> None:
-        topics = load_tutorial(resource_root() / "docs" / "gui-tutorial.md")
+        topics = load_tutorial(resource_root() / "docs" / "guides" / "gui-tutorial.md")
         titles = [topic.title for topic in topics]
         first = titles.index(start_topic) if start_topic is not None else 0
         super().__init__(parent)

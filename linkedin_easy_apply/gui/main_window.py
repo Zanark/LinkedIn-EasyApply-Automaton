@@ -965,7 +965,7 @@ class MainWindow(QMainWindow):
             assume_yes=not self._interactive.isChecked(),
             verbose=self._verbose.isChecked(),
             connect_run_id=self._connect_run.value() or None,
-            list_only=self._list_only.isChecked(),
+            list_only=action == "reapply" and self._list_only.isChecked(),
         )
 
     def _on_action_changed(self, label: str) -> None:
@@ -1060,7 +1060,7 @@ class MainWindow(QMainWindow):
                 return
         self._run(
             commands.run_args(options),
-            metrics_action=None if options.list_only else options.action,
+            metrics_action="reapply-list" if options.list_only else options.action,
         )
 
     def _copy_command(self) -> None:
@@ -1436,7 +1436,7 @@ class MainWindow(QMainWindow):
 
 def application_icon() -> QIcon:
     """Load the same multi-resolution mark embedded in the Windows executables."""
-    mark = resource_root() / "docs" / "mark.ico"
+    mark = resource_root() / "docs" / "assets" / "branding" / "mark.ico"
     icon = QIcon(str(mark))
     if icon.isNull():
         logger.warning("Application icon could not be loaded: {}", mark)

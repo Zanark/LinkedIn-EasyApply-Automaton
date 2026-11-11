@@ -1,5 +1,92 @@
 # Development ledger
 
+## 2026-11-12 - Final source publication intake
+
+- The user separately authorizes a final source commit and normal main push.
+  Review the completed README/retry and repository-layout changes rather than
+  replaying their implementation, source promotion or live operations.
+- Preserve private inputs and continuity, unrelated work, the four reviewed
+  public handoff files and independent applications. Retain the published
+  v0.2.4 tag/assets; no new release, installation or live action is included.
+- Correct two remaining prose-only screenshot-path references in the moved
+  developer guide. Existing workflow triggers, permissions, pinned actions
+  and tag-only release publication remain unchanged.
+- Publication and independent source verification are still pending.
+
+## 2026-11-12 - Complete the purpose-based repository layout
+
+- Move 117 files into documentation, asset, test and tool groups; add concise
+  navigation and update resource, packaging, import and workflow command paths.
+  Keep the package, application entry points and stable tracking command intact.
+- Collect all 1,012 tests; pass 290 affected desktop/tooling cases, Ruff, Black
+  and the 74-file mypy check. Review 290 relative references in 29 documents:
+  no new broken references; retain three attributed baseline fragment warnings.
+- All six version/help entry-point probes pass. Correct only the private
+  probe's UTF-8 decoding; import the legacy banner helper without generation.
+  Existing source/frozen resource fixtures confirm the moved bundle inputs.
+- Preserve 241 unchanged file byte/mtime identities, original HEAD/index,
+  selected private metadata, original media and independent process identities.
+  Keep all 38 predecessors and the historical public handoff unchanged.
+- Independently verify only lea-39/#39 CLOSED/COMPLETED, its exact managed
+  title/body, one non-archived Done Project membership and persistent source,
+  index and mapping backlinks. All 38 predecessor issue/Project snapshots
+  remain exact, including timestamps. This is scoped tracking settlement,
+  not source publication or human acceptance.
+- No commit, push, Windows build/release, installation, live LinkedIn action
+  or automation activation is included. This is not human acceptance.
+
+## 2026-11-12 - Repository organization intake
+
+- Group documentation and assets by audience, tests by responsibility and
+  development utilities by purpose. Retain the importable package and launch
+  entry points rather than introducing an unrelated packaging migration.
+- Preserve existing private workspace folders, independent dashboard processes,
+  earlier source changes, all 38 predecessor workstreams and published v0.2.4.
+- Resource, packaging, navigation and command references must follow the moves.
+  No commit, push, release, installation or live action is included.
+
+## 2026-11-12 - Deliver consistent retry cards and the final branded README
+
+- Restrict the hidden list-only option to Reapply. Keep the existing action
+  tile beside five responsive cards in preview and live retry.
+- The strict V3 preview reports Targets, Failed, Aborted, Attempts and Repeated
+  from the same bounded historical batch. Empty success reports zeroes;
+  unavailable/error input does not invent values. Preview opens no browser,
+  creates no automation run and implies no applications or outreach sends.
+  Existing live application and hiring-message outcomes remain distinct.
+- All 183 focused protocol, CLI, process and GUI cases pass with no skips.
+  Focused Black/Ruff and the 75-file mypy check pass. Direct fictional native
+  review covers both themes and compact/expanded layouts; local Markdown
+  review covers desktop/mobile, the banner and complete 36-icon glossary.
+  Technical and presentation checks are not live or human acceptance.
+- Add the final supplied banner with transparent feathered edges and unchanged
+  central artwork. Shorten README and link longer setup/reference guidance.
+  Refresh only the changed fictional walkthrough; retain original SVG bytes
+  and byte-identical stills.
+- Deliver exactly 21 qualified files locally; verify exact candidate bytes and
+  original-source imports. Preserve 251 unrelated tracked identities, HEAD,
+  staging, selected private metadata and independent dashboard process identities.
+- Independently verify only lea-38/#38 CLOSED/COMPLETED, its single Done Project
+  item, exact body/title and durable backlinks. Preserve all 37 predecessors;
+  a settled scoped preview/apply leaves all 38 complete remote snapshots and
+  timestamps plus the local snapshot unchanged.
+- No live LinkedIn action, installed-app change, independent-runtime control,
+  commit, push or release is included. Published v0.2.4 remains unchanged.
+
+## 2026-11-12 - Retry presentation and README curation intake
+
+- The retry list-only route hides the metrics strip; a checked hidden option
+  can also affect the next action. Live retry already reports application
+  failures and configured hiring-team outcomes through the normal pipeline.
+- Preserve the action-and-five-card arrangement. Use explicitly historical
+  target/status/attempt counts for the bounded preview batch, not invented
+  applications or message sends. Preserve unavailable-before-valid values.
+- Reuse the existing application mark and complete linked icon glossary.
+  Relocate longer setup/reference prose rather than discarding useful guidance.
+- Preserve all 37 predecessor tracking objects and use a separate public-source
+  candidate with fictional workspaces. No live action, independent-runtime
+  control, installed-app change, commit, push or release is included.
+
 ## 2026-11-12 - Publish reviewed source and public project handoff
 
 - Publish source commit dc2da766ce741d94410dacec37e79f8e7f3399dc to main

@@ -1,0 +1,65 @@
+# Purpose-based repository organization
+Workstream-ID: lea-39
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/39
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded repository organization request
+Status: DONE
+Milestone: Make source, guides, assets and development tools easier to navigate
+Dependencies: lea-38
+
+## Purpose
+Reduce repository clutter without changing application behavior or relocating
+existing private workspaces. Group guides, documentation assets, tests and
+build/media utilities by purpose, with concise navigation and current references.
+
+## Tasks
+- [x] Inventory path-sensitive resources, current changes and protected runtimes.
+- [x] Group documentation, assets, tests and build/media tooling.
+- [x] Update navigation, resource loading, packaging and development commands.
+- [x] Verify preservation, test discovery, resource paths and affected regressions.
+- [x] Maintain the scoped issue, Project item and persistent backlink.
+
+## Acceptance criteria
+- [x] Documentation has clear getting-started, guides, architecture and development sections.
+- [x] Branding and screenshots have dedicated asset directories.
+- [x] Tests and development tools are grouped by their responsibility.
+- [x] Application launch commands, package imports and workspace locations stay compatible.
+- [x] Source and frozen tutorial/icon resources use consistent existing files.
+- [x] Earlier dirty work and original media survive the moves.
+- [x] Historical workstreams, private inputs and independent applications remain intact.
+- [x] One scoped issue-backed Project item/backlink preserves all 38 predecessors.
+- [x] No commit, push, release, installation, live action or automation activation occurs.
+
+## Completion evidence
+Move 117 files into purpose-based documentation, asset, test and tool groups.
+Add concise documentation, repository-layout, test and tool navigation.
+Update source/frozen branding and tutorial resources, helper imports and
+Windows workflow command paths; preserve its activation and permission policy.
+
+Collect all 1,012 tests successfully; pass 290 affected desktop/tooling cases.
+Ruff and Black pass; mypy passes 74 source files. Check 290 relative references
+across 29 live documents with no introduced broken references. Three existing
+run-guide fragment warnings remain attributed to the baseline.
+
+All six harmless version/help probes pass, including the installed CLI entry
+point and moved Windows/media tools. Correct the private probe's Windows
+decoding error with explicit UTF-8; no product encoding change is needed.
+Import the legacy banner generator and verify its moved SVG target without
+regenerating media. Source/frozen resource tests check existing bundle inputs.
+
+Verify every move, 241 unchanged file byte/modification-time identities,
+original HEAD/index, selected private metadata and all 38 predecessor mappings.
+Protected dashboard process creation identities remain unchanged. Preserve
+historical workstreams and reviewed public handoff bytes rather than rewriting
+their historical citations. The issue backlink is persisted; completion
+synchronization is limited to this workstream.
+
+This is local structural/offline qualification, not a new Windows build,
+publication, live LinkedIn qualification or human acceptance.
+
+## Completion log
+- 2026-11-12: Complete the purpose-based layout and directly dependent
+  navigation/resource/tool updates. Preserve launch commands, private
+  workspace paths, independent applications and the published release.
+- 2026-11-12: Begin the bounded repository-only organization workstream.
+  Preserve the source launcher, private workspace paths and earlier changes.
