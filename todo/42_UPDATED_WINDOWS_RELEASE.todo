@@ -3,7 +3,7 @@ Workstream-ID: lea-42
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/42
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed bounded Windows release update request
-Status: IN_PROGRESS
+Status: DONE
 Milestone: Deliver a new immutable package with verified source and assets
 Dependencies: lea-35, lea-36, lea-38, lea-39, lea-41
 
@@ -14,26 +14,43 @@ Preserve previous releases and every private or independently running setup.
 
 ## Tasks
 - [x] Align package version, release notes and directly affected guides.
-- [ ] Qualify the reviewed source and verify commit attribution.
-- [ ] Normally push source and a new matching immutable release tag.
-- [ ] Verify every exact-source hosted lane and release publication.
-- [ ] Download and verify published assets against the exact manifest/checksums.
-- [ ] Reconcile only this workstream's issue, Project item and durable backlink.
+- [x] Qualify the reviewed source and verify commit attribution.
+- [x] Normally push source and a new matching immutable release tag.
+- [x] Verify every exact-source hosted lane and release publication.
+- [x] Download and verify published assets against the exact manifest/checksums.
+- [x] Reconcile only this workstream's issue, Project item and durable backlink.
 
 ## Acceptance criteria
-- [ ] Source and package version match the new tag and release notes.
-- [ ] The release waits for every parallel qualification lane.
-- [ ] The actual published archive, checksum file and manifest agree.
-- [ ] Manifest source identity equals the exact tagged commit.
-- [ ] Previous tags/releases/assets and all predecessor tracking are preserved.
-- [ ] No private continuity, applicant values or unrelated work is published.
-- [ ] No installation, independent-app control or live LinkedIn action occurs.
+- [x] Source and package version match the new tag and release notes.
+- [x] The release waits for every parallel qualification lane.
+- [x] The actual published archive, checksum file and manifest agree.
+- [x] Manifest source identity equals the exact tagged commit.
+- [x] Previous tags/releases/assets and all predecessor tracking are preserved.
+- [x] No private continuity, applicant values or unrelated work is published.
+- [x] No installation, independent-app control or live LinkedIn action occurs.
 
 ## Completion evidence
-Version v0.2.5 is aligned in package metadata and source, with dedicated notes
-and directly affected guides. Local and hosted qualification remain separate.
-No tag or release has been created, and no installed application is being updated.
+Publish source 7fbd525ad5f32b9b8f5e00e2c3bea4d496dc0601 with verified
+Zanark author/committer identity and both session trailers, then normally push
+its new annotated v0.2.5 tag. Main run 43115725352 and tag run 43116415970
+pass all thirteen independent qualification lanes and the fail-closed barrier.
+The tag run's subsequent publication succeeds; v0.2.5 is independently
+verified as the latest release:
+https://github.com/Zanark/LinkedIn-EasyApply-Automaton/releases/tag/v0.2.5
+The release body equals the checked-in notes and has exactly the Windows ZIP,
+manifest and SHA256SUMS assets. Verify both published checksums, all 454 ZIP
+member sizes/hashes, exact manifest membership and tagged source identity.
+Downloaded hosted reports confirm 1,082 passing cases per supported Python
+version, separately from the earlier 1,081-case local full qualification.
+All five prior complete release/asset records, original tag objects and forty
+predecessor tracking records are preserved. Private context publication stays
+skipped; the four reviewed public handoff files remain unchanged.
+No installation, independent-app control, live LinkedIn action or human
+acceptance is included. The unsigned package still does not bundle a browser.
 
 ## Completion log
+- 2026-11-12: Deliver and independently verify the new latest v0.2.5 release
+  and every downloaded archive member without extracting or executing it.
+  Complete scoped tracking; keep the release tag on its qualified source.
 - 2026-11-12: Begin the separately authorized Windows release update.
   Keep private context publication skipped and preserve earlier releases.

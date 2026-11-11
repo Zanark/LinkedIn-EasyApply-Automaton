@@ -1,5 +1,32 @@
 # Development ledger
 
+## 2026-11-12 - Publish and independently verify Windows v0.2.5
+
+- Normally push reviewed source 7fbd525ad5f32b9b8f5e00e2c3bea4d496dc0601
+  with verified Zanark author/committer identity and both required trailers.
+  Independently verify its full canonical tree and all 290 public source objects.
+- Exact main run 43115725352 and new v0.2.5 tag run 43116415970 pass two
+  quality lanes, ten Python/suite lanes and the actual frozen build/smoke.
+  The fail-closed barrier passes in both; only the tag run publishes.
+- Download all ten tag-run JUnit/coverage artifacts. Each supported Python
+  version passes 1,082 cases: core 251, automation 426, desktop 233,
+  dashboard 45 and tooling 127. There are no failures, errors or skips.
+  The extra case versus the earlier local full run checks the final release
+  notes as part of the relocated-document inventory.
+- Independently verify v0.2.5 as latest, exact checked-in notes and exactly
+  three hosted assets. Check both published checksums and every one of the
+  454 ZIP member sizes/hashes against complete manifest membership and the
+  exact tagged source identity, without extracting or executing the package.
+  Ten selected bundled resources match the public source; nine text resources
+  differ only by the Windows checkout's expected LF-to-CRLF conversion.
+- Preserve the five original tag objects and all five complete prior
+  release/asset API records. Preserve all forty predecessor issue/Project
+  objects, timestamps and durable mapping entries; settle only lea-41/42.
+- Keep all four reviewed public handoff files unchanged and private context
+  publication skipped. Preserve private inputs, the unrelated plugin and
+  independent applications. No installation, live LinkedIn action or human
+  acceptance is claimed; the package remains unsigned and browser-unbundled.
+
 ## 2026-11-12 - Qualify the parallel CI candidate locally
 
 - Pass all 1,081 fictional offline cases with two workers and file-scoped

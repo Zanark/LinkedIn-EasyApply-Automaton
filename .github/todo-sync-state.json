@@ -606,12 +606,12 @@
     "lea-41": {
       "baseline": {
         "title": "[lea-41] Expand parallel qualification and relocated-layout regressions",
-        "managed": "052809977f9f84540001677cd8c355afdc917a8edea9db88fa5d39847c7636d3",
+        "managed": "1aeac9a3695f8c8686a26969cafd1adbe3b9ac41661300a6bc613b06be35e574",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABecyhoQ",
       "number": 41,
@@ -621,12 +621,12 @@
     "lea-42": {
       "baseline": {
         "title": "[lea-42] Publish the updated Windows desktop patch release",
-        "managed": "cc7ddfbe12279d7368431f5533ff0be50d16b2fb94d2560f142f7e447b588312",
+        "managed": "d17b3ba6bc6cd41bc70656be10de6c33b0c8e776b69f30f2183d48076d8e6ab9",
         "lifecycle": [
-          "OPEN",
-          null
+          "CLOSED",
+          "COMPLETED"
         ],
-        "status": "47fc9ee4"
+        "status": "98236657"
       },
       "issue_id": "I_kwDOTXAU388AAAABecymhQ",
       "number": 42,

@@ -3,7 +3,7 @@ Workstream-ID: lea-41
 GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/41
 Publication: PUBLIC_SAFE_PROJECTION
 Source-record: Reviewed bounded CI and relocation-test request
-Status: IN_PROGRESS
+Status: DONE
 Milestone: Qualify every supported test group without weakening release gates
 Dependencies: lea-39
 
@@ -18,26 +18,37 @@ tag-only publication boundary and all predecessor workstreams.
 - [x] Use bounded isolated workers and retain per-lane diagnostic reports.
 - [x] Require fictional invitation browser cases instead of silently skipping.
 - [x] Block release publication on any failed, cancelled or skipped prerequisite.
-- [ ] Qualify the exact workflow and reconcile only this workstream's tracking.
+- [x] Qualify the exact workflow and reconcile only this workstream's tracking.
 
 ## Acceptance criteria
 - [x] Every collected test file belongs to a scheduled matrix group.
 - [x] Actual schema/tutorial/configuration behavior works outside the checkout cwd.
 - [x] Fictional private/excluded payloads cannot produce release archives.
-- [ ] All bundled bytes, manifest entries and published checksums agree.
-- [ ] All independent qualification lanes must succeed before a tag publishes.
-- [ ] Local and exact-source hosted results are recorded distinctly.
-- [ ] Private inputs, independent applications and prior tracking are preserved.
+- [x] All bundled bytes, manifest entries and published checksums agree.
+- [x] All independent qualification lanes must succeed before a tag publishes.
+- [x] Local and exact-source hosted results are recorded distinctly.
+- [x] Private inputs, independent applications and prior tracking are preserved.
 
 ## Completion evidence
 The full fictional offline suite passes locally: 1,081 cases with two workers
 and file-scoped scheduling, including required invitation browser fixtures.
 Ruff, Black and mypy over 74 source files pass. The actual barrier is exercised
 against missing, unexpected, failed, cancelled and skipped results.
-All forty predecessor issue and Project records/timestamps are independently
-preserved after adopting only lea-41 and lea-42. Hosted qualification and
-release integrity remain pending; no live LinkedIn or human acceptance is claimed.
+Exact source 7fbd525ad5f32b9b8f5e00e2c3bea4d496dc0601 passes main run
+43115725352 and v0.2.5 tag run 43116415970. Each run requires two quality
+lanes, ten Python/suite lanes and one actual frozen Windows build/smoke.
+Downloaded tag-run JUnit and coverage reports verify 1,082 passing cases on
+each of Python 3.12 and 3.13, with zero failures, errors or skips. This includes
+the final release-note layout case added after the earlier local full run.
+Both qualification barriers pass; main publication skips and tag publication
+succeeds only afterward. Independently downloaded release checksums, manifest
+and all 454 archive members agree. All forty predecessor issue/Project
+records, timestamps and mapping entries are independently preserved.
+No live LinkedIn, local installation or human acceptance is claimed.
 
 ## Completion log
+- 2026-11-12: Complete exact-source main/tag qualification, all ten hosted
+  report read-backs and downloaded archive integrity. Settle only this
+  workstream and dependent lea-42; retain the original live review gaps.
 - 2026-11-12: Begin the separately requested parallel CI and relocation coverage.
   Keep tests fictional, hosted permissions minimal and local workers bounded.

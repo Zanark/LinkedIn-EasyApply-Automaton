@@ -207,6 +207,17 @@ qualified source/test/guide payloads are byte-verified in the original checkout;
 owned tracking edits retain bytes and mtimes. Live markup and live LinkedIn
 acceptance remain unverified; installed apps, existing media and v0.2.4 are unchanged.
 
+The bounded lea-41 expands relocated-resource, workflow and archive regressions
+and qualifies all five suites on Python 3.12 and 3.13 in ten independent lanes,
+beside two quality lanes and the actual frozen Windows build/smoke.
+The dependent lea-42 publishes the new latest v0.2.5 release from exact source
+7fbd525ad5f32b9b8f5e00e2c3bea4d496dc0601. Main and tag qualification pass;
+downloaded tag reports verify 1,082 passing cases per Python version with no
+failures, errors or skips. All 454 downloaded ZIP members, manifest entries and
+published checksums agree. Previous release assets and all forty predecessor
+tracking records remain intact. Private context publication is skipped; no
+installation, independent-runtime control or live qualification is included.
+
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
 | lea-01 | 01_AUTOMATION_IMPROVEMENTS.todo | IN_REVIEW | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/2 |
@@ -249,10 +260,13 @@ acceptance remain unverified; installed apps, existing media and v0.2.4 are unch
 | lea-38 | 38_RETRY_METRICS_AND_README.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/38 |
 | lea-39 | 39_REPOSITORY_ORGANIZATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/39 |
 | lea-40 | 40_FINAL_SOURCE_PUBLICATION.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/40 |
-| lea-41 | 41_PARALLEL_CI_AND_LAYOUT_TESTS.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/41 |
-| lea-42 | 42_UPDATED_WINDOWS_RELEASE.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/42 |
+| lea-41 | 41_PARALLEL_CI_AND_LAYOUT_TESTS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/41 |
+| lea-42 | 42_UPDATED_WINDOWS_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/42 |
 
 ## Completion log
+- 2026-11-12: Complete lea-41 and lea-42 after exact-source main/tag
+  qualification and independent downloaded release/report verification.
+  Keep v0.2.5 on its qualified source and preserve all forty predecessors.
 - 2026-11-12: Verify both new issue-backed Project items as OPEN/In Progress
   and preserve all forty predecessor records/timestamps. The local candidate
   passes 1,081 full-suite cases, 94 final focused cases and all source/workflow
