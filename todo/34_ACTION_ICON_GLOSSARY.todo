@@ -1,0 +1,58 @@
+# Complete desktop action icon glossary
+Workstream-ID: lea-34
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/34
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded public documentation request
+Status: DONE
+Milestone: Explain every desktop action icon in README and the user reference
+Dependencies: lea-33
+
+## Purpose
+Make all 36 native action icons discoverable with their actual artwork,
+displayed names and source-grounded meanings. Explain the semantic colors and
+steady border glow without confusing operations with confirmed outcomes.
+
+## Tasks
+- [x] Review the complete state, artwork, palette and authoritative stage sources.
+- [x] Export the exact original artwork as public-safe documentation assets.
+- [x] Add all icons and meanings to an expandable README glossary.
+- [x] Add the detailed grouped reference with state IDs, colors and caveats.
+- [x] Link the reference from the desktop and contributor guides.
+- [x] Verify complete coverage, matching labels/meanings, images and navigation.
+- [x] Reconcile the scoped issue, Project status and persistent backlink.
+
+## Acceptance criteria
+- [x] README and documentation show every one of the 36 actual native designs.
+- [x] Every icon has its exact displayed name and a plain-English explanation.
+- [x] The detailed reference includes all state IDs and correct semantic tones.
+- [x] Input pauses, timed waits, selection/upload and attempts/outcomes stay distinct.
+- [x] All documentation SVGs render and directly affected relative links resolve.
+- [x] One issue-backed Project item and durable backlink represent this workstream.
+- [x] Runtime code, installed applications, private setup and existing releases stay unchanged.
+
+## Completion evidence
+Authoring covers the seven lifecycle states and 29 engine operations from
+`gui/activity.py::_STATES`, using exact `gui/activity_icons.py::_ARTWORK`
+geometry and Harbor Daylight palette values. All explanatory content is
+public-safe product behavior; no applicant or runtime data is included.
+All 36 exported SVGs render through Qt and match the native vector bodies,
+labels and semantic tones. All 126 relative references across the four affected
+guides resolve. Both locally rendered Markdown glossaries load every icon and
+matching explanation in an isolated browser; the README disclosure and
+1280px/390px page containment pass. Directly inspect the full icon sheet and
+expanded README layout. These are local documentation checks, not a hosted
+GitHub page, live LinkedIn qualification or human acceptance.
+
+Scoped synchronization creates issue #34 and one issue-backed Project item,
+then writes the persistent backlink. Independent read-back verifies the exact
+managed description and membership, all 34 backlinks and unchanged snapshots,
+mappings and local source records for all 33 predecessors. Completion remains
+local documentation delivery, not publication. No new commit, push, release,
+live LinkedIn action or application restart is included.
+
+## Completion log
+- 2026-11-11: Complete all 36 icon explanations, exact artwork exports and
+  local rendering/navigation checks. Reconcile only the new glossary identity;
+  preserve all predecessor work and separate publication authority.
+- 2026-11-11: Begin the bounded icon-glossary update after the completed
+  action-tile release. Preserve all 33 predecessors and immutable downloads.

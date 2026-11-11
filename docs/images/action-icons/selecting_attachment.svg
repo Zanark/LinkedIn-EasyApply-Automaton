@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Selecting attachment</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 6h12l5 5v23H6Zm12 0v6h5M10 18h6m-6 5h4"
+              fill="#236A9A" fill-opacity=".10"/>
+        <path d="m23 29 11-11a6 6 0 0 0-8-8L15 21a4 4 0 0 0 6 6l10-10a2 2 0 0 0-3-3l-9 9"
+              stroke="#236A9A"/>
+        <path d="m27 33 3 3 7-7" stroke="#247449" stroke-width="2.5"/>
+  </g>
+</svg>

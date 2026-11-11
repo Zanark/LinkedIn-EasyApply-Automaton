@@ -44,6 +44,8 @@ not add fields to saved preferences or the database. See
 drafts and completed dry runs are not sends.
 The current-action tile needs no YAML setting either: its rounded Nunito label
 and steady border glow follow the selected desktop theme and current stage.
+Current source uses 64px icons inside the unchanged 112-by-108 logical pixel
+tile; the packaged v0.2.4 icons remain 40px.
 Blue means normal work, green/teal resume or completion work, yellow pause/caution,
 and red error/discard. Only the action label uses the bundled font.
 `apply.py gui --tutorial` reads only that guide, without private setup/history.
@@ -540,8 +542,8 @@ approval and types + sends each message on LinkedIn.
 | `skip_if_messaged` | `true`               | Never contact the same person twice (deduped by profile URL, else name). |
 | `report_dir`       | `generated/outreach` | Where the plain-text `draft`-mode report is written.               |
 | `send_connection_notes` | `false`         | **Opt-in.** After a run, open a fresh browser and auto-send each pending recruiter a free connection invitation with their ≤300-char note (the `connect` microservice). OFF because it clicks Connect + Send for real. |
-| `connect_dry_run`  | `false`              | Walk Connect → Add a note but never click Send (rehearsal for the connection pass). |
-| `connect_without_note` | `false`          | **Opt-in fallback.** If note entry is missing, hidden or disabled, use an explicit invitation-dialog **Send without a note** button. Prefer the note whenever available; otherwise skip when this is off. |
+| `connect_dry_run`  | `false`              | Rehearse the invitation flow but never click a final send action. |
+| `connect_without_note` | `false`          | **Opt-in fallback.** If note entry is unavailable, permit a plain invitation inside an identified invitation dialog. Prefer the note whenever usable; otherwise skip when this is off. |
 | `connect_max_per_run` | `15`              | Cap on connection invitations sent per pass (LinkedIn's weekly limit is ~100–200). |
 | `connect_min_delay_seconds` | `8`         | Lower bound of the randomised, human-like pause between invitations. |
 | `connect_max_delay_seconds` | `25`        | Upper bound of that randomised pause.                              |
@@ -590,12 +592,23 @@ Behaviour:
 - **`connect_without_note` is available in source and Windows v0.2.4**, off by default.
   Enable it in YAML or **Run → Customize settings for this run → Behavior →
   Connect without a note if unavailable**. The GUI creates a changed-only private
-  preset; saved YAML is unchanged. The fallback needs an enabled, explicitly
-  identified **Send without a note** invitation button. It does not substitute a
-  generic Send button or retry arbitrary note-send failures without a note.
-  Dry runs click neither final Send action and do not mark delivery. A plain
-  invitation leaves the note unsent and keeps the full-message draft for follow-up;
-  the dashboard labels it **Sent without note**.
+  preset; saved YAML is unchanged. **Current source repairs control recognition:**
+  bounded waits allow delayed controls, and an already-open editable note is
+  preferred without requiring Add a note. The fallback accepts exact normalized
+  **Send without a note/Send without note** text or an accessible label; a generic
+  **Send/Connect** is allowed only inside positively identified invitation context,
+  never an unrelated message composer. Hidden, disabled or misleading controls
+  do not authorize a final action. Existing conflicting or unavailable drafts
+  block the fallback and are left untouched. Arbitrary note-send errors are not
+  retried without a note.
+- **Delivery requires evidence:** profile **Pending** or a new explicit
+  invitation-sent confirmation. A click or disappearing modal alone is
+  **Failed/unconfirmed**, never marked sent or automatically retried. Weekly
+  invitation limits stop the pass. Dry runs click no final send action, persist
+  no delivery and do not dismiss a pre-existing matching note draft. A confirmed
+  plain invitation leaves its note unsent and keeps both draft texts for follow-up;
+  the dashboard labels it **Sent without note**. These control and confirmation
+  repairs are source-only; published v0.2.4 retains its older exact-only fallback.
 - Every record (drafted, sent, declined, or failed) is written to the
   `outreach_messages` table for auditing and dedupe.
 - The message context includes the role, company, your name, years of experience

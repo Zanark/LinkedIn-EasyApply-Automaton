@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Sending outreach</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 17 36 5 25 35l-6-12Zm12 6L36 5m-17 18-1 9 5-4"
+              fill="#236A9A" fill-opacity=".12"/>
+        <path d="M3 25h8m-5 6h7m-1 6h5" stroke="#247449"/>
+        <path d="m12 17 15-6" stroke="#006F63"/>
+  </g>
+</svg>

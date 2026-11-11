@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Ready</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="20" cy="20" r="13" fill="#236A9A" fill-opacity=".10"/>
+        <path d="M20 5v4m15 11h-4M20 35v-4M5 20h4"/>
+        <path d="m25 14-3 9-9 3 3-9Z" stroke="#247449" fill="#247449" fill-opacity=".18"/>
+        <circle cx="20" cy="20" r="1.5" fill="#173D3A" stroke="none"/>
+  </g>
+</svg>

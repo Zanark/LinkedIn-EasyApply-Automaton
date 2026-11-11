@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Selecting resume</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 4h17l7 7v24H7Zm17 0v8h7"
+              fill="#236A9A" fill-opacity=".10"/>
+        <circle cx="17" cy="17" r="3" stroke="#006F63"/>
+        <path d="M12 26v-2c0-4 10-4 10 0v2m-11 5h7" stroke="#236A9A"/>
+        <path d="m25 22 11 7-5 1-2 6Z" stroke="#247449"
+              fill="#E3ECE7" stroke-width="2"/>
+  </g>
+</svg>

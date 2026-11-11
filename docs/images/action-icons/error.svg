@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Command error</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 5h12l9 9v12l-9 9H14l-9-9V14Z" stroke="#AD3E55"
+              fill="#AD3E55" fill-opacity=".12"/>
+        <path d="m15 15 10 10m0-10L15 25" stroke="#AD3E55" stroke-width="2.8"/>
+        <path d="M4 3v4m-2-2h4m29 29v4m-2-2h4" stroke="#77600E"/>
+  </g>
+</svg>

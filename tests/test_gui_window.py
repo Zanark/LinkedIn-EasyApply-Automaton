@@ -951,7 +951,7 @@ def test_every_activity_has_distinct_detailed_multicolor_artwork(qapp, theme, pi
     silhouettes = set()
     for state in _STATES:
         pixmap = activity_icon(state, palette, pixel_ratio=pixel_ratio)
-        assert pixmap.deviceIndependentSize().toTuple() == (40, 40)
+        assert pixmap.deviceIndependentSize().toTuple() == (64, 64)
         image = pixmap.toImage()
         pixels = [
             image.pixelColor(x, y) for y in range(image.height()) for x in range(image.width())
@@ -967,7 +967,7 @@ def test_every_activity_has_distinct_detailed_multicolor_artwork(qapp, theme, pi
 
 @pytest.mark.parametrize("theme", list(THEMES))
 @pytest.mark.parametrize("size", [(940, 640), (1340, 860)])
-def test_all_action_groups_are_centered_padded_and_smaller_without_a_header(
+def test_larger_action_icons_keep_the_original_box_and_centered_full_labels(
     window, qapp, theme, size
 ):
     assert ensure_fonts()
@@ -986,11 +986,15 @@ def test_all_action_groups_are_centered_padded_and_smaller_without_a_header(
         assert all(raw_font.supportsCharacter(ord(character)) for character in tile.name.text())
         assert window._resume_display.name.font().family() != "Nunito"
         icon, name = tile.icon.geometry(), tile.name.geometry()
+        assert tile.size().toTuple() == (112, 108)
+        assert icon.size().toTuple() == (64, 64)
+        assert tile.icon.pixmap().deviceIndependentSize().toTuple() == (64, 64)
+        assert tile.icon.pixmap().devicePixelRatio() == tile.devicePixelRatioF()
         assert abs(icon.center().x() - tile.rect().center().x()) <= 1
         assert abs(name.center().x() - tile.rect().center().x()) <= 1
         assert abs((icon.top() + name.bottom()) / 2 - tile.rect().center().y()) <= 1
-        assert icon.top() >= 10 and tile.height() - name.bottom() >= 10
-        assert name.top() - icon.bottom() >= 6
+        assert icon.top() >= 5 and tile.height() - name.bottom() >= 5
+        assert name.top() - icon.bottom() >= 4
         assert tile.name.height() >= tile.name.heightForWidth(tile.name.width())
         assert window.size().toTuple() == size
         assert window._console.height() > 80

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Pacing pause</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 5h20m-20 30h20M12 5v8c0 4 8 7 8 7s8 3 8 7v8M28 5v8c0 4-8 7-8 7s-8 3-8 7v8"
+              stroke="#236A9A"/>
+        <path d="m15 11 5 5 5-5Zm-1 20 6-6 6 6Z"
+              stroke="#77600E" fill="#77600E" fill-opacity=".24"/>
+        <path d="M20 19v3" stroke="#77600E"/>
+  </g>
+</svg>

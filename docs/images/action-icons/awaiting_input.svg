@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Waiting for you</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 5h30v23H18L9 35v-7H5Z" stroke="#77600E"
+              fill="#77600E" fill-opacity=".10"/>
+        <path d="M16 13a4 4 0 0 1 8 0c0 4-4 3-4 7m0 4h.01"
+              stroke="#77600E" stroke-width="2.5"/>
+        <path d="m29 25 8 7-4 1-1 5Z" stroke="#236A9A" fill="#E3ECE7"/>
+  </g>
+</svg>

@@ -9,7 +9,7 @@ For the commands themselves see
 
 ![The Run page in the DeepSeaFoam theme](images/gui-run-deepseafoam.png)
 
-*Windows v0.2.4 layout: run setup on the left; detailed current-action icon, outcome
+*Current source layout: run setup on the left; larger current-action icon, outcome
 counters, retained resume filename, console and prompt input on the right.
 These current previews use isolated fictional data, not live applications.*
 
@@ -189,11 +189,14 @@ Unchecked hides the tabs and applies no customization overrides; checking alone
 does not save or start anything. Only changed overrides are applied.
 **Connect without a note if unavailable** defaults off and applies to standalone
 Connect and the optional end-of-run invitation pass. Enabled still prefers the
-note; only unavailable note entry permits an explicit **Send without a note**
-invitation action. Dry run skips both final send actions. A plain invitation is
+note; only unavailable note entry permits a plain invitation. Current source
+waits for controls and recognizes explicit no-note actions or a final Send/Connect
+inside an identified invitation dialog, never an unrelated message Send.
+Dry run skips all final send actions. A confirmed plain invitation is
 counted under Invites, not HR sent, and does not mark its draft note as delivered.
 This control is included in source and Windows v0.2.4; older v0.2.3 EXEs are
-unchanged.
+unchanged. The control-recognition repair is source-only; v0.2.4 retains its
+older exact-only fallback. A final click alone is not delivery confirmation.
 **Start** and **Copy command** validate and
 materialize a private preset in `logs\gui-runs`; the original YAML is unchanged.
 Presets may contain personal configuration: keep them private like logs.
@@ -225,6 +228,16 @@ and uses the bundled, rounded Nunito font. A soft, steady border glow follows
 the current stage's color in both themes; it does not flash or pulse.
 The redundant visible **CURRENT ACTION** header is gone. Color and icons
 describe an operation, never proof that an application or invitation succeeded.
+
+**Larger source icons:** all 36 icons now render at 64-by-64 logical pixels,
+up from 40-by-40 (2.56 times the area). The tile stays 112 by 108 pixels; tighter
+internal spacing preserves the full centered labels and their existing font.
+The immutable Windows v0.2.4 download retains its original 40px icons.
+
+See the [complete action icon glossary](gui-action-icons.md) for all **36
+actual icons**, their displayed names, meanings, state IDs and color/glow
+legend. The [README](../README.md#action-icon-glossary) also has an expandable
+full-set visual glossary.
 
 The **Resume** field beside Start/Stop/Copy command shows the final filename
 chosen for an application, including a tailored PDF that replaced a static

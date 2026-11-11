@@ -303,6 +303,7 @@ POST_APPLY_UPSELL_DISMISS = [
 PROFILE_CONNECT_BUTTON = [
     "main button[aria-label*='Invite'][aria-label*='to connect']",
     "main button[aria-label*='to connect']",
+    "main button:text-is('Connect')",
 ]
 # The "More" overflow button that hides Connect on most profiles. The live button
 # is just text "More" with NO aria-label (LinkedIn pushes Follow as primary and
@@ -328,37 +329,52 @@ PROFILE_PENDING = [
     "main button:has-text('Pending')",
     "main span.artdeco-button__text:has-text('Pending')",
 ]
-# The "Add a note" button in the invitation modal.
+# The connector positively identifies invitation context before using these
+# dialog-relative controls. Neither generic Send nor Add a note alone is proof.
+INVITE_DIALOG = [
+    "[role='dialog']:visible",
+    "dialog[open]:visible",
+    ".artdeco-modal:visible",
+]
+INVITE_DIALOG_HEADING = [
+    "h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible, [role='heading']:visible"
+]
 INVITE_ADD_NOTE_BUTTON = [
     "button[aria-label='Add a note']:visible:enabled",
-    "button:has-text('Add a note'):visible:enabled",
+    "button:text-is('Add a note'):visible:enabled",
+    "button:visible:enabled",
 ]
-# The custom-note textarea revealed after clicking "Add a note".
+# A note can already be open, rather than requiring an Add a note click.
 INVITE_NOTE_TEXTAREA = [
-    "textarea[name='message']:visible:enabled",
-    "textarea#custom-message:visible:enabled",
-    "textarea[id*='custom-message']:visible:enabled",
-    "div[role='dialog'] textarea:visible:enabled",
+    "textarea[name='message']:visible:enabled:not([readonly])",
+    "textarea#custom-message:visible:enabled:not([readonly])",
+    "textarea[id*='custom-message']:visible:enabled:not([readonly])",
+    "textarea:visible:enabled:not([readonly])",
 ]
-# The "Send" / "Send invitation" button in the invitation modal.
+INVITE_NOTE_DRAFT = ["textarea"]
+# Every action is additionally checked against exact normalized text/aria labels.
 INVITE_SEND_BUTTON = [
-    "button[aria-label='Send invitation']",
-    "button[aria-label*='Send now']",
-    "div[role='dialog'] button:has-text('Send')",
+    "button[aria-label='Send invitation']:visible:enabled",
+    "button:visible:enabled",
 ]
 INVITE_SEND_WITHOUT_NOTE_BUTTON = [
-    "div[role='dialog']:visible button[aria-label='Send without a note']:visible:enabled",
-    "div[role='dialog']:visible button:has-text('Send without a note'):visible:enabled",
+    "button[aria-label='Send without a note']:visible:enabled",
+    "button:visible:enabled",
 ]
 # The modal LinkedIn shows once the weekly invitation limit is hit (stop signal).
 INVITE_LIMIT_MODAL = [
-    "div[role='dialog']:has-text('weekly invitation limit')",
-    "div[role='dialog']:has-text('reached the weekly')",
+    ":is([role='dialog'], dialog[open], .artdeco-modal):has-text('weekly invitation limit')",
+    ":is([role='dialog'], dialog[open], .artdeco-modal):has-text('reached the weekly')",
 ]
-# Dismiss/cancel in the invitation modal (used to back out cleanly on dry-run or
-# when the note field never appears).
+# Only newly observed explicit success text or profile Pending confirms delivery.
+INVITE_SENT_CONFIRMATION = [
+    "[role='alert']:visible",
+    "[role='status']:visible",
+    ".artdeco-toast-item:visible",
+]
+# Dialog-relative dismissal must not close unrelated message composers.
 INVITE_DISMISS_BUTTON = [
-    "div[role='dialog'] button[aria-label='Dismiss']",
-    "div[role='dialog'] button[aria-label*='Cancel']",
     "button[aria-label='Dismiss']",
+    "button[aria-label='Cancel']",
+    "button:text-is('Cancel')",
 ]

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Discarding application</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m10 13 2 22h17l2-22M7 12h27M15 12V7h11v5"
+              stroke="#AD3E55" fill="#AD3E55" fill-opacity=".10"/>
+        <path d="M17 18v11m7-11v11" stroke="#AD3E55"/>
+        <path d="m26 3 8 3-3 8-8-3Z" stroke="#77600E" fill="#E3ECE7"/>
+  </g>
+</svg>

@@ -854,8 +854,9 @@ it again just to connect" flow.
 It prefers an invitation **with the connection note**, never the long message (the long message
 still needs the recruiter to accept the invite first, and is handled by hand from
 the dashboard). The separate `outreach.connect_without_note: false` toggle permits
-an explicit **Send without a note** invitation action only when note entry is
-unavailable. Notes remain preferred when enabled; the default skips that contact.
+a plain invitation only when note entry is unavailable. Current source accepts
+explicit no-note actions or a final Send/Connect only inside positively identified
+invitation context. Notes remain preferred when enabled; the default skips that contact.
 
 **Two entry points, one implementation:**
 
@@ -873,14 +874,22 @@ unavailable. Notes remain preferred when enabled; the default skips that contact
 - `connect/connector.py` — `ProfileConnector` is the thin, DOM-touching half
   (mirrors `forms/outreach.py`): `send_invite(page, target)` navigates to the
   profile, detects an already-connected/pending state, clicks **Connect** (from the
-  top card or the **More** overflow menu), clicks **Add a note**, types the note
-  (defensively trimmed to 300 chars), and clicks **Send** — returning a
+  top card or the **More** overflow menu), waits for an identified invitation
+  dialog and uses an already-open editable note or **Add a note** when needed.
+  It types the note (defensively trimmed to 300 chars) and clicks **Send** — returning a
   `ConnectOutcome` (`sent` / `sent_without_note` / `already` / `no_button` /
   `note_unavailable` / `limit_reached` / `dry_run` / `dry_run_without_note` /
-  `failed`). The opt-in fallback requires an enabled, explicitly identified
-  invitation-dialog no-note button; generic Send and arbitrary note-send errors
-  do not authorize it. `dry_run` skips both final send actions and dismisses the
-  modal.
+  `failed`). Semantic/native dialogs and Artdeco modals require invitation
+  evidence from a heading, accessible name or explicit invitation action.
+  Dialog-relative controls use exact normalized text/accessible labels,
+  visibility, enabled/editable checks and bounded polling. The opt-in fallback
+  prefers explicit no-note actions before generic Send/Connect in that scope;
+  conflicting/unavailable drafts and arbitrary note-send errors block it.
+  A profile Pending indicator or new explicit invitation-sent confirmation is
+  required before returning a sent outcome. A click or modal closure alone
+  remains failed/unconfirmed, with no automatic retry. `dry_run` skips every
+  final send action and retains pre-existing matching note drafts rather than
+  dismissing them.
 - `connect/service.py` — `ConnectionInviteService` is the orchestration half: it
   loads pending invites (`database.pending_connection_invites`), de-dupes by
   profile URL (a recruiter surfaced by two jobs is invited once, but **all** their
@@ -895,12 +904,16 @@ unavailable. Notes remain preferred when enabled; the default skips that contact
   `ConnectSummary` whose `sent_without_note` is a subset of invitation total `sent`;
   dry-run would-send counts never persist delivery.
 - `forms/selectors.py` — the `PROFILE_*` / `INVITE_*` candidate lists driving the
-  flow (the only un-unit-testable part; live selectors).
+  flow. Real selectors and dialog transitions are covered by intercepted
+  fictional browser pages; those fixtures do not establish current live markup.
 
 **Safety:** OFF by default (`send_connection_notes: false`) because it clicks
-Connect + Send for real. The decision flow is fully unit-tested against a fake
-page; the DB marking, de-dup, limit-stop and dry-run paths are tested against a
-temp DB with a scripted fake connector.
+Connect + Send for real. Fake-page regressions cover decisions; a temporary DB
+and scripted connector cover persistence, de-dup, limit-stop and dry-run.
+Fresh-browser fictional DOM tests exercise supported surfaces, delayed controls,
+note preference, unrelated composers, drafts and positive confirmation without
+external requests or user profiles. Live LinkedIn qualification remains separate.
+The control-recognition repair is source-only, not a change to published v0.2.4.
 
 ---
 

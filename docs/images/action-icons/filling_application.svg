@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Filling application</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 4h24v31H6Z" fill="#236A9A" fill-opacity=".10"/>
+        <path d="M11 11h3m4 0h7m-14 7h3m4 0h4m-11 7h3m-3 5h7"
+              stroke="#236A9A"/>
+        <path d="m21 25 12-12 4 4-12 12-6 2Zm9-9 4 4"
+              stroke="#77600E" fill="#E3ECE7"/>
+  </g>
+</svg>

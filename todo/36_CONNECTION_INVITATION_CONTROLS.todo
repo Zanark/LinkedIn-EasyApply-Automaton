@@ -1,0 +1,70 @@
+# Repair invitation controls and note-free fallback
+Workstream-ID: lea-36
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/36
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded invitation-control repair
+Status: DONE
+Milestone: Recognize invitation layouts without weakening send safeguards
+Dependencies: lea-31
+
+## Purpose
+Repair invitation-control discovery when dialog markup, visible text and
+accessible labels differ. Prefer a usable note, including an already-open note
+box, and permit an opted-in plain invitation only inside an identified invitation
+dialog. Keep technical qualification distinct from live-site acceptance.
+
+## Tasks
+- [x] Trace the existing fallback and preserve previous source and tracking.
+- [x] Implement scoped controls and bounded waits in a separate fictional lane.
+- [x] Cover note preference, safe plain actions, dry-run, limits and confirmation.
+- [x] Qualify actual fictional DOM variants and directly affected regressions.
+- [x] Update affected user and developer guidance without changing unrelated media.
+- [x] Deliver the qualified source without controlling independent applications.
+- [x] Verify the issue, Project item, backlink and unchanged predecessor records.
+
+## Acceptance criteria
+- [x] Supported invitation dialogs are not restricted to a div element.
+- [x] An already-open usable note box is preferred over a plain invitation.
+- [x] Exact visible action text can identify a button with a generic accessible label.
+- [x] Generic send actions require positively identified invitation context.
+- [x] Missing, disabled, hidden or misleading actions never authorize sending.
+- [x] An unavailable note uses a plain action only with the explicit option enabled.
+- [x] Dry-run never clicks a final invitation send action or marks delivery.
+- [x] A click alone is not recorded as confirmed invitation delivery.
+- [x] Weekly limits and arbitrary send failures do not trigger unsafe fallback.
+- [x] Existing drafts, invitation-versus-note persistence and prior work are preserved.
+- [x] Local verification is not represented as live qualification or publication.
+- [x] One issue-backed Project item and durable backlink represent this repair.
+
+## Completion evidence
+Delivered the bounded connector/selector repair, focused regressions and eleven
+directly affected guides to local source. Semantic/native dialogs, exact visible
+labels and bounded control waits are supported. Usable notes take preference;
+an opted-in generic final action additionally requires identified invitation
+context. Existing drafts are protected, including an already-matching dry-run
+draft. A final click or disappearing modal alone does not confirm delivery.
+
+All 97 focused cases pass, including 29 actual browser DOM cases on independently
+fictional pages, with no skips. Black, Ruff and mypy pass for the changed Python
+scope. Exact delivered imports and 68 original-source connector/service boundary
+cases pass. All fourteen payload files match the qualified candidate; all 217
+other baseline files outside deliberate tracking edits retain bytes and mtimes.
+The existing issue-backed item and backlink are independently verified, with all
+35 predecessor issue/Project snapshots, mappings and numbered sources preserved.
+
+The initial qualification had 17 temporary-directory setup errors and no product
+assertion failures; creating the missing parent enabled the complete reruns.
+The first XML was overwritten by a later rerun; retain that evidence limitation
+rather than claiming the original report exists. This local repair does not
+establish the exact reported live markup or live LinkedIn acceptance. Existing
+icon/glossary/media work, independent applications, installed versions and
+published releases are unchanged. No live invitation, commit, push or release.
+
+## Completion log
+- 2026-11-11: Complete local source delivery and fictional qualification. Keep
+  positive delivery evidence, note-versus-invitation persistence and opt-in
+  boundaries explicit; do not equate fixture success with live qualification.
+- 2026-11-11: Begin the bounded control repair. Preserve lea-31's historical
+  completion, all predecessor records, existing icon/glossary changes and private
+  setup. No live invitations, installed-app update, independent restart, commit,
+  push or release is included.

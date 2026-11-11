@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Checking job</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 7H6v28h22V7h-6M13 4h8v6h-8Z"
+              fill="#236A9A" fill-opacity=".10"/>
+        <path d="m10 17 2 2 3-4m-5 11 2 2 3-4m3-6h5m-5 9h3" stroke="#247449"/>
+        <circle cx="28" cy="25" r="6" stroke="#236A9A" fill="#E3ECE7"/>
+        <path d="m32 30 4 5" stroke="#77600E" stroke-width="2.5"/>
+  </g>
+</svg>

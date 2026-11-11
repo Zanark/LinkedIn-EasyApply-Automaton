@@ -14,6 +14,12 @@ mirror raw conversations, applicant values, private continuity or runtime data.
 The original `todo/TODO.md` is excluded from synchronization; do not copy it
 wholesale into a new tracked/public document or issue.
 
+The [public project handoff](.agent-context/public/README.md) contains reviewed
+engineering notes, not private session continuity. Only its four named Markdown
+files are allowlisted. Keep private root files, social history and new/unreviewed
+context files ignored; never force-add the context directory or copy a private
+store into that projection.
+
 After an authorized new workstream, description/evidence update, completion,
 reopening, cancellation or supersession, preview the configured synchronizer.
 Apply only within the current task's remote-write authority, then verify issue,

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Finding hiring team</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="14" cy="12" r="5" stroke="#236A9A"
+                fill="#236A9A" fill-opacity=".12"/>
+        <path d="M4 31v-5c0-9 20-9 20 0v5Zm19-23a5 5 0 0 1 3 9"
+              stroke="#236A9A"/>
+        <circle cx="29" cy="25" r="6" stroke="#006F63" fill="#E3ECE7"/>
+        <path d="m33 30 4 5" stroke="#247449" stroke-width="2.5"/>
+        <path d="M27 25h4m-2-2v4" stroke="#006F63"/>
+  </g>
+</svg>

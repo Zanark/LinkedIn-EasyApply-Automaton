@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Processing invitation</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 26-3 3a6 6 0 0 1-8-8l9-9a6 6 0 0 1 9 1"
+              stroke="#236A9A"/>
+        <path d="m23 14 3-3a6 6 0 0 1 8 8l-9 9a6 6 0 0 1-9-1"
+              stroke="#006F63"/>
+        <path d="m13 24 11-11" stroke="#236A9A"/>
+        <circle cx="31" cy="31" r="6" stroke="#236A9A" fill="#E3ECE7"/>
+        <path d="M28 31h6m-3-3v6" stroke="#247449"/>
+  </g>
+</svg>

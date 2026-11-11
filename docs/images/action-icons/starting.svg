@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Starting command</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 9a14 14 0 1 0 16 0" stroke="#236A9A"/>
+        <path d="M20 4v14" stroke="#247449" stroke-width="3"/>
+        <path d="m30 4 1 4 4 1-4 1-1 4-1-4-4-1 4-1Z"
+              fill="#77600E" stroke="#77600E" stroke-width="1"/>
+  </g>
+</svg>

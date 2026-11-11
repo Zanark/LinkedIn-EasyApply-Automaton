@@ -1,5 +1,26 @@
 # Troubleshooting
 
+## Connect without a note is enabled, but the invitation fails
+
+The option permits a fallback; it does not force an arbitrary Send button.
+An older exact-only selector can miss a legitimate control because its dialog
+element or accessible label differs. A failure log alone does not identify the
+actual live markup.
+
+Updated source waits for usable controls, prefers an already-open note and
+accepts explicit no-note actions or a final Send/Connect only inside positively
+identified invitation context. Existing conflicting/unavailable drafts and
+arbitrary note-send errors block a plain retry. The published v0.2.4 download
+does not contain this repair.
+
+Check **Connection invitations**, not only the command's finished message.
+In dry-run, **would-send** means the final action was recognized but not clicked;
+zero would-send with failures is not a successful rehearsal. Dry-run never sends.
+For live source runs, a click or modal closure alone remains **Failed/unconfirmed**
+unless profile Pending or a new invitation-sent confirmation appears. Do not
+blindly retry an unconfirmed action: check the profile's invitation state first.
+The repair's fictional browser fixtures are not live LinkedIn qualification.
+
 ## Dashboard columns look squeezed or hide text
 
 Refresh the updated source dashboard and accept its rerun prompt if shown.

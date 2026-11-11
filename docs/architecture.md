@@ -29,7 +29,9 @@ from outcomes; the selected resume remains in `ResumeDisplay` until replaced.
 `gui/activity_icons.py::activity_icon` renders an original per-stage SVG with
 Qt's SVG renderer at the display pixel density. The artwork uses palette roles,
 outlines and partial fills, not recolored platform-icon silhouettes. Geometry
-and theme changes remain presentation-only. The action name alone uses a bundled
+is rendered into a 64-by-64 logical pixel icon inside the unchanged 112-by-108
+action tile; the original 40-unit SVG viewBox is independent of display size.
+Size and theme changes remain presentation-only. The action name alone uses a bundled
 Nunito application font; a steady Qt drop-shadow glow and frame border share
 the state's semantic tone. No engine or persistence decision depends on the
 icon, label, font or its color.

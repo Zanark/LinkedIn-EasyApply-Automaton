@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Writing cover letter</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 17h25v18H4Zm0 0 12 10 13-10M4 35l8-10m17 10-8-10"
+              fill="#236A9A" fill-opacity=".10"/>
+        <path d="M16 21 29 5c3-4 8-2 7 2-2 6-7 9-14 10m-3 0 10-7"
+              stroke="#77600E" fill="#77600E" fill-opacity=".14"/>
+        <path d="M9 12h6m-4-5h7" stroke="#006F63"/>
+  </g>
+</svg>

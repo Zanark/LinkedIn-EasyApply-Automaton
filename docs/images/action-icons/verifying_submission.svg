@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Checking submission</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m20 4 13 5v10c0 9-13 16-13 16S7 28 7 19V9Z"
+              fill="#236A9A" fill-opacity=".10"/>
+        <path d="m14 18 4 4 8-8" stroke="#247449" stroke-width="2.5"/>
+        <path d="M35 21a16 16 0 0 1-8 14m6-1-6 1 1-5" stroke="#006F63"/>
+  </g>
+</svg>

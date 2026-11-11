@@ -155,6 +155,13 @@ payloads, preview authorized tracking changes, then explicitly apply and read
 back issue/Project/backlink results. This is local invocation, not an activated
 workflow; commits, pushes and live applications require separate authority.
 
+The [public project handoff](../.agent-context/public/README.md) summarizes
+source state, durable engineering rules and open qualification boundaries.
+It is independently authored public documentation, not the private continuity
+store. Git allowlists only its README, STATE, MEMORY and JOURNAL; keep all other
+context, social history and applicant/runtime data local. New public handoff
+content needs semantic review, not automatic copying or redaction of private files.
+
 ```powershell
 # Install dependencies for the complete test suite
 python -m venv .venv
@@ -170,6 +177,16 @@ python -m venv .venv
 Optional extras: `.[ai]` (OpenAI), `.[dashboard]` (Streamlit), `.[export]`
 (XLSX export). The full suite imports dashboard helpers, so its environment
 needs the dashboard extra even though the portable build excludes it.
+
+`tests/test_connection_invites.py` covers the connector, service persistence and
+actual selectors against intercepted fictional HTTPS pages. It launches a fresh
+headless Chromium or installed Edge context, aborts other requests and never
+uses a user profile. Set `LEA_REQUIRE_INVITATION_BROWSER_TESTS=1` for qualification
+so missing browser binaries fail rather than skip. Supported dialog fixtures are
+not proof of current LinkedIn markup; live qualification is a separate activity.
+Keep generic send actions invitation-scoped, prefer usable notes, preserve
+existing drafts and require positive delivery evidence. Dry-run and arbitrary
+note-send failures must never authorize a final/plain action or persistence.
 
 Report-control tests use disposable fictional files and stub native openers.
 AppTest exercises corner-button events and standalone dialog widget reruns;
@@ -281,13 +298,27 @@ needs original distinct SVG geometry in `gui/activity_icons.py`, not merely a
 different color or a flattened standard icon. `activity_icon` uses QSvgRenderer
 and transparent, density-aware pixmaps with palette roles; informational blue
 is a documented local supplement, not a canonical DeepSeaFoam token. The tile
-has no visible caption, and centers its icon/name group with padding. The
-10.01px name declaration is 77% of the former 13px size, including a 10% increase
+has no visible caption, and centers its icon/name group with padding. Current
+source uses 64-by-64 logical pixel icons in both the QLabel and the
+SVG render target, keeping the tile at 112 by 108. Five-pixel layout margins
+and four-pixel spacing leave room for unchanged two-line labels; the SVG's
+40-unit viewBox remains the original artwork coordinate system. Regression
+checks assert the actual widget, pixmap and outer tile sizes in every state.
+The 10.01px name declaration is 77% of the former 13px size, including a 10% increase
 over the initial compact design; Qt rounds raster font
 sizes to whole pixels. Tests cover every state in both themes at 1x/2x density,
 distinct alpha geometry, multiple inks, transparency and compact/expanded fit.
 Preserve the status-only transport, accessible operation description and
 selection-versus-attachment distinction when changing this presentation.
+
+Keep the [complete icon glossary](gui-action-icons.md), the README's full-set
+table and `docs/images/action-icons/*.svg` synchronized with `_STATES` and
+`_ARTWORK`. The 36 documentation exports use the exact original vector bodies
+and Harbor Daylight palette on padded panel backgrounds. Preserve the visible
+labels, per-state tones, accessible image names and operation-versus-outcome
+distinctions; a new state also needs its documentation icon and explanation.
+These exports do not replace runtime artwork or require recapturing unchanged
+GUI screenshots and GIFs.
 
 Only action names use the bundled Nunito variable font, registered once through
 Qt's application-font database; registration failure is explicit. The original

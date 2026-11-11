@@ -420,12 +420,19 @@ microservice; the same pass is available standalone as `apply.py connect`.
 - Skipped after **Ctrl+C**, a **failed** or **unconfirmed** run, and in **scan** mode.
 - `ConnectionInviteService` loads pending invites (`note` present, `profile_url`
   present, both `invitation_sent_at` and `note_sent_at IS NULL`), de-dupes by profile URL, and for each: navigate
-  → **Connect** (top card or **More** menu) → **Add a note** → type the note →
-  **Send**, pausing a randomised `connect_min…max_delay_seconds` between people.
+  → **Connect** (top card or **More** menu) → identify the invitation dialog →
+  use an already-open editable note or **Add a note** → type the note → **Send**,
+  pausing a randomised `connect_min…max_delay_seconds` between people.
 - With `outreach.connect_without_note: true`, unavailable note entry instead
-  permits an enabled, explicitly identified invitation-dialog **Send without a
-  note** action. Off by default, this fallback neither replaces an available note
-  nor retries arbitrary send errors. Dry run skips both final send actions.
+  permits an explicit no-note action, or a final Send/Connect only inside
+  positively identified invitation context. Current source waits for usable
+  controls; conflicting/unavailable drafts and arbitrary send errors never
+  authorize a plain fallback. Off by default, it still prefers a usable note.
+  Dry run skips every final send action and preserves pre-existing matching drafts.
+- Source records delivery only after profile **Pending** or a new explicit
+  invitation-sent confirmation; a click or modal closure alone remains
+  **Failed/unconfirmed**, without automatic retry. These control-recognition
+  and confirmation repairs are not in the unchanged v0.2.4 download.
 - Each success is marked via `mark_outreach_invitation_sent`: all invitations get
   `invitation_sent_at`; only invitations with a note get `note_sent_at` and a
   struck-through note. Plain invitations leave their draft note unsent and retain

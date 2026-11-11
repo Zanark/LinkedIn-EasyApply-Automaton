@@ -280,12 +280,12 @@ def activity_icon(state: str, palette: Palette, *, pixel_ratio: float = 1.0) -> 
     renderer = QSvgRenderer(QByteArray(svg.encode("utf-8")))
     if not renderer.isValid():
         raise ValueError(f"Invalid activity artwork: {state}")
-    pixmap = QPixmap(round(40 * pixel_ratio), round(40 * pixel_ratio))
+    pixmap = QPixmap(round(64 * pixel_ratio), round(64 * pixel_ratio))
     pixmap.setDevicePixelRatio(pixel_ratio)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
     try:
-        renderer.render(painter, QRectF(0, 0, 40, 40))
+        renderer.render(painter, QRectF(0, 0, 64, 64))
     finally:
         painter.end()
     return pixmap

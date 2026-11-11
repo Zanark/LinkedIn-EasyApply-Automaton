@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Status unavailable</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 22v11h5V22m5-7v18h5V15m5-8v13" stroke="#236A9A"/>
+        <path d="M4 5 35 36" stroke="#77600E" stroke-width="2.5"/>
+        <path d="M28 27a4 4 0 0 1 8 0c0 3-4 3-4 5m0 4h.01" stroke="#77600E"/>
+  </g>
+</svg>

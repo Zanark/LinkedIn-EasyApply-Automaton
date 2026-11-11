@@ -30,6 +30,8 @@ without resetting your setup.
 
 **Current action and resume (v0.2.4 and source):** every stage has its own detailed,
 outlined multicolor icon above a centered rounded Nunito action name, 23% smaller than before.
+Current source enlarges the icons from 40 to 64 logical pixels, keeping the
+112-by-108 tile and full labels unchanged; the v0.2.4 download retains 40px icons.
 The border has a soft, steady glow matching the current stage's color, without
 flashing or pulsing. There is no redundant action header. Blue indicates normal work, green/teal
 resume or completion work, yellow a pause/caution, and red an error/discard.
@@ -412,9 +414,11 @@ Retry **every failed or aborted application** in one go — no search crawl. It 
 
 ### `connect`
 
-Send your pending hiring-team recruiters a **free LinkedIn connection invitation**, preferring their ≤300-character note — never the long message. It opens its **own fresh browser** (so you can run it after an apply run has closed its browser), goes to each recruiter's profile, clicks **Connect → Add a note**, types the note, and clicks **Send**. It reads the same `outreach_messages` table the outreach drafts live in, de-dupes by profile URL, paces itself with a random human-like delay, and stops on LinkedIn's weekly invite limit.
+Send your pending hiring-team recruiters a **free LinkedIn connection invitation**, preferring their ≤300-character note — never the long message. It opens its **own fresh browser** (so you can run it after an apply run has closed its browser), goes to each recruiter's profile, clicks **Connect**, and uses the note box already open or **Add a note** when needed. It reads the same `outreach_messages` table the outreach drafts live in, de-dupes by profile URL, paces itself with a random human-like delay, and stops on LinkedIn's weekly invite limit.
 
-Set `outreach.connect_without_note: true` to permit an explicit **Send without a note** invitation button only when note entry is unavailable. The default is `false` (skip instead); an available note is still preferred. In the source GUI, use **Run → Customize settings for this run → Behavior → Connect without a note if unavailable**. Successful plain invitations leave the pending queue but do not mark or strike through the unsent note. Both draft texts stay available for follow-up. The **Connection invitations** summary includes **Without note** as a subset of **Sent**.
+Set `outreach.connect_without_note: true` to permit a plain invitation only when note entry is unavailable. Current source waits for usable controls and accepts **Send without a note**, or a final **Send/Connect** inside a positively identified invitation dialog; it never substitutes an unrelated message Send. The default is `false` (skip instead); an available note is still preferred. In the source GUI, use **Run → Customize settings for this run → Behavior → Connect without a note if unavailable**. Existing conflicting or unavailable drafts are left untouched, and note-send errors never trigger a plain retry.
+
+Only a profile **Pending** indicator or new invitation-sent confirmation records delivery; clicking or closing a modal alone does not. Successful plain invitations leave the pending queue but do not mark or strike through the unsent note. Both draft texts stay available for follow-up. The **Connection invitations** summary includes **Without note** as a subset of **Sent**. This control-recognition repair is source-only; the published v0.2.4 download is unchanged.
 
 | Option | Meaning | Default |
 | --- | --- | --- |

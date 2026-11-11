@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Resume review pause</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 4h17l7 7v13M7 4v31h8m9-31v8h7"
+              fill="#236A9A" fill-opacity=".10"/>
+        <circle cx="16" cy="17" r="3" stroke="#236A9A"/>
+        <path d="M11 24c1-5 9-5 10 0" stroke="#236A9A"/>
+        <circle cx="20" cy="29" r="5" stroke="#77600E"/>
+        <circle cx="32" cy="29" r="5" stroke="#77600E"/>
+        <path d="M25 29h2m-12-2-2-4m24 4 1-4" stroke="#77600E"/>
+  </g>
+</svg>

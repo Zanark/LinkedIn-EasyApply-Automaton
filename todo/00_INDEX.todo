@@ -189,6 +189,24 @@ exact imports/version, unchanged launcher check and 89 offline GUI/resource
 cases pass. Private/native metadata, independent applications, installed versions
 and unrelated work remain untouched; original #2/#9 review gaps remain open.
 
+The bounded lea-35 enlarges every action icon from 40 to 64 logical pixels
+inside the unchanged 112-by-108 tile. Full centered names keep their font,
+colors and accessible descriptions. All 144 native state/theme/layout
+comparisons, 83 GUI cases, eight double-scale cases and eight original-source
+boundary cases pass. Seven guides and eight fictional Run media assets are
+refreshed and all eighteen qualified payloads are byte-verified in the source
+checkout. The unchanged launcher's nonlaunching check passes. This is local
+source completion; v0.2.4, installed apps and independent runtime are unchanged.
+Final scoped issue/Project/backlink reconciliation is recorded separately below.
+
+The bounded lea-36 repairs invitation-control discovery and opted-in note-free
+fallback without treating a click as delivery. All 97 fictional cases, including
+29 actual browser DOM cases, and focused formatting/lint/types pass. Fourteen
+qualified source/test/guide payloads are byte-verified in the original checkout;
+68 original-source boundary cases pass. All 217 unrelated baseline files outside
+owned tracking edits retain bytes and mtimes. Live markup and live LinkedIn
+acceptance remain unverified; installed apps, existing media and v0.2.4 are unchanged.
+
 | Stable ID | File | Status | Issue |
 | --- | --- | --- | --- |
 | lea-01 | 01_AUTOMATION_IMPROVEMENTS.todo | IN_REVIEW | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/2 |
@@ -224,8 +242,38 @@ and unrelated work remain untouched; original #2/#9 review gaps remain open.
 | lea-31 | 31_OPTIONAL_NOTE_FREE_CONNECTIONS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/31 |
 | lea-32 | 32_WINDOWS_APPLICATION_ICON.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/32 |
 | lea-33 | 33_DETAILED_ACTION_TILE_RELEASE.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/33 |
+| lea-34 | 34_ACTION_ICON_GLOSSARY.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/34 |
+| lea-35 | 35_LARGER_ACTION_ICONS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/35 |
+| lea-36 | 36_CONNECTION_INVITATION_CONTROLS.todo | DONE | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/36 |
+| lea-37 | 37_REVIEWED_SOURCE_PUBLICATION.todo | IN_PROGRESS | https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/37 |
 
 ## Completion log
+- 2026-11-11: Begin lea-37 for the separately authorized source push and a
+  reviewed four-file public project handoff. Keep the original private store,
+  applicant inputs and unrelated work local; preserve all 36 predecessors.
+- 2026-11-11: Complete only lea-36/#36 with its exact reviewed description,
+  CLOSED/COMPLETED lifecycle, one Done Project item and persistent backlink.
+  Independently preserve all 35 predecessor snapshots, mappings and numbered
+  sources. A genuine settled preview/apply preserves all 36 issue/item contents
+  and timestamps plus 237 local hashes/mtimes. Local source delivery does not
+  establish live LinkedIn acceptance or authorize publication.
+- 2026-11-11: Add lea-36 for invitation-control discovery, bounded waits and
+  the opted-in plain-invitation fallback. Qualify fictional DOM variants in a
+  separate source lane; preserve all 35 predecessors and existing UI work.
+- 2026-11-11: Complete lea-35/#35 with its exact reviewed description,
+  CLOSED/COMPLETED lifecycle, one Done Project item and persistent backlink.
+  Independently verify all 34 predecessors unchanged; scoped preview/apply
+  settle as no-ops preserving all 35 issue/item timestamps and local records.
+  The qualified source, seven guides and fictional Run media are updated;
+  published releases and installed applications remain unchanged.
+- 2026-11-11: Add lea-35 for larger 64-by-64 action icons inside the unchanged
+  112-by-108 tile. Preserve complete labels, colors, glossary and all predecessors;
+  qualify isolated source before delivery, without restarting independent apps.
+- 2026-11-11: Add lea-34 for the complete 36-icon README glossary and grouped
+  action reference. Export exact original artwork and verify matching meanings,
+  colors, image rendering and navigation. Complete its separate issue #34,
+  Project item and persistent backlink while preserving all 33 predecessors;
+  no runtime change, commit, push or release is included.
 - 2026-11-11: Complete lea-33's exact-source v0.2.4 release, hosted/downloaded
   verification and original-source delivery. The unchanged source launcher
   selects the qualified GUI; installed versions and independent runtime remain

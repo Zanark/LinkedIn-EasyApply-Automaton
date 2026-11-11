@@ -497,6 +497,66 @@
       "number": 33,
       "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/33",
       "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH1AO8"
+    },
+    "lea-34": {
+      "baseline": {
+        "title": "[lea-34] Complete desktop action icon glossary",
+        "managed": "ad03c13cf83ba567460a50ecdb93a22da8c724d906a5e12523afa2f711fa4489",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABeWOdpg",
+      "number": 34,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/34",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH3NP0"
+    },
+    "lea-35": {
+      "baseline": {
+        "title": "[lea-35] Larger action icons within the existing tile",
+        "managed": "bd148fdd52613e2764e0f972f1c1772129066e66990aa2b6d3d247d0f43cf9ef",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABeXvGZg",
+      "number": 35,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/35",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH4w5Q"
+    },
+    "lea-36": {
+      "baseline": {
+        "title": "[lea-36] Repair invitation controls and note-free fallback",
+        "managed": "32230344616327a237d09ae716978ad5dd957022d1a4531019c67e20ab64d0e1",
+        "lifecycle": [
+          "CLOSED",
+          "COMPLETED"
+        ],
+        "status": "98236657"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABeYYNDg",
+      "number": 36,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/36",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH5ZrE"
+    },
+    "lea-37": {
+      "baseline": {
+        "title": "[lea-37] Publish reviewed source and a public project handoff",
+        "managed": "ad883773c58d174b8ef4edfda971bf0ad61f9a78d612aa5d956517b0362e23a2",
+        "lifecycle": [
+          "OPEN",
+          null
+        ],
+        "status": "47fc9ee4"
+      },
+      "issue_id": "I_kwDOTXAU388AAAABeZYsrg",
+      "number": 37,
+      "url": "https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/37",
+      "item_id": "PVTI_lAHOAe2wCs4BqfEBzhH6ZSc"
     }
   }
 }

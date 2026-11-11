@@ -291,19 +291,29 @@ draft.
 
 Yes — that's the opt-in **connection-note microservice**. The draft/report flow
 above only *writes* the ≤300-char note; sending the free invitation is a separate
-pass that clicks **Connect → Add a note → Send** for you. Run it standalone with
+pass that clicks **Connect**, uses the available note box (or **Add a note**) and
+**Send** for you. Run it standalone with
 `python apply.py connect` (add `--dry-run` to rehearse without sending, `--limit N`
 to cap, `--run <id>` to scope, `-y` to skip the prompt), or set
 `outreach.send_connection_notes: true` to have every `apply` run trigger it
 automatically at the end. Either way it opens its **own fresh browser** *after* the
 apply run's browser has closed (so it literally "closes the window, then opens it
-again just to connect"), sends only the **note** (never the long message — that
+again just to connect"), prefers the **note** (never the long message — that
 still waits until they accept), de-dupes by profile URL, paces itself with a random
 8–25 s delay, stops the moment LinkedIn shows its weekly-invite-limit modal, and
-marks each sent note so it's never sent twice (the dashboard strikes it through).
+marks confirmed invitations so they leave the pending queue. Only confirmed
+notes are struck through on the dashboard.
 It is **off by default** because it clicks Connect + Send for real — start with
 `connect --dry-run` to confirm the flow works against the live page. See
 [configuration → `outreach`](configuration.md#outreach).
+
+Set `outreach.connect_without_note: true` to permit a plain invitation when note
+entry is unavailable. Current source waits for usable controls, accepts explicit
+no-note actions or a final Send/Connect only inside an identified invitation
+dialog, and preserves existing drafts instead of downgrading arbitrary errors.
+It requires profile Pending or a new invitation-sent confirmation before marking
+delivery; a click or modal closure alone is unconfirmed. Dry-run never sends.
+These repairs are source-only; the v0.2.4 download is unchanged.
 
 ### Where is my data stored?
 

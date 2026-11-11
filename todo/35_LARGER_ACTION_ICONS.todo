@@ -1,0 +1,72 @@
+# Larger action icons within the existing tile
+Workstream-ID: lea-35
+GitHub-Issue: https://github.com/Zanark/LinkedIn-EasyApply-Automaton/issues/35
+Publication: PUBLIC_SAFE_PROJECTION
+Source-record: Reviewed bounded public desktop presentation request
+Status: DONE
+Milestone: Enlarge every action icon while preserving the original tile dimensions
+Dependencies: lea-33, lea-34
+
+## Purpose
+Make all 36 action icons easier to see without enlarging the 112-by-108 logical
+pixel tile. Use the selected 64-by-64 icon size while retaining complete action
+names, their existing rounded font, semantic colors and steady border glow.
+
+## Tasks
+- [x] Measure the original tile and every label in both desktop themes.
+- [x] Establish an isolated source candidate with fictional test workspaces.
+- [x] Enlarge the rendered vectors and displayed icon widgets together.
+- [x] Verify all states, display densities and compact/expanded layouts.
+- [x] Refresh directly affected documentation and fictional Run media.
+- [x] Deliver the qualified source change without controlling independent apps.
+- [x] Reconcile the scoped issue, Project status and persistent backlink.
+
+## Acceptance criteria
+- [x] Every action uses a 64-by-64 logical pixel icon, not just a denser bitmap.
+- [x] The tile remains exactly 112-by-108 logical pixels for every state.
+- [x] Full labels retain their font, size, colors and accessible descriptions.
+- [x] Icon and name remain centered, separated and contained without clipping.
+- [x] High-density rendering, retained resume and neighboring controls still work.
+- [x] README media and affected guides accurately distinguish source from releases.
+- [x] One issue-backed Project item and durable backlink represent this workstream.
+- [x] Private setup, predecessor work, independent apps and releases are preserved.
+
+## Completion evidence
+Initial isolated measurements cover all 36 states in both themes at minimum
+and expanded window sizes: the original tile is 112 by 108 logical pixels and
+its icons are 40 by 40. Two-line labels need 28 pixels, so an 80-by-80 icon
+cannot retain those labels and padding inside the existing tile. The selected
+64-by-64 size preserves the box while increasing icon area by 2.56 times.
+
+Both the displayed widget and density-aware vector render target now use 64
+logical pixels. Five-pixel margins and four-pixel spacing preserve the exact
+original tile, complete centered labels and unchanged Nunito font. The artwork,
+semantic colors/glow, accessible descriptions and retained resume behavior remain
+unchanged. All 144 state/theme/layout comparisons retain exact tile positions,
+neighboring console geometry, label dimensions and font size without clipping.
+
+All 83 GUI cases pass, as do focused Ruff, Black and mypy checks. A separate
+double-scale execution passes eight affected cases. Seven guides, seven fictional
+Run screenshots and the nine-frame Run GIF are refreshed; all 148 relative
+references resolve and all 36 glossary exports remain unchanged. Direct visual
+review covers before/after Ready and two-line Preparing application in both
+themes, the GIF's first frame and the compact light Run view, not every frame.
+
+Exactly eighteen qualified source/test/documentation/media files are delivered
+and byte-verified in the original checkout. Eight focused original-source GUI
+cases pass; actual imports resolve to that checkout and the unchanged source
+launcher's nonlaunching check passes. All 249 baseline files outside the payload
+and three deliberate tracking edits retain exact bytes and modification times.
+Final scoped issue/Project/backlink reconciliation is recorded in the index
+and development ledger.
+
+This is local technical completion, not live LinkedIn qualification, human
+acceptance or publication. Published v0.2.4 and installed applications are
+unchanged. No application restart, commit, push or new release is included.
+
+## Completion log
+- 2026-11-11: Begin the bounded icon-size update. Preserve all 34 predecessor
+  workstreams, the complete glossary and independently running applications.
+- 2026-11-11: Complete isolated qualification, bounded visual review, affected
+  guides/media and exact original-source delivery. Keep final tracking read-back
+  separate from implementation, acceptance and release publication.

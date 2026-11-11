@@ -65,8 +65,16 @@ configs/question_bank.yaml
 .env.*
 /private-setup/
 
-# Private continuity and the mixed historical source are never release inputs.
-.agent-context/
+# Private continuity stays local; only these reviewed project notes are public.
+.agent-context/*
+!.agent-context/public/
+.agent-context/public/*
+!.agent-context/public/README.md
+!.agent-context/public/STATE.md
+!.agent-context/public/MEMORY.md
+!.agent-context/public/JOURNAL.md
+
+# The mixed historical source is never a publication input.
 todo/TODO.md
 
 # Browser profile - contains your logged-in LinkedIn session (NEVER commit)

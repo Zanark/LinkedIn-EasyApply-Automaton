@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52" role="img" aria-labelledby="title">
+  <title id="title">Loading invitations</title>
+  <!-- Original GUI artwork; Harbor Daylight documentation export. -->
+  <rect width="52" height="52" rx="8" fill="#E3ECE7"/>
+  <g transform="translate(6 6)" fill="none" stroke="#236A9A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 5h21v22H11Z" fill="#236A9A" fill-opacity=".10"/>
+        <path d="M7 10v17m-3-6v15h32V21m-32 6h10l2 5h8l2-5h10"
+              stroke="#006F63"/>
+        <circle cx="21" cy="12" r="3" stroke="#236A9A"/>
+        <path d="M16 21c0-6 10-6 10 0m3-14h.01" stroke="#236A9A"/>
+        <path d="M20 27v-3m-3 1 3 3 3-3" stroke="#77600E"/>
+  </g>
+</svg>

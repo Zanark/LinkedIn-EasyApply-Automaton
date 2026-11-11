@@ -178,13 +178,18 @@ Scan never submits, so it takes no submission flags.
 | `--run` | Only send notes drafted in one run id. |
 | `--yes`, `-y` | Skip the confirmation prompt. |
 
-Notes are preferred. Set `outreach.connect_without_note: true` to permit an
-explicit **Send without a note** invitation action only when note entry is
-unavailable; the default is `false` (skip instead). This is a configuration or
+Notes are preferred. Set `outreach.connect_without_note: true` to permit a plain
+invitation only when note entry is unavailable; the default is `false` (skip
+instead). Updated source waits for usable controls and accepts explicit no-note
+actions or a final Send/Connect only inside an identified invitation dialog.
+Existing drafts and arbitrary send errors never authorize a plain retry.
+This recognition repair is source-only; published v0.2.4 is unchanged.
+This is a configuration or
 GUI per-run setting, not a new CLI flag. Successful plain invitations leave the
 pending queue without marking the note delivered or removing the message draft.
 The summary's **Without note** row is included in **Sent**, or **would-send** in
-dry runs.
+dry runs. A click alone is not recorded as delivery: source requires profile
+Pending or a new invitation-sent confirmation.
 
 ### `export`
 
